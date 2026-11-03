@@ -419,6 +419,49 @@ export function TodayView() {
             </div>
           </Card>
 
+          <Mini
+            title={t("today.habits")}
+            action={
+              <span className="flex items-center gap-2">
+                <span>{day.habits.filter((h) => h.done).length}/{day.habits.length}</span>
+                <button
+                  type="button"
+                  onClick={() => setHabitOpen(true)}
+                  className="rounded-full border border-line px-1.5 py-0.5 text-[9px] text-ink-3 transition-colors hover:border-accent hover:text-ink"
+                >
+                  {t("today.manage")}
+                </button>
+              </span>
+            }
+          >
+            <div className="flex flex-wrap gap-1.5">
+              {day.habits.map((h) => (
+                <button
+                  key={h.id}
+                  type="button"
+                  onClick={() => void toggleHabit(h.id)}
+                  className={`rounded-full px-2.5 py-1 text-[10.5px] transition-colors ${
+                    h.done
+                      ? "bg-accent text-white"
+                      : "border border-line bg-surface text-ink-3 hover:border-accent"
+                  }`}
+                >
+                  {h.done ? "✓ " : ""}
+                  {h.name}
+                </button>
+              ))}
+            </div>
+          </Mini>
+
+          <MoneyCard date={day.date} />
+
+          <BodyCard date={day.date} />
+
+          <MealsCard date={day.date} />
+        </div>
+
+        {/* 右：时间轴固定栏，滚动时始终可见 */}
+        <div className="space-y-3.5 lg:sticky lg:top-6">
           <Card
             title={t("today.timeline")}
             action={
@@ -550,49 +593,6 @@ export function TodayView() {
               </div>
             ) : null}
           </Card>
-        </div>
-
-        {/* 右：今天的记录 */}
-        <div className="space-y-3.5">
-          <Mini
-            title={t("today.habits")}
-            action={
-              <span className="flex items-center gap-2">
-                <span>{day.habits.filter((h) => h.done).length}/{day.habits.length}</span>
-                <button
-                  type="button"
-                  onClick={() => setHabitOpen(true)}
-                  className="rounded-full border border-line px-1.5 py-0.5 text-[9px] text-ink-3 transition-colors hover:border-accent hover:text-ink"
-                >
-                  {t("today.manage")}
-                </button>
-              </span>
-            }
-          >
-            <div className="flex flex-wrap gap-1.5">
-              {day.habits.map((h) => (
-                <button
-                  key={h.id}
-                  type="button"
-                  onClick={() => void toggleHabit(h.id)}
-                  className={`rounded-full px-2.5 py-1 text-[10.5px] transition-colors ${
-                    h.done
-                      ? "bg-accent text-white"
-                      : "border border-line bg-surface text-ink-3 hover:border-accent"
-                  }`}
-                >
-                  {h.done ? "✓ " : ""}
-                  {h.name}
-                </button>
-              ))}
-            </div>
-          </Mini>
-
-          <MoneyCard date={day.date} />
-
-          <BodyCard date={day.date} />
-
-          <MealsCard date={day.date} />
         </div>
       </div>
 
