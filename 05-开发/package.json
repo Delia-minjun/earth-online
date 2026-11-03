@@ -11,6 +11,7 @@
     "build": "pnpm --filter @life/web build",
     "start": "pnpm --filter @life/server start",
     "migrate": "pnpm --filter @life/server migrate",
+    "test": "pnpm --filter @life/server test",
     "typecheck": "pnpm -r typecheck"
   },
   "devDependencies": {
