@@ -61,6 +61,34 @@ export interface ApiDayReview {
   next: string;
 }
 
+export interface ApiArea {
+  id: string;
+  name: string;
+  nameEn: string | null;
+  color: string | null;
+  projects: number;
+}
+
+export interface ApiProject {
+  id: string;
+  name: string;
+  status: "active" | "done" | "paused";
+  dueDate: string | null;
+  areaId: string | null;
+  areaName: string | null;
+  areaColor: string | null;
+  openTasks: number;
+  doneTasks: number;
+}
+
+export interface ApiProjectTask {
+  id: string;
+  title: string;
+  status: "todo" | "doing" | "done" | "dropped";
+  priority: number;
+  scheduledDate: string | null;
+}
+
 export interface ApiJournal {
   date: string;
   mood: number | null;
@@ -198,8 +226,8 @@ export const api = {
   saveReview: (weekId: string, patch: Partial<Omit<ApiReview, "week_id">>) =>
     request<ApiReview>(`/review/${weekId}`, { method: "PUT", body: JSON.stringify(patch) }),
 
-  addTask: (title: string, date?: string) =>
-    request<ApiTask>("/tasks", { method: "POST", body: JSON.stringify({ title, date }) }),
+  addTask: (title: string, date?: string, projectId?: string) =>
+    request<ApiTask>("/tasks", { method: "POST", body: JSON.stringify({ title, date, projectId }) }),
   setTaskStatus: (id: string, status: ApiTask["status"]) =>
     request<ApiTask>(`/tasks/${id}`, { method: "PATCH", body: JSON.stringify({ status }) }),
   patchTask: (
@@ -226,6 +254,25 @@ export const api = {
   dayReview: (date: string) => request<ApiDayReview>(`/day-review/${date}`),
   saveDayReview: (date: string, patch: Partial<Omit<ApiDayReview, "date">>) =>
     request<ApiDayReview>(`/day-review/${date}`, { method: "PUT", body: JSON.stringify(patch) }),
+
+  areas: () => request<ApiArea[]>("/areas"),
+  addArea: (name: string, color?: string) =>
+    request<{ id: string; name: string }>("/areas", {
+      method: "POST",
+      body: JSON.stringify({ name, color }),
+    }),
+  deleteArea: (id: string) => request<{ ok: true }>(`/areas/${id}`, { method: "DELETE" }),
+
+  projects: (status: "active" | "done" | "all" = "active") =>
+    request<ApiProject[]>(`/projects?status=${status}`),
+  addProject: (input: { name: string; areaId?: string; dueDate?: string }) =>
+    request<ApiProject>("/projects", { method: "POST", body: JSON.stringify(input) }),
+  patchProject: (
+    id: string,
+    patch: { name?: string; areaId?: string | null; status?: string; dueDate?: string | null },
+  ) => request<ApiProject>(`/projects/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
+  deleteProject: (id: string) => request<{ ok: true }>(`/projects/${id}`, { method: "DELETE" }),
+  projectTasks: (id: string) => request<ApiProjectTask[]>(`/projects/${id}/tasks`),
 
   courses: () => request<ApiCourse[]>("/courses"),
   addCourse: (input: {

@@ -6,11 +6,30 @@
   "nav": {
     "today": "今日",
     "week": "本周",
+    "projects": "项目",
     "habits": "习惯",
     "review": "复盘",
     "study": "学习",
     "reward": "奖赏",
     "settings": "设置"
+  },
+  "project": {
+    "showDone": "含已完成",
+    "areas": "领域",
+    "add": "＋ 新项目",
+    "areaHint": "领域用来分组；删除只是归档，已有项目不会消失",
+    "areaPlaceholder": "新领域名，回车添加",
+    "namePlaceholder": "项目名，回车保存",
+    "noArea": "未归类",
+    "empty": "还没有项目",
+    "emptyHint": "点右上角「＋ 新项目」建一个，比如「毕业设计」",
+    "counts": "{{open}} 待办 · {{done}} 完成",
+    "noTasks": "这个项目还没有任务",
+    "taskPlaceholder": "加一条任务，回车保存",
+    "statusActive": "进行中",
+    "statusPaused": "暂停",
+    "statusDone": "已完成",
+    "markDone": "标记项目完成"
   },
   "common": {
     "loading": "加载中…",
@@ -99,7 +118,9 @@
     "badHint": "哪件没做到，为什么",
     "nextHint": "明天只改一件什么"
   },
-  "sub": {    "week": "这一周的课程与安排",
+  "sub": {
+    "week": "这一周的课程与安排",
+    "projects": "把长期的事拆成项目，再拆成任务",
     "review": "回顾这一周：保持什么、改进什么、停止什么、开始什么",
     "reward": "做实事赚币，用币兑换自己定的奖励",
     "settings": "模型、学期与偏好",

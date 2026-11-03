@@ -1,11 +1,20 @@
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-export type ViewKey = "today" | "week" | "habits" | "review" | "study" | "reward" | "settings";
+export type ViewKey =
+  | "today"
+  | "week"
+  | "projects"
+  | "habits"
+  | "review"
+  | "study"
+  | "reward"
+  | "settings";
 
 export const NAV_ITEMS: { key: ViewKey; implemented: boolean }[] = [
   { key: "today", implemented: true },
   { key: "week", implemented: true },
+  { key: "projects", implemented: true },
   { key: "review", implemented: true },
   { key: "study", implemented: false },
   { key: "reward", implemented: true },

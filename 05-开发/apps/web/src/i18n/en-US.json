@@ -6,11 +6,30 @@
   "nav": {
     "today": "Today",
     "week": "Week",
+    "projects": "Projects",
     "habits": "Habits",
     "review": "Review",
     "study": "Study",
     "reward": "Rewards",
     "settings": "Settings"
+  },
+  "project": {
+    "showDone": "Include done",
+    "areas": "Areas",
+    "add": "＋ New project",
+    "areaHint": "Areas group projects; deleting only archives",
+    "areaPlaceholder": "New area, press Enter",
+    "namePlaceholder": "Project name, press Enter",
+    "noArea": "Unfiled",
+    "empty": "No projects yet",
+    "emptyHint": "Hit ＋ New project, e.g. “Thesis”",
+    "counts": "{{open}} open · {{done}} done",
+    "noTasks": "No tasks in this project",
+    "taskPlaceholder": "Add a task, press Enter",
+    "statusActive": "Active",
+    "statusPaused": "Paused",
+    "statusDone": "Done",
+    "markDone": "Mark project done"
   },
   "common": {
     "loading": "Loading…",
@@ -100,6 +119,7 @@
   },
   "sub": {
     "week": "This week's classes and plans",
+    "projects": "Break long-running work into projects, then tasks",
     "review": "Look back: keep, improve, stop, start",
     "reward": "Earn coins from real work, spend them on rewards you define",
     "settings": "Models, term and preferences",

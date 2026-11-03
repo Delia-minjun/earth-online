@@ -132,6 +132,7 @@ const taskCreate = z.object({
   title: z.string().trim().min(1).max(200),
   date: zDate.optional(),
   areaId: z.string().optional(),
+  projectId: z.string().optional(),
   priority: z.number().int().min(0).max(9).optional(),
 });
 
@@ -144,10 +145,18 @@ api.post("/tasks", async (c) => {
   const id = uid();
   getDb()
     .prepare(
-      `INSERT INTO task (id, week_id, title, status, priority, scheduled_date, is_focus, area_id)
-       VALUES (?, ?, ?, 'todo', ?, ?, 1, ?)`,
+      `INSERT INTO task (id, week_id, title, status, priority, scheduled_date, is_focus, area_id, project_id)
+       VALUES (?, ?, ?, 'todo', ?, ?, 1, ?, ?)`,
     )
-    .run(id, week.id, r.data.title, r.data.priority ?? 0, date, r.data.areaId ?? null);
+    .run(
+      id,
+      week.id,
+      r.data.title,
+      r.data.priority ?? 0,
+      date,
+      r.data.areaId ?? null,
+      r.data.projectId ?? null,
+    );
 
   const row = getDb().prepare("SELECT * FROM task WHERE id = ?").get(id);
   return c.json(row, 201);
@@ -159,6 +168,7 @@ const taskPatch = z.object({
   date: zDate.nullable().optional(),
   priority: z.number().int().min(0).max(9).optional(),
   areaId: z.string().nullable().optional(),
+  projectId: z.string().nullable().optional(),
 });
 
 api.patch("/tasks/:id", async (c) => {
@@ -198,6 +208,10 @@ api.patch("/tasks/:id", async (c) => {
   if (r.data.areaId !== undefined) {
     sets.push("area_id = ?");
     vals.push(r.data.areaId);
+  }
+  if (r.data.projectId !== undefined) {
+    sets.push("project_id = ?");
+    vals.push(r.data.projectId);
   }
   if (sets.length === 0) return c.json({ error: "nothing to update" }, 400);
 
@@ -842,6 +856,171 @@ api.get("/week/:year/:week", (c) => {
     courses,
     teachingWeek: weekNo,
   });
+});
+
+/* ---------------- areas & projects ---------------- */
+
+const AREA_COLORS = ["#A8B5A2", "#9BA7B0", "#C9A9A6", "#CBBB9A", "#B0A6BC", "#CDBDB0"];
+
+api.get("/areas", (c) => {
+  const rows = getDb()
+    .prepare(
+      `SELECT a.id, a.name, a.name_en AS nameEn, a.color,
+              (SELECT COUNT(*) FROM project p
+                WHERE p.area_id = a.id AND p.deleted_at IS NULL AND p.status = 'active') AS projects
+         FROM area a
+        WHERE a.archived = 0
+        ORDER BY a.sort`,
+    )
+    .all();
+  return c.json(rows);
+});
+
+api.post("/areas", async (c) => {
+  const r = await readBody(
+    c,
+    z.object({ name: z.string().trim().min(1).max(20), color: z.string().optional() }),
+  );
+  if (!r.ok) return c.json({ error: r.error }, 400);
+
+  const db = getDb();
+  const id = uid();
+  const next = (db.prepare("SELECT COALESCE(MAX(sort), 0) + 1 AS n FROM area").get() as { n: number }).n;
+  const color = r.data.color ?? AREA_COLORS[next % AREA_COLORS.length] ?? "#9BA7B0";
+  db.prepare("INSERT INTO area (id, name, color, sort) VALUES (?, ?, ?, ?)").run(
+    id,
+    r.data.name,
+    color,
+    next,
+  );
+  return c.json(db.prepare("SELECT * FROM area WHERE id = ?").get(id), 201);
+});
+
+api.patch("/areas/:id", async (c) => {
+  const id = c.req.param("id");
+  const r = await readBody(
+    c,
+    z.object({ name: z.string().trim().min(1).max(20).optional(), color: z.string().optional() }),
+  );
+  if (!r.ok) return c.json({ error: r.error }, 400);
+
+  const db = getDb();
+  const sets: string[] = [];
+  const vals: unknown[] = [];
+  if (r.data.name !== undefined) {
+    sets.push("name = ?");
+    vals.push(r.data.name);
+  }
+  if (r.data.color !== undefined) {
+    sets.push("color = ?");
+    vals.push(r.data.color);
+  }
+  if (sets.length === 0) return c.json({ error: "nothing to update" }, 400);
+  vals.push(id);
+  db.prepare(`UPDATE area SET ${sets.join(", ")} WHERE id = ?`).run(...(vals as never[]));
+  return c.json(db.prepare("SELECT * FROM area WHERE id = ?").get(id));
+});
+
+api.delete("/areas/:id", (c) => {
+  getDb().prepare("UPDATE area SET archived = 1 WHERE id = ?").run(c.req.param("id"));
+  return c.json({ ok: true });
+});
+
+api.get("/projects", (c) => {
+  const status = c.req.query("status") ?? "active";
+  const rows = getDb()
+    .prepare(
+      `SELECT p.id, p.name, p.status, p.due_date AS dueDate, p.area_id AS areaId,
+              a.name AS areaName, a.color AS areaColor,
+              (SELECT COUNT(*) FROM task t
+                WHERE t.project_id = p.id AND t.deleted_at IS NULL AND t.status != 'done') AS openTasks,
+              (SELECT COUNT(*) FROM task t
+                WHERE t.project_id = p.id AND t.deleted_at IS NULL AND t.status = 'done') AS doneTasks
+         FROM project p
+         LEFT JOIN area a ON a.id = p.area_id
+        WHERE p.deleted_at IS NULL AND (? = 'all' OR p.status = ?)
+        ORDER BY p.created_at DESC`,
+    )
+    .all(status, status);
+  return c.json(rows);
+});
+
+api.post("/projects", async (c) => {
+  const r = await readBody(
+    c,
+    z.object({
+      name: z.string().trim().min(1).max(80),
+      areaId: z.string().optional(),
+      dueDate: zDate.optional(),
+    }),
+  );
+  if (!r.ok) return c.json({ error: r.error }, 400);
+
+  const id = uid();
+  getDb()
+    .prepare("INSERT INTO project (id, area_id, name, due_date) VALUES (?, ?, ?, ?)")
+    .run(id, r.data.areaId ?? null, r.data.name, r.data.dueDate ?? null);
+  return c.json(getDb().prepare("SELECT * FROM project WHERE id = ?").get(id), 201);
+});
+
+api.patch("/projects/:id", async (c) => {
+  const id = c.req.param("id");
+  const r = await readBody(
+    c,
+    z.object({
+      name: z.string().trim().min(1).max(80).optional(),
+      areaId: z.string().nullable().optional(),
+      status: z.enum(["active", "done", "paused"]).optional(),
+      dueDate: zDate.nullable().optional(),
+    }),
+  );
+  if (!r.ok) return c.json({ error: r.error }, 400);
+
+  const db = getDb();
+  const exists = db.prepare("SELECT id FROM project WHERE id = ? AND deleted_at IS NULL").get(id);
+  if (!exists) return c.json({ error: "not found" }, 404);
+
+  const sets: string[] = [];
+  const vals: unknown[] = [];
+  if (r.data.name !== undefined) {
+    sets.push("name = ?");
+    vals.push(r.data.name);
+  }
+  if (r.data.areaId !== undefined) {
+    sets.push("area_id = ?");
+    vals.push(r.data.areaId);
+  }
+  if (r.data.status !== undefined) {
+    sets.push("status = ?");
+    vals.push(r.data.status);
+  }
+  if (r.data.dueDate !== undefined) {
+    sets.push("due_date = ?");
+    vals.push(r.data.dueDate);
+  }
+  if (sets.length === 0) return c.json({ error: "nothing to update" }, 400);
+
+  sets.push("updated_at = datetime('now')");
+  vals.push(id);
+  db.prepare(`UPDATE project SET ${sets.join(", ")} WHERE id = ?`).run(...(vals as never[]));
+  return c.json(db.prepare("SELECT * FROM project WHERE id = ?").get(id));
+});
+
+api.delete("/projects/:id", (c) => {
+  getDb().prepare("UPDATE project SET deleted_at = datetime('now') WHERE id = ?").run(c.req.param("id"));
+  return c.json({ ok: true });
+});
+
+api.get("/projects/:id/tasks", (c) => {
+  const rows = getDb()
+    .prepare(
+      `SELECT id, title, status, priority, scheduled_date AS scheduledDate
+         FROM task
+        WHERE project_id = ? AND deleted_at IS NULL
+        ORDER BY status = 'done', priority DESC, created_at ASC`,
+    )
+    .all(c.req.param("id"));
+  return c.json(rows);
 });
 
 /* ---------------- weekly review ---------------- */

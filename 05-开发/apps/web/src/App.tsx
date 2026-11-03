@@ -6,6 +6,7 @@ import { BottomNav, Sidebar, type ViewKey } from "./components/Nav";
 import { TodayView } from "./views/TodayView";
 import { RewardView } from "./views/RewardView";
 import { WeekView } from "./views/WeekView";
+import { ProjectsView } from "./views/ProjectsView";
 import { ReviewView } from "./views/ReviewView";
 import { SettingsView } from "./views/SettingsView";
 import { PlaceholderView } from "./views/PlaceholderView";
@@ -117,12 +118,16 @@ export default function App() {
         <main className="mx-auto w-full max-w-3xl flex-1 px-5 pt-5 md:px-8 md:pt-6">
           {isToday && <TodayView />}
           {view === "week" && <WeekView />}
+          {view === "projects" && <ProjectsView />}
           {view === "review" && <ReviewView />}
           {isReward && <RewardView />}
           {view === "settings" && <SettingsView />}
-          {!isToday && !isReward && view !== "week" && view !== "review" && view !== "settings" && (
-            <PlaceholderView nameKey={`nav.${view}`} />
-          )}
+          {!isToday &&
+            !isReward &&
+            view !== "week" &&
+            view !== "projects" &&
+            view !== "review" &&
+            view !== "settings" && <PlaceholderView nameKey={`nav.${view}`} />}
         </main>
       </div>
 
