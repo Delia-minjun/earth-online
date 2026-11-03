@@ -17,7 +17,8 @@
     "save": "保存",
     "saving": "保存中…",
     "saved": "已保存",
-    "saveFailed": "保存失败"
+    "saveFailed": "保存失败",
+    "cancel": "取消"
   },
   "demo": {
     "tag": "示例数据 · 接入真实记录后自动替换"
@@ -103,7 +104,23 @@
     "location": "地点",
     "count": "{{n}} 节课",
     "empty": "还没有课程",
-    "emptyHint": "把每周固定的课加进来，排时间时会自动避开"
+    "emptyHint": "把每周固定的课加进来，排时间时会自动避开",
+    "import": "导入截图",
+    "importing": "识别中…",
+    "importHint": "识别结果，请逐条核对后再导入",
+    "importConfirm": "确认导入",
+    "imported": "已导入 {{n}} 节，跳过 {{m}} 节",
+    "selected": "已选 {{n}} 条",
+    "unknownTime": "时间未知",
+    "nokey": "还没配置 Kimi API Key：把 key 写进 05-开发/data/kimi-key.txt，或设环境变量 LIFE_KIMI_API_KEY"
+  },
+  "periods": {
+    "title": "作息",
+    "hint": "用来把「第 N 节」换算成具体时间，截图识别时自动套用",
+    "first": "第 1 节",
+    "lesson": "每节",
+    "break": "课间",
+    "saved": "作息已保存"
   },
   "review": {
     "summary": "本周数据",

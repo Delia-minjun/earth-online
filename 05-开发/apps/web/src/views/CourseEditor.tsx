@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, hhmm, type ApiCourse } from "../api";
+import { api, hhmm, type ApiCourse, type CourseCandidate, type PeriodsConfig } from "../api";
 
 const SLOTS = Array.from({ length: 144 }, (_, i) => i * 10);
 const END_SLOTS = Array.from({ length: 144 }, (_, i) => (i + 1) * 10);
@@ -14,12 +14,29 @@ export function CourseEditor({ onChanged }: { onChanged?: () => void }) {
 
   const [courses, setCourses] = useState<ApiCourse[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [open, setOpen] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  const [addOpen, setAddOpen] = useState(false);
   const [form, setForm] = useState({ name: "", weekday: 1, startMin: 480, endMin: 570, location: "" });
+
+  const [periods, setPeriods] = useState<PeriodsConfig>({
+    firstStart: "08:00",
+    lessonMin: 45,
+    breakMin: 5,
+    count: 12,
+  });
+  const [periodsOpen, setPeriodsOpen] = useState(false);
+
+  const [importing, setImporting] = useState(false);
+  const [candidates, setCandidates] = useState<CourseCandidate[] | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
     try {
-      setCourses(await api.courses());
+      const [cs, ps] = await Promise.all([api.courses(), api.periods()]);
+      setCourses(cs);
+      setPeriods(ps);
       setError(null);
     } catch (e) {
       setError((e as Error).message);
@@ -49,7 +66,7 @@ export function CourseEditor({ onChanged }: { onChanged?: () => void }) {
         location: form.location.trim() || undefined,
       });
       setForm((f) => ({ ...f, name: "", location: "" }));
-      setOpen(false);
+      setAddOpen(false);
       await load();
       onChanged?.();
     } catch (e) {
@@ -64,17 +81,114 @@ export function CourseEditor({ onChanged }: { onChanged?: () => void }) {
     onChanged?.();
   };
 
+  const savePeriods = async () => {
+    try {
+      setPeriods(await api.savePeriods(periods));
+      setNotice(t("periods.saved"));
+      window.setTimeout(() => setNotice(null), 2000);
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  };
+
+  const onFile = (file: File) => {
+    setError(null);
+    setNotice(null);
+    setImporting(true);
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        const dataUrl = String(reader.result ?? "");
+        const comma = dataUrl.indexOf(",");
+        const meta = dataUrl.slice(0, comma);
+        const b64 = dataUrl.slice(comma + 1);
+        const mime = /data:(.*?);base64/.exec(meta)?.[1] ?? "image/png";
+        const res = await api.parseTimetable(b64, mime);
+        setCandidates(res.candidates);
+        setSelected(new Set(res.candidates.filter((c) => c.ok).map((c) => c.key)));
+        setPeriods(res.periods);
+      } catch (e) {
+        const msg = (e as Error).message;
+        setError(msg.includes("nokey") ? t("course.nokey") : msg);
+      } finally {
+        setImporting(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const confirmImport = async () => {
+    if (!candidates) return;
+    const list = candidates
+      .filter((c) => selected.has(c.key) && c.ok && c.weekday && c.startMin !== null && c.endMin !== null)
+      .map((c) => ({
+        name: c.name,
+        weekday: c.weekday as number,
+        startMin: c.startMin as number,
+        endMin: c.endMin as number,
+        location: c.location || undefined,
+      }));
+    if (list.length === 0) return;
+    try {
+      const res = await api.bulkCourses(list);
+      setCandidates(null);
+      setNotice(t("course.imported", { n: res.inserted, m: res.skipped.length }));
+      await load();
+      onChanged?.();
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  };
+
+  const toggle = (key: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
   return (
     <div className="space-y-2.5">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <span className="text-[10.5px] text-ink-3">{t("course.count", { n: courses.length })}</span>
+
         <button
           type="button"
-          onClick={() => setOpen((v) => !v)}
+          onClick={() => setPeriodsOpen((v) => !v)}
+          className={`rounded-full border px-2.5 py-1 text-[10.5px] transition-colors ${
+            periodsOpen ? "border-accent bg-accent text-white" : "border-line bg-surface text-ink-3 hover:border-accent"
+          }`}
+        >
+          {t("periods.title")}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          disabled={importing}
+          className="rounded-full border border-line bg-surface px-2.5 py-1 text-[10.5px] text-ink-3 transition-colors hover:border-accent hover:text-ink disabled:opacity-60"
+        >
+          {importing ? t("course.importing") : t("course.import")}
+        </button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) onFile(f);
+            e.target.value = "";
+          }}
+        />
+
+        <button
+          type="button"
+          onClick={() => setAddOpen((v) => !v)}
           className={`ml-auto rounded-full border px-2.5 py-1 text-[10.5px] transition-colors ${
-            open
-              ? "border-accent bg-accent text-white"
-              : "border-line bg-surface text-ink-3 hover:border-accent hover:text-ink"
+            addOpen ? "border-accent bg-accent text-white" : "border-line bg-surface text-ink-3 hover:border-accent"
           }`}
         >
           {t("action.add")}
@@ -82,8 +196,104 @@ export function CourseEditor({ onChanged }: { onChanged?: () => void }) {
       </div>
 
       {error ? <p className="text-[10.5px] text-warn">{error}</p> : null}
+      {notice ? <p className="text-[10.5px] text-accent">{notice}</p> : null}
 
-      {open ? (
+      {periodsOpen ? (
+        <div className="space-y-2 rounded-2xl border border-line bg-surface p-3">
+          <p className="text-[10.5px] text-ink-3">{t("periods.hint")}</p>
+          <div className="flex flex-wrap items-center gap-2 text-[11px] text-ink-2">
+            <label className="flex items-center gap-1">
+              {t("periods.first")}
+              <input
+                type="time"
+                step={600}
+                value={periods.firstStart}
+                onChange={(e) => setPeriods((p) => ({ ...p, firstStart: e.target.value }))}
+                className="rounded-lg border border-line bg-surface-2 px-1.5 py-1 tabular-nums outline-none"
+              />
+            </label>
+            <label className="flex items-center gap-1">
+              {t("periods.lesson")}
+              <input
+                type="number"
+                min={20}
+                max={120}
+                value={periods.lessonMin}
+                onChange={(e) => setPeriods((p) => ({ ...p, lessonMin: Number(e.target.value) }))}
+                className="w-14 rounded-lg border border-line bg-surface-2 px-1.5 py-1 tabular-nums outline-none"
+              />
+            </label>
+            <label className="flex items-center gap-1">
+              {t("periods.break")}
+              <input
+                type="number"
+                min={0}
+                max={60}
+                value={periods.breakMin}
+                onChange={(e) => setPeriods((p) => ({ ...p, breakMin: Number(e.target.value) }))}
+                className="w-14 rounded-lg border border-line bg-surface-2 px-1.5 py-1 tabular-nums outline-none"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={() => void savePeriods()}
+              className="ml-auto rounded-lg bg-accent px-3 py-1.5 text-[10.5px] font-semibold text-white"
+            >
+              {t("common.save")}
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {candidates ? (
+        <div className="space-y-2 rounded-2xl border border-accent-soft bg-surface p-3">
+          <p className="text-[11px] text-ink-2">{t("course.importHint")}</p>
+          <ul className="max-h-64 space-y-1 overflow-y-auto">
+            {candidates.map((c) => (
+              <li key={c.key} className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={selected.has(c.key)}
+                  disabled={!c.ok}
+                  onChange={() => toggle(c.key)}
+                  className="accent-[#8FA38E]"
+                />
+                <span className={`w-8 shrink-0 text-[10px] ${c.ok ? "text-ink-3" : "text-[#c8c4bc]"}`}>
+                  {c.weekday ? WD[c.weekday - 1] : "—"}
+                </span>
+                <span className={`w-[92px] shrink-0 text-[10px] tabular-nums ${c.ok ? "text-ink-3" : "text-[#c8c4bc]"}`}>
+                  {c.startMin !== null && c.endMin !== null
+                    ? `${hhmm(c.startMin)}–${hhmm(c.endMin)}`
+                    : t("course.unknownTime")}
+                </span>
+                <span className={`min-w-0 flex-1 truncate text-[11px] ${c.ok ? "text-ink" : "text-[#c8c4bc]"}`}>
+                  {c.name || "—"}
+                </span>
+                <span className="shrink-0 text-[9.5px] text-ink-3">{c.location}</span>
+              </li>
+            ))}
+          </ul>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-ink-3">{t("course.selected", { n: selected.size })}</span>
+            <button
+              type="button"
+              onClick={() => void confirmImport()}
+              className="ml-auto rounded-lg bg-accent px-3 py-1.5 text-[10.5px] font-semibold text-white"
+            >
+              {t("course.importConfirm")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setCandidates(null)}
+              className="rounded-lg border border-line px-3 py-1.5 text-[10.5px] text-ink-3"
+            >
+              {t("common.cancel")}
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {addOpen ? (
         <div className="space-y-2 rounded-2xl border border-line bg-surface p-3">
           <input
             value={form.name}

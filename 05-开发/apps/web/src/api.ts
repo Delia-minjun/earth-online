@@ -130,6 +130,23 @@ export interface ApiReview {
   start: string;
 }
 
+export interface PeriodsConfig {
+  firstStart: string;
+  lessonMin: number;
+  breakMin: number;
+  count: number;
+}
+
+export interface CourseCandidate {
+  key: string;
+  name: string;
+  weekday: number | null;
+  startMin: number | null;
+  endMin: number | null;
+  location: string;
+  ok: boolean;
+}
+
 export const api = {
   meta: () => request<ApiMeta>("/meta"),
   day: (date?: string) => request<ApiDay>(`/day${date ? `?date=${date}` : ""}`),
@@ -158,6 +175,22 @@ export const api = {
   addCourse: (input: { name: string; weekday: number; startMin: number; endMin: number; location?: string }) =>
     request<ApiCourse>("/courses", { method: "POST", body: JSON.stringify(input) }),
   deleteCourse: (id: string) => request<{ ok: true }>(`/courses/${id}`, { method: "DELETE" }),
+
+  periods: () => request<PeriodsConfig>("/settings/periods"),
+  savePeriods: (p: PeriodsConfig) =>
+    request<PeriodsConfig>("/settings/periods", { method: "PUT", body: JSON.stringify(p) }),
+  parseTimetable: (imageBase64: string, mimeType: string) =>
+    request<{ candidates: CourseCandidate[]; periods: PeriodsConfig }>("/courses/parse-image", {
+      method: "POST",
+      body: JSON.stringify({ imageBase64, mimeType }),
+    }),
+  bulkCourses: (
+    courses: { name: string; weekday: number; startMin: number; endMin: number; location?: string }[],
+  ) =>
+    request<{ inserted: number; skipped: { name: string; reason: string }[] }>("/courses/bulk", {
+      method: "POST",
+      body: JSON.stringify({ courses }),
+    }),
 
   saveJournal: (date: string, body: string) =>
     request<ApiJournal>(`/journal/${date}`, { method: "PUT", body: JSON.stringify({ body }) }),

@@ -17,7 +17,8 @@
     "save": "Save",
     "saving": "Saving…",
     "saved": "Saved",
-    "saveFailed": "Save failed"
+    "saveFailed": "Save failed",
+    "cancel": "Cancel"
   },
   "demo": {
     "tag": "Sample data · replaced once real records are wired"
@@ -103,7 +104,23 @@
     "location": "Room",
     "count": "{{n}} classes",
     "empty": "No classes yet",
-    "emptyHint": "Add your weekly classes and planning will avoid them"
+    "emptyHint": "Add your weekly classes and planning will avoid them",
+    "import": "Import screenshot",
+    "importing": "Reading…",
+    "importHint": "Check each row before importing",
+    "importConfirm": "Import selected",
+    "imported": "Imported {{n}}, skipped {{m}}",
+    "selected": "{{n}} selected",
+    "unknownTime": "time unknown",
+    "nokey": "No Kimi API key yet — put it in 05-开发/data/kimi-key.txt or set LIFE_KIMI_API_KEY"
+  },
+  "periods": {
+    "title": "Periods",
+    "hint": "Used to turn \"period 3-4\" into real times when importing",
+    "first": "Period 1",
+    "lesson": "Lesson",
+    "break": "Break",
+    "saved": "Periods saved"
   },
   "review": {
     "summary": "This week",

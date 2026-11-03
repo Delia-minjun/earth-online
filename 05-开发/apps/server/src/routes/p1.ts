@@ -2,6 +2,14 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { getDb } from "../db.ts";
 import { buildWeek, isoWeekOf, weekId } from "../week.ts";
+import { parseTimetableImage } from "../lib/kimi.ts";
+import {
+  DEFAULT_PERIODS,
+  getSetting,
+  resolvePeriods,
+  setSetting,
+  type PeriodsConfig,
+} from "../lib/settings.ts";
 
 export const api = new Hono();
 
@@ -373,6 +381,129 @@ api.delete("/courses/:id", (c) => {
     .prepare("UPDATE course SET archived = 1, updated_at = datetime('now') WHERE id = ?")
     .run(c.req.param("id"));
   return c.json({ ok: true });
+});
+
+/* ---------------- periods & timetable import ---------------- */
+
+api.get("/settings/periods", (c) => c.json(getSetting<PeriodsConfig>("periods", DEFAULT_PERIODS)));
+
+api.put("/settings/periods", async (c) => {
+  const r = await readBody(
+    c,
+    z.object({
+      firstStart: z.string().regex(/^\d{2}:\d{2}$/),
+      lessonMin: z.number().int().min(20).max(120),
+      breakMin: z.number().int().min(0).max(60),
+      count: z.number().int().min(1).max(20),
+    }),
+  );
+  if (!r.ok) return c.json({ error: r.error }, 400);
+  setSetting("periods", r.data);
+  return c.json(r.data);
+});
+
+const toMinOf = (s?: string): number | null => {
+  if (!s) return null;
+  const m = /^(\d{1,2}):(\d{2})$/.exec(s.trim());
+  if (!m) return null;
+  return Number(m[1]) * 60 + Number(m[2]);
+};
+
+api.post("/courses/parse-image", async (c) => {
+  const r = await readBody(
+    c,
+    z.object({ imageBase64: z.string().min(100), mimeType: z.string().default("image/png") }),
+  );
+  if (!r.ok) return c.json({ error: r.error }, 400);
+
+  let parsed;
+  try {
+    parsed = await parseTimetableImage(r.data.imageBase64, r.data.mimeType ?? "image/png");
+  } catch (e) {
+    const msg = (e as Error).message;
+    if (msg === "NOKEY") {
+      return c.json({ error: "nokey", message: "没有配置 Kimi API Key" }, 400);
+    }
+    return c.json({ error: "vision_failed", message: msg }, 502);
+  }
+
+  const cfg = getSetting<PeriodsConfig>("periods", DEFAULT_PERIODS);
+
+  const candidates = parsed.map((p, i) => {
+    const weekday = Number(p.weekday);
+    const byPeriod = resolvePeriods(p.startPeriod, p.endPeriod, cfg);
+    const startMin = byPeriod ? byPeriod.startMin : toMinOf(p.startTime);
+    const endMin = byPeriod ? byPeriod.endMin : toMinOf(p.endTime);
+    const name = (p.name ?? "").trim();
+    const ok =
+      Boolean(name) &&
+      Number.isInteger(weekday) &&
+      weekday >= 1 &&
+      weekday <= 7 &&
+      startMin !== null &&
+      endMin !== null &&
+      endMin > startMin;
+    return {
+      key: `cand-${i}`,
+      name,
+      weekday: Number.isInteger(weekday) ? weekday : null,
+      startMin,
+      endMin,
+      location: (p.location ?? "").trim(),
+      ok,
+    };
+  });
+
+  return c.json({ candidates, periods: cfg });
+});
+
+api.post("/courses/bulk", async (c) => {
+  const r = await readBody(
+    c,
+    z.object({
+      courses: z
+        .array(
+          z.object({
+            name: z.string().trim().min(1).max(60),
+            weekday: z.number().int().min(1).max(7),
+            startMin: z.number().int().min(0).max(1440),
+            endMin: z.number().int().min(0).max(1440),
+            location: z.string().trim().max(60).optional(),
+          }),
+        )
+        .min(1)
+        .max(80),
+    }),
+  );
+  if (!r.ok) return c.json({ error: r.error }, 400);
+
+  const db = getDb();
+  let inserted = 0;
+  const skipped: { name: string; reason: string }[] = [];
+
+  for (const course of r.data.courses) {
+    if (course.endMin <= course.startMin) {
+      skipped.push({ name: course.name, reason: "invalid-range" });
+      continue;
+    }
+    const clash = db
+      .prepare(
+        `SELECT id FROM course WHERE archived = 0 AND weekday = ?
+           AND ? < end_min AND ? > start_min LIMIT 1`,
+      )
+      .get(course.weekday, course.startMin, course.endMin);
+    if (clash) {
+      skipped.push({ name: course.name, reason: "overlap" });
+      continue;
+    }
+    db.prepare(
+      `INSERT INTO course (id, name, weekday, start_min, end_min, location)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+    ).run(uid(), course.name, course.weekday, course.startMin, course.endMin, course.location ?? null);
+    inserted += 1;
+  }
+
+  return c.json({ inserted, skipped });
 });
 
 /* ---------------- week ---------------- */
