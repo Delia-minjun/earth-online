@@ -294,7 +294,7 @@ export function TodayView() {
     <div className="space-y-3.5">
       {error ? <p className="text-[10px] text-warn">{error}</p> : null}
 
-      <div className="space-y-3.5 lg:grid lg:grid-cols-2 lg:items-start lg:gap-3.5 lg:space-y-0">
+      <div className="space-y-3.5 lg:grid lg:grid-cols-2 lg:items-start lg:gap-3.5 lg:space-y-0 min-[1150px]:grid-cols-[1fr_1fr_17rem]">
         {/* 左：今天的计划 */}
         <div className="space-y-3.5">
           <Card title={t("today.focus")} action={`${doneCount}/${focus.length}`}>
@@ -461,10 +461,9 @@ export function TodayView() {
 
           <MealsCard date={day.date} />
         </div>
-      </div>
 
-      {/* 时间轴：宽屏时固定在视口右侧空白区，窄屏回到正文流里 */}
-      <aside className="min-[1300px]:fixed min-[1300px]:right-6 min-[1300px]:top-24 min-[1300px]:z-10 min-[1300px]:w-60 min-[1300px]:max-h-[calc(100vh-8rem)] min-[1300px]:overflow-y-auto">
+        {/* 时间轴：宽屏时作为第三列固定在右侧，窄屏回到正文流里 */}
+        <aside className="min-[1150px]:sticky min-[1150px]:top-24 min-[1150px]:self-start">
           <Card
             title={t("today.timeline")}
             action={
@@ -596,7 +595,8 @@ export function TodayView() {
               </div>
             ) : null}
           </Card>
-      </aside>
+        </aside>
+      </div>
 
       <div className="space-y-3.5 lg:grid lg:grid-cols-2 lg:items-start lg:gap-3.5 lg:space-y-0">
         <Mini

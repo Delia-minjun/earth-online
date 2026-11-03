@@ -69,6 +69,8 @@ export default function App() {
 
   const short = (d: string) => d.slice(5).replace("-", "/");
   const isToday = view === "today";
+  /** 今日页在宽屏下放宽，好放下右侧的时间轴栏 */
+  const shellWidth = isToday ? "max-w-[1180px]" : "max-w-3xl";
   const isReward = view === "reward";
 
   return (
@@ -87,7 +89,9 @@ export default function App() {
           </div>
         ) : null}
 
-        <header className="mx-auto flex w-full max-w-3xl items-start justify-between gap-4 px-5 pt-7 md:px-8 md:pt-9">
+        <header
+          className={`mx-auto flex w-full items-start justify-between gap-4 px-5 pt-7 md:px-8 md:pt-9 ${shellWidth}`}
+        >
           <div className="min-w-0">
             <p className="text-[10px] uppercase tracking-[0.2em] text-ink-3">
               {isToday ? t("today.title") : t("app.title")}
@@ -115,7 +119,9 @@ export default function App() {
           </button>
         </header>
 
-        <main className="mx-auto w-full max-w-3xl flex-1 px-5 pt-5 md:px-8 md:pt-6">
+        <main
+          className={`mx-auto w-full flex-1 px-5 pt-5 md:px-8 md:pt-6 ${shellWidth}`}
+        >
           {isToday && <TodayView />}
           {view === "week" && <WeekView />}
           {view === "projects" && <ProjectsView />}
