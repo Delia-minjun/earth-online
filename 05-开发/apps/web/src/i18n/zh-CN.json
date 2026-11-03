@@ -3,14 +3,54 @@
     "title": "人生管理",
     "badge": "P0 脚手架"
   },
+  "nav": {
+    "today": "今日",
+    "week": "本周",
+    "habits": "习惯",
+    "review": "复盘",
+    "study": "学习",
+    "reward": "奖赏",
+    "settings": "设置"
+  },
   "today": {
     "title": "今日",
     "focus": "今日重点",
     "focusEmpty": "还没有重点",
+    "focusHint": "P1 会在这里显示今天的 3 件事",
     "habits": "习惯打卡",
     "habitsEmpty": "还没有设置习惯",
-    "reward": "奖赏",
-    "rewardEmpty": "0 币"
+    "notes": "随手记",
+    "notesEmpty": "今天还没有记录"
+  },
+  "area": {
+    "health": "健康",
+    "study": "学业",
+    "relation": "关系",
+    "finance": "财务",
+    "growth": "成长",
+    "fun": "娱乐"
+  },
+  "reward": {
+    "sub": "做实事赚币，用币兑换自己定的奖励",
+    "balance": "我的余额",
+    "unit": "币",
+    "weekIn": "本周 +0",
+    "weekOut": "本周 −0",
+    "hint": "完成任务、打卡、复盘都会赚币。币只能由系统按规则发放，不能手动加。",
+    "areas": "六领域进度",
+    "decay": "每日 −1%，下限 40%",
+    "shop": "奖赏商店",
+    "shopEmpty": "还没有奖励",
+    "shopHint": "写下你真正想要的：一杯奶茶、一集剧、一本书",
+    "ledger": "最近的账本",
+    "ledgerAll": "查看全部",
+    "ledgerEmpty": "还没有记录"
+  },
+  "placeholder": {
+    "title": "还在开发中",
+    "sub": "P1 阶段陆续上线",
+    "body": "这个模块还没有开始做",
+    "hint": "P0 只搭了骨架，功能从 P1 开始填"
   },
   "week": {
     "label": "第 {{week}} 周",

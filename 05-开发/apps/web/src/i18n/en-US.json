@@ -3,14 +3,54 @@
     "title": "Life OS",
     "badge": "P0 scaffold"
   },
+  "nav": {
+    "today": "Today",
+    "week": "Week",
+    "habits": "Habits",
+    "review": "Review",
+    "study": "Study",
+    "reward": "Rewards",
+    "settings": "Settings"
+  },
   "today": {
     "title": "Today",
     "focus": "Today's focus",
     "focusEmpty": "Nothing yet",
+    "focusHint": "P1 will show today's three things here",
     "habits": "Habits",
     "habitsEmpty": "No habits yet",
-    "reward": "Rewards",
-    "rewardEmpty": "0 coins"
+    "notes": "Notes",
+    "notesEmpty": "No notes for today"
+  },
+  "area": {
+    "health": "Health",
+    "study": "Study",
+    "relation": "Bonds",
+    "finance": "Money",
+    "growth": "Growth",
+    "fun": "Leisure"
+  },
+  "reward": {
+    "sub": "Earn coins from real work, spend them on rewards you define",
+    "balance": "Balance",
+    "unit": "coins",
+    "weekIn": "This week +0",
+    "weekOut": "This week −0",
+    "hint": "Finishing tasks, checking in and reviewing all earn coins. Coins are only granted by the system, never by hand.",
+    "areas": "Six areas",
+    "decay": "−1% per day, floor 40%",
+    "shop": "Reward shop",
+    "shopEmpty": "No rewards yet",
+    "shopHint": "Write down what you actually want: a milk tea, an episode, a book",
+    "ledger": "Recent ledger",
+    "ledgerAll": "See all",
+    "ledgerEmpty": "No entries yet"
+  },
+  "placeholder": {
+    "title": "Still building",
+    "sub": "Ships during P1",
+    "body": "This module is not started yet",
+    "hint": "P0 only builds the skeleton; features start in P1"
   },
   "week": {
     "label": "Week {{week}}",
