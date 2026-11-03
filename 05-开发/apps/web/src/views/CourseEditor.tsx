@@ -297,38 +297,16 @@ export function CourseEditor({
     });
   };
 
-  const visible = courses.filter((c) => activeInWeek(c, week));
+  // 没设学期时不知道是第几教学周，就全部列出（与后端返回一致）
+  const visible = baseWeek == null ? courses : courses.filter((c) => activeInWeek(c, week));
 
   return (
     <div className="space-y-2.5">
-      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-line bg-surface px-3 py-2">
-        <button
-          type="button"
-          onClick={() => setWeek((w) => Math.max(1, w - 1))}
-          className="grid h-6 w-6 place-items-center rounded-full border border-line text-[11px] text-ink-2 hover:border-accent"
-        >
-          ‹
-        </button>
-        <span className="text-[11.5px] font-semibold tabular-nums text-ink">
-          {t("week.teaching", { n: week })}
-        </span>
-        <button
-          type="button"
-          onClick={() => setWeek((w) => Math.min(30, w + 1))}
-          className="grid h-6 w-6 place-items-center rounded-full border border-line text-[11px] text-ink-2 hover:border-accent"
-        >
-          ›
-        </button>
-        <span className="text-[10px] text-ink-3">
-          {t("course.count", { n: visible.length })}
-        </span>
-        {baseWeek == null ? (
-          <span className="ml-auto text-[10px] text-[#c8c4bc]">{t("course.setSemesterHint")}</span>
-        ) : null}
-      </div>
-
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-[10.5px] text-ink-3">{t("course.count", { n: visible.length })}</span>
+        {baseWeek == null ? (
+          <span className="text-[10px] text-[#c8c4bc]">{t("course.setSemesterHint")}</span>
+        ) : null}
 
         <button
           type="button"
