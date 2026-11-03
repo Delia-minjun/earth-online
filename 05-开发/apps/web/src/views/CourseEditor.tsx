@@ -58,6 +58,18 @@ export function CourseEditor({ onChanged }: { onChanged?: () => void }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const fileRef = useRef<HTMLInputElement>(null);
 
+  const [editing, setEditing] = useState<{
+    id: string;
+    name: string;
+    weekday: number;
+    startMin: number;
+    endMin: number;
+    location: string;
+    weekType: string;
+    weekStart: number;
+    weekEnd: number;
+  } | null>(null);
+
   const load = useCallback(async () => {
     try {
       const [cs, ps, sem] = await Promise.all([api.courses(), api.periods(), api.semester()]);
@@ -109,6 +121,43 @@ export function CourseEditor({ onChanged }: { onChanged?: () => void }) {
     await api.deleteCourse(id);
     await load();
     onChanged?.();
+  };
+
+  const startEdit = (c: ApiCourse) => {
+    setError(null);
+    setEditing({
+      id: c.id,
+      name: c.name,
+      weekday: c.weekday,
+      startMin: c.start_min,
+      endMin: c.end_min,
+      location: c.location ?? "",
+      weekType: c.week_type ?? "all",
+      weekStart: c.week_start ?? 1,
+      weekEnd: c.week_end ?? 16,
+    });
+  };
+
+  const saveEdit = async () => {
+    if (!editing) return;
+    try {
+      await api.updateCourse(editing.id, {
+        name: editing.name.trim(),
+        weekday: editing.weekday,
+        startMin: editing.startMin,
+        endMin: editing.endMin,
+        location: editing.location.trim() || null,
+        weekType: editing.weekType,
+        weekStart: editing.weekType === "range" ? editing.weekStart : null,
+        weekEnd: editing.weekType === "range" ? editing.weekEnd : null,
+      });
+      setEditing(null);
+      await load();
+      onChanged?.();
+    } catch (e) {
+      const msg = (e as Error).message;
+      setError(msg.includes("overlap") ? t("today.overlap") : msg);
+    }
   };
 
   const savePeriods = async () => {
@@ -607,35 +656,150 @@ export function CourseEditor({ onChanged }: { onChanged?: () => void }) {
                   <span className="text-[9.5px] text-ink-3">{list.length}</span>
                 </header>
                 <ul className="mt-1.5 space-y-1.5">
-                  {list.map((c) => (
-                    <li key={c.id} className="flex items-center gap-2">
-                      <span className="w-[80px] shrink-0 text-[10px] tabular-nums text-ink-3">
-                        {hhmm(c.start_min)}–{hhmm(c.end_min)}
-                      </span>
-                      <span className="h-3.5 w-[3px] shrink-0 rounded-full bg-[#9BA7B0]" />
-                      <span className="min-w-0 flex-1 truncate text-[11px] text-ink">{c.name}</span>
-                      {c.location ? (
-                        <span className="shrink-0 text-[9.5px] text-ink-3">{c.location}</span>
-                      ) : null}
-                      {c.week_type !== "all" ? (
-                        <span className="shrink-0 rounded-full bg-[#eef0f4] px-1.5 py-0.5 text-[9px] text-[#7c8792]">
-                          {c.week_type === "odd"
-                            ? t("course.weekOdd")
-                            : c.week_type === "even"
-                              ? t("course.weekEven")
-                              : `${c.week_start ?? 1}-${c.week_end ?? "?"}${t("course.weekSuffix")}`}
-                        </span>
-                      ) : null}
-                      <button
-                        type="button"
-                        onClick={() => void remove(c.id)}
-                        className="shrink-0 text-[11px] text-[#a9a49b] transition-colors hover:text-warn"
-                        aria-label="delete"
+                  {list.map((c) =>
+                    editing?.id === c.id ? (
+                      <li key={c.id} className="space-y-1.5 rounded-lg bg-surface-2 p-1.5">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <select
+                            value={editing.weekday}
+                            onChange={(e) =>
+                              setEditing({ ...editing, weekday: Number(e.target.value) })
+                            }
+                            className="w-[62px] rounded-md border border-line bg-surface px-1 py-0.5 text-[10.5px] text-ink outline-none"
+                          >
+                            {WD.map((w, i) => (
+                              <option key={w} value={i + 1}>
+                                {w}
+                              </option>
+                            ))}
+                          </select>
+                          <input
+                            type="time"
+                            step={600}
+                            value={hhmm(editing.startMin)}
+                            onChange={(e) =>
+                              setEditing({
+                                ...editing,
+                                startMin: minOf(e.target.value) ?? editing.startMin,
+                              })
+                            }
+                            className="w-[84px] rounded-md border border-line bg-surface px-1 py-0.5 text-[10.5px] tabular-nums text-ink outline-none"
+                          />
+                          <span className="text-[10px] text-ink-3">–</span>
+                          <input
+                            type="time"
+                            step={600}
+                            value={hhmm(editing.endMin)}
+                            onChange={(e) =>
+                              setEditing({
+                                ...editing,
+                                endMin: minOf(e.target.value) ?? editing.endMin,
+                              })
+                            }
+                            className="w-[84px] rounded-md border border-line bg-surface px-1 py-0.5 text-[10.5px] tabular-nums text-ink outline-none"
+                          />
+                          <input
+                            value={editing.name}
+                            onChange={(e) => setEditing({ ...editing, name: e.target.value })}
+                            className="min-w-[110px] flex-1 rounded-md border border-line bg-surface px-1.5 py-0.5 text-[11px] text-ink outline-none"
+                          />
+                          <input
+                            value={editing.location}
+                            onChange={(e) => setEditing({ ...editing, location: e.target.value })}
+                            placeholder={t("course.location")}
+                            className="w-[84px] rounded-md border border-line bg-surface px-1.5 py-0.5 text-[10.5px] text-ink outline-none placeholder:text-[#c8c4bc]"
+                          />
+                        </div>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <select
+                            value={editing.weekType}
+                            onChange={(e) => setEditing({ ...editing, weekType: e.target.value })}
+                            className="w-[64px] rounded-md border border-line bg-surface px-1 py-0.5 text-[10.5px] text-ink outline-none"
+                          >
+                            <option value="all">{t("course.weekAll")}</option>
+                            <option value="odd">{t("course.weekOdd")}</option>
+                            <option value="even">{t("course.weekEven")}</option>
+                            <option value="range">{t("course.weekRange")}</option>
+                          </select>
+                          {editing.weekType === "range" ? (
+                            <>
+                              <input
+                                type="number"
+                                min={1}
+                                max={30}
+                                value={editing.weekStart}
+                                onChange={(e) =>
+                                  setEditing({ ...editing, weekStart: Number(e.target.value) })
+                                }
+                                className="w-11 rounded-md border border-line bg-surface px-1 py-0.5 text-[10.5px] tabular-nums text-ink outline-none"
+                              />
+                              <span className="text-[10px] text-ink-3">–</span>
+                              <input
+                                type="number"
+                                min={1}
+                                max={30}
+                                value={editing.weekEnd}
+                                onChange={(e) =>
+                                  setEditing({ ...editing, weekEnd: Number(e.target.value) })
+                                }
+                                className="w-11 rounded-md border border-line bg-surface px-1 py-0.5 text-[10.5px] tabular-nums text-ink outline-none"
+                              />
+                            </>
+                          ) : null}
+                          <button
+                            type="button"
+                            onClick={() => void saveEdit()}
+                            className="ml-auto rounded-md bg-accent px-2.5 py-1 text-[10px] font-semibold text-white"
+                          >
+                            {t("common.save")}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEditing(null)}
+                            className="rounded-md border border-line px-2.5 py-1 text-[10px] text-ink-3"
+                          >
+                            {t("common.cancel")}
+                          </button>
+                        </div>
+                      </li>
+                    ) : (
+                      <li
+                        key={c.id}
+                        onClick={() => startEdit(c)}
+                        className="flex cursor-pointer items-center gap-2 rounded-md px-1 py-0.5 transition-colors hover:bg-surface-2"
+                        title={t("course.clickToEdit")}
                       >
-                        ×
-                      </button>
-                    </li>
-                  ))}
+                        <span className="w-[80px] shrink-0 text-[10px] tabular-nums text-ink-3">
+                          {hhmm(c.start_min)}–{hhmm(c.end_min)}
+                        </span>
+                        <span className="h-3.5 w-[3px] shrink-0 rounded-full bg-[#9BA7B0]" />
+                        <span className="min-w-0 flex-1 truncate text-[11px] text-ink">{c.name}</span>
+                        {c.location ? (
+                          <span className="shrink-0 text-[9.5px] text-ink-3">{c.location}</span>
+                        ) : null}
+                        {c.week_type !== "all" ? (
+                          <span className="shrink-0 rounded-full bg-[#eef0f4] px-1.5 py-0.5 text-[9px] text-[#7c8792]">
+                            {c.week_type === "odd"
+                              ? t("course.weekOdd")
+                              : c.week_type === "even"
+                                ? t("course.weekEven")
+                                : `${c.week_start ?? 1}-${c.week_end ?? "?"}${t("course.weekSuffix")}`}
+                          </span>
+                        ) : null}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void remove(c.id);
+                          }}
+                          className="shrink-0 text-[11px] text-[#a9a49b] transition-colors hover:text-warn"
+                          aria-label="delete"
+                        >
+                          ×
+                        </button>
+                      </li>
+                    ),
+                  )}
                 </ul>
               </section>
             );

@@ -122,7 +122,8 @@
     "weekOdd": "Odd wks",
     "weekEven": "Even wks",
     "weekRange": "Range",
-    "weekSuffix": "w"
+    "weekSuffix": "w",
+    "clickToEdit": "Click to edit"
   },
   "periods": {
     "title": "Periods",

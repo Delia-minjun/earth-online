@@ -212,6 +212,19 @@ export const api = {
     weekEnd?: number | null;
   }) => request<ApiCourse>("/courses", { method: "POST", body: JSON.stringify(input) }),
   deleteCourse: (id: string) => request<{ ok: true }>(`/courses/${id}`, { method: "DELETE" }),
+  updateCourse: (
+    id: string,
+    patch: {
+      name?: string;
+      weekday?: number;
+      startMin?: number;
+      endMin?: number;
+      location?: string | null;
+      weekType?: string;
+      weekStart?: number | null;
+      weekEnd?: number | null;
+    },
+  ) => request<ApiCourse>(`/courses/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
 
   periods: () => request<PeriodsConfig>("/settings/periods"),
   savePeriods: (p: PeriodsConfig) =>

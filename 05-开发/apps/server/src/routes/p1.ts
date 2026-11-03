@@ -409,6 +409,87 @@ api.post("/courses", async (c) => {
   return c.json(db.prepare(`SELECT ${COURSE_COLS} FROM course WHERE id = ?`).get(id), 201);
 });
 
+const coursePatch = z
+  .object({
+    name: z.string().trim().min(1).max(60).optional(),
+    weekday: z.number().int().min(1).max(7).optional(),
+    startMin: z.number().int().min(0).max(1440).optional(),
+    endMin: z.number().int().min(0).max(1440).optional(),
+    location: z.string().trim().max(60).nullable().optional(),
+    ...weekFields,
+  })
+  .strict();
+
+api.patch("/courses/:id", async (c) => {
+  const id = c.req.param("id");
+  const r = await readBody(c, coursePatch);
+  if (!r.ok) return c.json({ error: r.error }, 400);
+  const db = getDb();
+
+  const cur = db
+    .prepare(`SELECT ${COURSE_COLS} FROM course WHERE id = ? AND archived = 0`)
+    .get(id) as unknown as
+    | (WeekRule & {
+        id: string;
+        name: string;
+        weekday: number;
+        start_min: number;
+        end_min: number;
+        location: string | null;
+      })
+    | undefined;
+  if (!cur) return c.json({ error: "not found" }, 404);
+
+  const next = {
+    name: r.data.name ?? cur.name,
+    weekday: r.data.weekday ?? cur.weekday,
+    start_min: r.data.startMin ?? cur.start_min,
+    end_min: r.data.endMin ?? cur.end_min,
+    location: r.data.location === undefined ? cur.location : r.data.location,
+    week_type: r.data.weekType ?? cur.week_type,
+    week_start: r.data.weekStart === undefined ? cur.week_start : r.data.weekStart,
+    week_end: r.data.weekEnd === undefined ? cur.week_end : r.data.weekEnd,
+  };
+
+  if (next.end_min <= next.start_min) {
+    return c.json({ error: "endMin must be > startMin" }, 400);
+  }
+
+  const incoming: WeekRule = {
+    week_type: next.week_type,
+    week_start: next.week_start,
+    week_end: next.week_end,
+  };
+  const sameSlot = db
+    .prepare(
+      `SELECT id, name, start_min, end_min, week_type, week_start, week_end FROM course
+        WHERE archived = 0 AND weekday = ? AND id != ? AND ? < end_min AND ? > start_min`,
+    )
+    .all(next.weekday, id, next.start_min, next.end_min) as unknown as (WeekRule & { name: string })[];
+  const clash = sameSlot.find((c) => weeksOverlap(c, incoming));
+  if (clash) {
+    return c.json({ error: "overlap", clash: { title: clash.name } }, 409);
+  }
+
+  db.prepare(
+    `UPDATE course SET name = ?, weekday = ?, start_min = ?, end_min = ?, location = ?,
+       week_type = ?, week_start = ?, week_end = ?, updated_at = datetime('now')
+     WHERE id = ?`,
+  ).run(
+    next.name,
+    next.weekday,
+    next.start_min,
+    next.end_min,
+    next.location,
+    next.week_type,
+    next.week_start,
+    next.week_end,
+    id,
+  );
+
+  return c.json(db.prepare(`SELECT ${COURSE_COLS} FROM course WHERE id = ?`).get(id));
+});
+
 api.delete("/courses/:id", (c) => {
   getDb()
     .prepare("UPDATE course SET archived = 1, updated_at = datetime('now') WHERE id = ?")
