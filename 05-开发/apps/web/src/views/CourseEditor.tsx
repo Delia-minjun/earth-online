@@ -123,7 +123,13 @@ export function CourseEditor({ onChanged }: { onChanged?: () => void }) {
         setPeriods(res.periods);
       } catch (e) {
         const msg = (e as Error).message;
-        setError(msg.includes("nokey") ? t("course.nokey") : msg);
+        setError(
+          msg.includes("nokey")
+            ? t("course.nokey")
+            : msg.includes("no_vision")
+              ? t("course.noVision")
+              : msg,
+        );
       } finally {
         setImporting(false);
       }

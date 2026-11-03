@@ -125,6 +125,10 @@ export async function parseTimetableImage(base64: string, mime: string): Promise
 
   if (!res.ok) {
     const text = await res.text();
+    // 把「模型不支持图片」翻译成人话
+    if (/image|vision|multimodal|unsupported/i.test(text) && res.status >= 400 && res.status < 500) {
+      throw new Error("VISION_UNSUPPORTED");
+    }
     throw new Error(`${res.status}: ${text.slice(0, 200)}`);
   }
 
@@ -148,23 +152,35 @@ export async function testAiConfig(cfg: AiConfig): Promise<{ ok: boolean; detail
   }
 }
 
-/** 列出账号下可用模型，顺便帮用户挑带视觉的那个 */
+/** 名字里带这些的，基本都能读图 */
+const VISION_HINTS = /(vision|multimodal|omni|vl\b|vlm|gpt-4o|gpt-4\.1|claude-3|gemini)/i;
+
+export function looksVisionCapable(model: string): boolean {
+  return VISION_HINTS.test(model);
+}
+
+/** 列出账号下可用模型，并标出哪些大概率能读图 */
 export async function listModels(
   cfg: AiConfig,
-): Promise<{ ok: boolean; models: string[]; detail: string }> {
-  if (!cfg.apiKey) return { ok: false, models: [], detail: "NOKEY" };
+): Promise<{ ok: boolean; models: string[]; vision: string[]; detail: string }> {
+  if (!cfg.apiKey) return { ok: false, models: [], vision: [], detail: "NOKEY" };
   try {
     const res = await fetch(`${cfg.base.replace(/\/$/, "")}/models`, {
       headers: { authorization: `Bearer ${cfg.apiKey}` },
       signal: AbortSignal.timeout(20_000),
     });
     if (!res.ok) {
-      return { ok: false, models: [], detail: `${res.status} ${(await res.text()).slice(0, 120)}` };
+      return {
+        ok: false,
+        models: [],
+        vision: [],
+        detail: `${res.status} ${(await res.text()).slice(0, 120)}`,
+      };
     }
     const data = (await res.json()) as { data?: { id?: string }[] };
     const models = (data.data ?? []).map((m) => m.id ?? "").filter(Boolean).sort();
-    return { ok: true, models, detail: "ok" };
+    return { ok: true, models, vision: models.filter(looksVisionCapable), detail: "ok" };
   } catch (e) {
-    return { ok: false, models: [], detail: (e as Error).message };
+    return { ok: false, models: [], vision: [], detail: (e as Error).message };
   }
 }

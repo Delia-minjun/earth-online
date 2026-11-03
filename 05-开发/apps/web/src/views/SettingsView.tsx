@@ -11,7 +11,7 @@ export function SettingsView() {
   const [base, setBase] = useState("https://api.moonshot.cn/v1");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
-  const [models, setModels] = useState<string[] | null>(null);
+  const [models, setModels] = useState<{ all: string[]; vision: string[] } | null>(null);
 
   const load = async () => {
     const next = await api.aiSettings();
@@ -81,7 +81,11 @@ export function SettingsView() {
     try {
       const res = await api.listAiModels();
       if (res.ok) {
-        setModels(res.models);
+        setModels({ all: res.models, vision: res.vision });
+        // 有名字带 vision 的就自动切过去；没有就保持当前选择
+        if (res.vision.length > 0 && !res.vision.includes(model)) {
+          setModel(res.vision[0] ?? model);
+        }
         setMessage({ kind: "ok", text: t("settings.modelsFound", { n: res.models.length }) });
       } else {
         setMessage({ kind: "err", text: `${t("settings.testFail")}：${res.detail}` });
@@ -187,23 +191,31 @@ export function SettingsView() {
 
           {models ? (
             <div className="flex flex-wrap gap-1.5 pt-0.5">
-              {models.map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  onClick={() => setModel(m)}
-                  className={`rounded-full border px-2.5 py-1 text-[10px] transition-colors ${
-                    model === m
-                      ? "border-accent bg-accent text-white"
-                      : "border-line bg-surface text-ink-3 hover:border-accent"
-                  }`}
-                >
-                  {m}
-                </button>
-              ))}
+              {models.all.map((m) => {
+                const canSee = models.vision.includes(m);
+                return (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setModel(m)}
+                    className={`rounded-full border px-2.5 py-1 text-[10px] transition-colors ${
+                      model === m
+                        ? "border-accent bg-accent text-white"
+                        : canSee
+                          ? "border-accent/50 bg-surface text-ink-2 hover:border-accent"
+                          : "border-line bg-surface text-ink-3 hover:border-accent"
+                    }`}
+                  >
+                    {canSee ? "◉ " : ""}
+                    {m}
+                  </button>
+                );
+              })}
             </div>
           ) : null}
-        </div>
+          {models && models.vision.length === 0 ? (
+            <p className="text-[10px] leading-relaxed text-[#c8c4bc]">{t("settings.noVisionHint")}</p>
+          ) : null}        </div>
       </Card>
 
       <Card title={t("settings.about")}>

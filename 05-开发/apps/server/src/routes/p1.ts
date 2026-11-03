@@ -512,6 +512,9 @@ api.post("/courses/parse-image", async (c) => {
     if (msg === "NOKEY") {
       return c.json({ error: "nokey", message: "没有配置 API Key" }, 400);
     }
+    if (msg === "VISION_UNSUPPORTED") {
+      return c.json({ error: "no_vision", message: "当前模型不支持图片输入" }, 400);
+    }
     return c.json({ error: "vision_failed", message: msg }, 502);
   }
 

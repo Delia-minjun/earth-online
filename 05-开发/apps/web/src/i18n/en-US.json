@@ -113,7 +113,8 @@
     "imported": "Imported {{n}}, skipped {{m}}",
     "selected": "{{n}} selected",
     "unknownTime": "time unknown",
-    "nokey": "No API key yet — add one in Settings, or set LIFE_AI_API_KEY"
+    "nokey": "No API key yet — add one in Settings, or set LIFE_AI_API_KEY",
+    "noVision": "This model cannot read images — pick one marked ◉ in Settings"
   },
   "periods": {
     "title": "Periods",
@@ -134,7 +135,9 @@
     "ai": "Model API",
     "aiHint": "Any OpenAI-compatible endpoint works; defaults to DeepSeek. Reading a timetable screenshot needs a vision model (DeepSeek's V4-Flash-Vision series) — plain text models like deepseek-chat cannot read images. The key stays on this machine.",
     "fetchModels": "Fetch models",
-    "modelsFound": "Found {{n}} models — click one to fill it in",
+    "modelsFound": "Found {{n}} models — click to fill. ◉ = the name mentions vision",
+    "noVision": "No model named after vision",
+    "noVisionHint": "No vision-named model is fine — deepseek-flash was measured to read timetable screenshots directly, so just pick it.",
     "configured": "Configured",
     "notConfigured": "Not configured",
     "current": "In use",
