@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, courseColor, hhmm, type ApiCourse, type CourseCandidate, type PeriodsConfig, type SemesterConfig } from "../api";
+import { api, COURSE_COLOR, hhmm, type ApiCourse, type CourseCandidate, type PeriodsConfig, type SemesterConfig } from "../api";
 
 const SLOTS = Array.from({ length: 144 }, (_, i) => i * 10);
 const END_SLOTS = Array.from({ length: 144 }, (_, i) => (i + 1) * 10);
@@ -702,7 +702,7 @@ export function CourseEditor({
                         </span>
                         <span
                           className="h-3.5 w-[3px] shrink-0 rounded-full"
-                          style={{ background: courseColor(c) }}
+                          style={{ background: COURSE_COLOR }}
                         />
                         <span className="min-w-0 flex-1 truncate text-[11px] text-ink">{c.name}</span>
                         {c.location ? (

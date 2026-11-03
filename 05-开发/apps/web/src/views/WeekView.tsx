@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, courseColor, hhmm, isoWeekOf, mondayOfThisWeek, shiftWeeks, type ApiWeek } from "../api";
+import { api, COURSE_COLOR, hhmm, isoWeekOf, mondayOfThisWeek, shiftWeeks, type ApiWeek } from "../api";
 import { CourseEditor } from "./CourseEditor";
 
 const WD_ZH = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
@@ -112,7 +112,7 @@ export function WeekView() {
               title: c.name,
               start: c.start_min,
               end: c.end_min,
-              color: courseColor(c),
+              color: COURSE_COLOR,
               location: c.location,
             }));
           const blocks: Item[] = (data?.blocks ?? [])
