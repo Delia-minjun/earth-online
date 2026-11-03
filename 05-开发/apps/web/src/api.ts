@@ -28,6 +28,8 @@ export interface ApiTask {
   scheduled_date: string | null;
   done_at: string | null;
   is_focus: number;
+  /** 1 = 过期未完成，被自动顺延到今天 */
+  overdue?: number;
 }
 
 export interface ApiBlock {

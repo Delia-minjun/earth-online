@@ -104,7 +104,8 @@
   "task": {
     "priority0": "Normal",
     "priority1": "Important",
-    "priority2": "Urgent"
+    "priority2": "Urgent",
+    "overdue": "Late"
   },
   "habit": {
     "streak": "{{n}}-day streak"

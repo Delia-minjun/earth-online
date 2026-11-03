@@ -105,7 +105,8 @@
   "task": {
     "priority0": "普通",
     "priority1": "重要",
-    "priority2": "紧急"
+    "priority2": "紧急",
+    "overdue": "延迟"
   },
   "habit": {
     "streak": "连续 {{n}} 天"

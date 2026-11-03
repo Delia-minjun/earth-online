@@ -74,6 +74,49 @@ test("任务：可以改标题、优先级、日期，改日期会跟着换周",
   assert.equal(row.week_id, "2026-W45", "2026-11-05 属于第 45 周");
 });
 
+test("任务：过期未完成会自动顺延到今日并标记 overdue", async () => {
+  const d = new Date();
+  d.setDate(d.getDate() - 2);
+  const twoDaysAgo = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+    d.getDate(),
+  ).padStart(2, "0")}`;
+
+  const created = (await (
+    await post("/tasks", { title: "前天没做完的事", date: twoDaysAgo })
+  ).json()) as { id: string };
+
+  const day = (await (await get("/day")).json()) as {
+    tasks: { id: string; scheduled_date: string; overdue: number }[];
+  };
+  const row = day.tasks.find((t) => t.id === created.id);
+  assert.ok(row, "逾期任务应出现在今天");
+  assert.equal(row.scheduled_date, twoDaysAgo, "顺延只是显示，原始日期不该被改写");
+  assert.equal(row.overdue, 1, "应带 overdue 标记");
+
+  // 标成完成之后就不再顺延了
+  await patch(`/tasks/${created.id}`, { status: "done" });
+  const after = (await (await get("/day")).json()) as { tasks: { id: string }[] };
+  assert.equal(
+    after.tasks.some((t) => t.id === created.id),
+    false,
+    "完成的任务不该继续顺延",
+  );
+});
+
+test("任务：未来日期的任务不会出现在今天", async () => {
+  const d = new Date();
+  d.setDate(d.getDate() + 3);
+  const future = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+    d.getDate(),
+  ).padStart(2, "0")}`;
+
+  const created = (await (await post("/tasks", { title: "以后再说", date: future })).json()) as {
+    id: string;
+  };
+  const day = (await (await get("/day")).json()) as { tasks: { id: string }[] };
+  assert.equal(day.tasks.some((t) => t.id === created.id), false);
+});
+
 test("时间块：同一时段不能重叠，冲突返回 409", async () => {
   const first = await post("/blocks", { startMin: 480, endMin: 600, title: "上午学习" });
   assert.equal(first.status, 201);

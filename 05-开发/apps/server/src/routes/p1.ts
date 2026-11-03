@@ -81,15 +81,21 @@ api.get("/day", (c) => {
   const week = weekOfDate(date);
   const db = getDb();
 
+  // 当天任务 + 过期未完成（自动顺延）+ 无日期的今日重点
   const tasks = db
     .prepare(
-      `SELECT id, title, status, priority, scheduled_date, done_at, area_id, is_focus
+      `SELECT id, title, status, priority, scheduled_date, done_at, area_id, is_focus,
+              (scheduled_date IS NOT NULL AND scheduled_date < ? AND status != 'done') AS overdue
          FROM task
         WHERE deleted_at IS NULL
-          AND (scheduled_date = ? OR (is_focus = 1 AND scheduled_date IS NULL AND status != 'done'))
-        ORDER BY status = 'done', priority DESC, created_at ASC`,
+          AND (
+            scheduled_date = ?
+            OR (scheduled_date IS NOT NULL AND scheduled_date < ? AND status != 'done')
+            OR (is_focus = 1 AND scheduled_date IS NULL AND status != 'done')
+          )
+        ORDER BY overdue DESC, status = 'done', priority DESC, scheduled_date, created_at ASC`,
     )
-    .all(date) as Row[];
+    .all(date, date, date) as Row[];
 
   const blocks = db
     .prepare(

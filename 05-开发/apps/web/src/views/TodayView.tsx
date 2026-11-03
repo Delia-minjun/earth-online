@@ -319,6 +319,11 @@ export function TodayView() {
                       >
                         {f.title}
                       </p>
+                      {f.overdue ? (
+                        <span className="mt-0.5 mr-1.5 inline-block rounded-full bg-warn-soft px-1.5 py-[1px] text-[9px] tabular-nums text-warn">
+                          {t("task.overdue")} {f.scheduled_date?.slice(5)}
+                        </span>
+                      ) : null}
                       {f.priority > 0 ? (
                         <span className="mt-0.5 inline-block text-[9px] text-[#b08b6a]">
                           {f.priority >= 2 ? t("task.priority2") : t("task.priority1")}
