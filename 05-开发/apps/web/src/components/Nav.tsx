@@ -17,7 +17,6 @@ export const NAV_ITEMS: { key: ViewKey; implemented: boolean; phase?: string }[]
   { key: "projects", implemented: true },
   { key: "review", implemented: true },
   { key: "study", implemented: false, phase: "P5" },
-  { key: "reward", implemented: true },
   { key: "settings", implemented: true },
 ];
 
@@ -89,7 +88,12 @@ export function Sidebar({
 
   return (
     <aside className="hidden w-52 shrink-0 flex-col border-r border-line bg-surface-2 px-4 py-6 md:flex">
-      <div className="flex items-center gap-2.5 px-1">
+      <button
+        type="button"
+        onClick={() => onChange("reward")}
+        className="flex w-full items-center gap-2.5 rounded-[11px] px-1 py-0.5 text-left transition-opacity hover:opacity-80"
+        title={t("reward.homeTitle")}
+      >
         <img
           src="/icons/icon-48.png?v=2"
           alt=""
@@ -97,7 +101,7 @@ export function Sidebar({
           draggable={false}
         />
         <span className="text-[15px] font-semibold text-ink">{t("app.title")}</span>
-      </div>
+      </button>
       <p className="mt-1.5 px-1 text-[9px] uppercase tracking-[0.18em] text-ink-3">
         {t("app.badge")}
       </p>
