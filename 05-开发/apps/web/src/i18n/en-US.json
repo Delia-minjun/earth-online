@@ -88,6 +88,7 @@
     "fun": "Leisure"
   },
   "reward": {
+    "homeTitle": "Earth Online System",
     "sub": "Earn coins from real work, spend them on rewards you define",
     "balance": "Balance",
     "unit": "coins",

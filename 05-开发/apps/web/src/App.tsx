@@ -13,7 +13,7 @@ import { PlaceholderView } from "./views/PlaceholderView";
 
 export default function App() {
   const { t, i18n } = useTranslation();
-  const [view, setView] = useState<ViewKey>("today");
+  const [view, setView] = useState<ViewKey>("reward");
   const [week, setWeek] = useState<WeekInfo | null>(null);
   const [health, setHealth] = useState<HealthInfo | null>(null);
   const [failed, setFailed] = useState(false);
@@ -100,7 +100,7 @@ export default function App() {
             </p>
             <div className="mt-1.5 flex items-center gap-3">
               <h1 className="truncate text-[22px] font-semibold leading-tight text-ink">
-                {isToday ? dateText : t(`nav.${view}`)}
+                {isToday ? dateText : isReward ? t("reward.homeTitle") : t(`nav.${view}`)}
               </h1>
               {view === "week" ? (
                 <div className="flex shrink-0 items-center rounded-full border border-line bg-surface p-0.5">
