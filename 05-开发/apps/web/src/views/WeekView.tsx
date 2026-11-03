@@ -60,25 +60,6 @@ export function WeekView() {
     });
   }, [offset, wd, today]);
 
-  const totals = useMemo(() => {
-    const blocks = data?.blocks ?? [];
-    const tasks = data?.tasks ?? [];
-    const minutes = blocks.reduce((s, b) => s + (b.end_min - b.start_min), 0);
-    return {
-      courses: data?.courses.length ?? 0,
-      blocks: blocks.length,
-      minutes,
-      done: tasks.filter((x) => x.status === "done").length,
-      tasks: tasks.length,
-    };
-  }, [data]);
-
-  const dur = (min: number) => {
-    const h = Math.floor(min / 60);
-    const m = min % 60;
-    return h > 0 ? `${h}${t("week.hour")}${m > 0 ? ` ${m}${t("week.min")}` : ""}` : `${m}${t("week.min")}`;
-  };
-
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
@@ -120,19 +101,6 @@ export function WeekView() {
       </div>
 
       {error ? <p className="text-[10.5px] text-warn">{error}</p> : null}
-
-      <div className="flex flex-wrap gap-2 text-[10.5px] text-ink-3">
-        <span className="rounded-full bg-surface px-2.5 py-1">
-          {totals.courses} {t("week.courses")}
-        </span>
-        <span className="rounded-full bg-surface px-2.5 py-1">
-          {totals.blocks} {t("week.blocks")}
-        </span>
-        <span className="rounded-full bg-surface px-2.5 py-1">{dur(totals.minutes)}</span>
-        <span className="rounded-full bg-surface px-2.5 py-1">
-          {t("week.focus")} {totals.done}/{totals.tasks}
-        </span>
-      </div>
 
       <div className="overflow-hidden rounded-2xl border border-line bg-surface">
         {days.map((d, idx) => {
@@ -179,44 +147,50 @@ export function WeekView() {
                 <p className="text-[9.5px] tabular-nums text-ink-3">{d.label}</p>
               </div>
 
-              <div className="flex min-w-0 flex-1 flex-wrap items-start gap-1.5">
-                {items.map((it) => (
-                  <div
-                    key={`${it.kind}-${it.id}`}
-                    className="flex items-center gap-1.5 rounded-lg border border-line-2 bg-surface px-2 py-1"
-                  >
-                    <span
-                      className="h-4 w-[2px] shrink-0 rounded-full"
-                      style={{ background: it.color }}
-                    />
-                    <div className="min-w-0">
-                      <p className="truncate text-[10.5px] text-ink">{it.title}</p>
-                      <p className="text-[9px] tabular-nums text-ink-3">
-                        {hhmm(it.start)}–{hhmm(it.end)}
-                        {it.location ? ` · ${it.location}` : ""}
-                      </p>
+              <div className="flex min-w-0 flex-1 items-start gap-2">
+                <div className="flex min-w-0 flex-1 flex-wrap items-start gap-1.5">
+                  {items.map((it) => (
+                    <div
+                      key={`${it.kind}-${it.id}`}
+                      className="flex items-center gap-1.5 rounded-lg border border-line-2 bg-surface px-2 py-1"
+                    >
+                      <span
+                        className="h-4 w-[2px] shrink-0 rounded-full"
+                        style={{ background: it.color }}
+                      />
+                      <div className="min-w-0">
+                        <p className="truncate text-[10.5px] text-ink">{it.title}</p>
+                        <p className="text-[9px] tabular-nums text-ink-3">
+                          {hhmm(it.start)}–{hhmm(it.end)}
+                          {it.location ? ` · ${it.location}` : ""}
+                        </p>
+                      </div>
                     </div>
+                  ))}
+
+                  {empty ? (
+                    <span className="py-1 text-[10px] text-[#c8c4bc]">{t("week.empty")}</span>
+                  ) : null}
+                </div>
+
+                {tasks.length ? (
+                  <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+                    {tasks.map((x) => (
+                      <span
+                        key={x.id}
+                        className="inline-flex items-center gap-1 rounded-full bg-[#f1eee8] px-2 py-[3px] text-[9.5px] text-ink-2"
+                      >
+                        <span
+                          className={`h-1.5 w-1.5 rounded-full ${
+                            x.status === "done" ? "bg-accent" : "bg-[#d8d4cc]"
+                          }`}
+                        />
+                        <span className={x.status === "done" ? "line-through text-ink-3" : ""}>
+                          {x.title}
+                        </span>
+                      </span>
+                    ))}
                   </div>
-                ))}
-
-                {tasks.map((x) => (
-                  <span
-                    key={x.id}
-                    className="inline-flex items-center gap-1 rounded-full bg-[#f1eee8] px-2 py-[3px] text-[9.5px] text-ink-2"
-                  >
-                    <span
-                      className={`h-1.5 w-1.5 rounded-full ${
-                        x.status === "done" ? "bg-accent" : "bg-[#d8d4cc]"
-                      }`}
-                    />
-                    <span className={x.status === "done" ? "line-through text-ink-3" : ""}>
-                      {x.title}
-                    </span>
-                  </span>
-                ))}
-
-                {empty ? (
-                  <span className="py-1 text-[10px] text-[#c8c4bc]">{t("week.empty")}</span>
                 ) : null}
               </div>
             </div>
