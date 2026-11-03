@@ -454,14 +454,17 @@ export function TodayView() {
           </Mini>
 
           <MoneyCard date={day.date} />
+        </div>
 
+        <div className="space-y-3.5">
           <BodyCard date={day.date} />
 
           <MealsCard date={day.date} />
         </div>
+      </div>
 
-        {/* 右：时间轴固定栏，滚动时始终可见 */}
-        <div className="space-y-3.5 lg:sticky lg:top-6">
+      {/* 时间轴：宽屏时固定在视口右侧空白区，窄屏回到正文流里 */}
+      <aside className="min-[1300px]:fixed min-[1300px]:right-6 min-[1300px]:top-24 min-[1300px]:z-10 min-[1300px]:w-60 min-[1300px]:max-h-[calc(100vh-8rem)] min-[1300px]:overflow-y-auto">
           <Card
             title={t("today.timeline")}
             action={
@@ -593,8 +596,7 @@ export function TodayView() {
               </div>
             ) : null}
           </Card>
-        </div>
-      </div>
+      </aside>
 
       <div className="space-y-3.5 lg:grid lg:grid-cols-2 lg:items-start lg:gap-3.5 lg:space-y-0">
         <Mini
