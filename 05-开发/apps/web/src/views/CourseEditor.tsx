@@ -66,10 +66,9 @@ export function CourseEditor({
     breakMin: 5,
     count: 12,
   });
-  const [periodsOpen, setPeriodsOpen] = useState(false);
   const [semester, setSemester] = useState<SemesterConfig>({ startDate: null });
-  const [semesterOpen, setSemesterOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const [importing, setImporting] = useState(false);
   const [candidates, setCandidates] = useState<CourseCandidate[] | null>(null);
@@ -310,25 +309,14 @@ export function CourseEditor({
 
         <button
           type="button"
-          onClick={() => setPeriodsOpen((v) => !v)}
+          onClick={() => setSettingsOpen(true)}
           className={`rounded-full border px-2.5 py-1 text-[10.5px] transition-colors ${
-            periodsOpen ? "border-accent bg-accent text-white" : "border-line bg-surface text-ink-3 hover:border-accent"
+            settingsOpen
+              ? "border-accent bg-accent text-white"
+              : "border-line bg-surface text-ink-3 hover:border-accent hover:text-ink"
           }`}
         >
-          {t("periods.title")}
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setSemesterOpen((v) => !v)}
-          className={`rounded-full border px-2.5 py-1 text-[10.5px] transition-colors ${
-            semesterOpen ? "border-accent bg-accent text-white" : "border-line bg-surface text-ink-3 hover:border-accent"
-          }`}
-        >
-          {t("semester.title")}
-          {semester.startDate ? (
-            <span className="ml-1 text-[9px] opacity-70">{semester.startDate.slice(5)}</span>
-          ) : null}
+          {t("course.editMode")}
         </button>
 
         <button
@@ -353,21 +341,6 @@ export function CourseEditor({
 
         <button
           type="button"
-          onClick={() => {
-            setEditMode((v) => !v);
-            setEditing(null);
-          }}
-          className={`rounded-full border px-2.5 py-1 text-[10.5px] transition-colors ${
-            editMode
-              ? "border-accent bg-accent text-white"
-              : "border-line bg-surface text-ink-3 hover:border-accent"
-          }`}
-        >
-          {t("course.editMode")}
-        </button>
-
-        <button
-          type="button"
           onClick={() => setAddOpen((v) => !v)}
           className={`ml-auto rounded-full border px-2.5 py-1 text-[10.5px] transition-colors ${
             addOpen ? "border-accent bg-accent text-white" : "border-line bg-surface text-ink-3 hover:border-accent"
@@ -379,89 +352,6 @@ export function CourseEditor({
 
       {error ? <p className="text-[10.5px] text-warn">{error}</p> : null}
       {notice ? <p className="text-[10.5px] text-accent">{notice}</p> : null}
-
-      {periodsOpen ? (
-        <div className="space-y-2 rounded-2xl border border-line bg-surface p-3">
-          <p className="text-[10.5px] text-ink-3">{t("periods.hint")}</p>
-          <div className="flex flex-wrap items-center gap-2 text-[11px] text-ink-2">
-            <label className="flex items-center gap-1">
-              {t("periods.first")}
-              <input
-                type="time"
-                step={600}
-                value={periods.firstStart}
-                onChange={(e) => setPeriods((p) => ({ ...p, firstStart: e.target.value }))}
-                className="rounded-lg border border-line bg-surface-2 px-1.5 py-1 tabular-nums outline-none"
-              />
-            </label>
-            <label className="flex items-center gap-1">
-              {t("periods.lesson")}
-              <input
-                type="number"
-                min={20}
-                max={120}
-                value={periods.lessonMin}
-                onChange={(e) => setPeriods((p) => ({ ...p, lessonMin: Number(e.target.value) }))}
-                className="w-14 rounded-lg border border-line bg-surface-2 px-1.5 py-1 tabular-nums outline-none"
-              />
-            </label>
-            <label className="flex items-center gap-1">
-              {t("periods.break")}
-              <input
-                type="number"
-                min={0}
-                max={60}
-                value={periods.breakMin}
-                onChange={(e) => setPeriods((p) => ({ ...p, breakMin: Number(e.target.value) }))}
-                className="w-14 rounded-lg border border-line bg-surface-2 px-1.5 py-1 tabular-nums outline-none"
-              />
-            </label>
-            <button
-              type="button"
-              onClick={() => void savePeriods()}
-              className="ml-auto rounded-lg bg-accent px-3 py-1.5 text-[10.5px] font-semibold text-white"
-            >
-              {t("common.save")}
-            </button>
-          </div>
-        </div>
-      ) : null}
-
-      {semesterOpen ? (
-        <div className="space-y-2 rounded-2xl border border-line bg-surface p-3">
-          <p className="text-[10.5px] text-ink-3">{t("semester.hint")}</p>
-          <div className="flex flex-wrap items-center gap-2 text-[11px] text-ink-2">
-            <label className="flex items-center gap-1">
-              {t("semester.first")}
-              <input
-                type="date"
-                value={semester.startDate ?? ""}
-                onChange={(e) => setSemester({ startDate: e.target.value || null })}
-                className="rounded-lg border border-line bg-surface-2 px-1.5 py-1 tabular-nums outline-none"
-              />
-            </label>
-            <button
-              type="button"
-              onClick={() => void saveSemester()}
-              className="ml-auto rounded-lg bg-accent px-3 py-1.5 text-[10.5px] font-semibold text-white"
-            >
-              {t("common.save")}
-            </button>
-            {semester.startDate ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setSemester({ startDate: null });
-                  void api.saveSemester({ startDate: null }).then(() => onChanged?.());
-                }}
-                className="rounded-lg border border-line px-3 py-1.5 text-[10.5px] text-ink-3"
-              >
-                {t("semester.clear")}
-              </button>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
 
       {candidates ? (
         <div className="space-y-2 rounded-2xl border border-accent-soft bg-surface p-3">
@@ -874,6 +764,126 @@ export function CourseEditor({
           })}
         </div>
       )}
+
+      {settingsOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/20 p-4 pt-16"
+          onClick={() => setSettingsOpen(false)}
+        >
+          <div
+            className="w-full max-w-md space-y-3 rounded-2xl border border-line bg-surface p-4 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h2 className="text-[13px] font-semibold text-ink">{t("course.editMode")}</h2>
+              <button
+                type="button"
+                onClick={() => setSettingsOpen(false)}
+                className="text-[14px] leading-none text-ink-3 transition-colors hover:text-ink"
+                aria-label="close"
+              >
+                ✕
+              </button>
+            </div>
+
+            <section className="space-y-1.5 border-t border-line-2 pt-3">
+              <h3 className="text-[11.5px] font-semibold text-ink">{t("semester.title")}</h3>
+              <p className="text-[10px] leading-relaxed text-ink-3">{t("semester.hint")}</p>
+              <div className="flex flex-wrap items-center gap-2 text-[11px] text-ink-2">
+                <label className="flex items-center gap-1">
+                  {t("semester.first")}
+                  <input
+                    type="date"
+                    value={semester.startDate ?? ""}
+                    onChange={(e) => setSemester({ startDate: e.target.value || null })}
+                    className="rounded-lg border border-line bg-surface-2 px-1.5 py-1 tabular-nums outline-none"
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={() => void saveSemester()}
+                  className="rounded-lg bg-accent px-3 py-1.5 text-[10.5px] font-semibold text-white"
+                >
+                  {t("common.save")}
+                </button>
+                {semester.startDate ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSemester({ startDate: null });
+                      void api.saveSemester({ startDate: null }).then(() => onChanged?.());
+                    }}
+                    className="rounded-lg border border-line px-3 py-1.5 text-[10.5px] text-ink-3"
+                  >
+                    {t("semester.clear")}
+                  </button>
+                ) : null}
+              </div>
+            </section>
+
+            <section className="space-y-1.5 border-t border-line-2 pt-3">
+              <h3 className="text-[11.5px] font-semibold text-ink">{t("periods.title")}</h3>
+              <p className="text-[10px] leading-relaxed text-ink-3">{t("periods.hint")}</p>
+              <div className="flex flex-wrap items-center gap-2 text-[11px] text-ink-2">
+                <label className="flex items-center gap-1">
+                  {t("periods.first")}
+                  <input
+                    type="time"
+                    step={600}
+                    value={periods.firstStart}
+                    onChange={(e) => setPeriods((p) => ({ ...p, firstStart: e.target.value }))}
+                    className="rounded-lg border border-line bg-surface-2 px-1.5 py-1 tabular-nums outline-none"
+                  />
+                </label>
+                <label className="flex items-center gap-1">
+                  {t("periods.lesson")}
+                  <input
+                    type="number"
+                    min={20}
+                    max={120}
+                    value={periods.lessonMin}
+                    onChange={(e) => setPeriods((p) => ({ ...p, lessonMin: Number(e.target.value) }))}
+                    className="w-14 rounded-lg border border-line bg-surface-2 px-1.5 py-1 tabular-nums outline-none"
+                  />
+                </label>
+                <label className="flex items-center gap-1">
+                  {t("periods.break")}
+                  <input
+                    type="number"
+                    min={0}
+                    max={60}
+                    value={periods.breakMin}
+                    onChange={(e) => setPeriods((p) => ({ ...p, breakMin: Number(e.target.value) }))}
+                    className="w-14 rounded-lg border border-line bg-surface-2 px-1.5 py-1 tabular-nums outline-none"
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={() => void savePeriods()}
+                  className="rounded-lg bg-accent px-3 py-1.5 text-[10.5px] font-semibold text-white"
+                >
+                  {t("common.save")}
+                </button>
+              </div>
+            </section>
+
+            <section className="border-t border-line-2 pt-3">
+              <label className="flex items-start gap-2 text-[11px] leading-relaxed text-ink-2">
+                <input
+                  type="checkbox"
+                  checked={editMode}
+                  onChange={() => {
+                    setEditMode((v) => !v);
+                    setEditing(null);
+                  }}
+                  className="mt-0.5 accent-[#8FA38E]"
+                />
+                <span>{t("course.editModeHint")}</span>
+              </label>
+            </section>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

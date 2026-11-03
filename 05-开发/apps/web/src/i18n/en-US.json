@@ -125,6 +125,7 @@
     "weekSuffix": "w",
     "clickToEdit": "Click to edit",
     "editMode": "Edit",
+    "editModeHint": "Turn on to edit courses row by row",
     "editRow": "Edit",
     "showAll": "Show all",
     "setSemesterHint": "No term set — add week 1's Monday in Settings",
