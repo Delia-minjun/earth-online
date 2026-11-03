@@ -723,7 +723,7 @@ export function CourseEditor({
                             e.stopPropagation();
                             startEdit(c);
                           }}
-                          className="shrink-0 rounded-full border border-line px-1.5 py-0.5 text-[9px] text-ink-3 transition-colors hover:border-accent hover:text-ink"
+                          className="shrink-0 rounded-full border border-line px-1.5 py-0.5 text-[9px] text-ink-3 opacity-100 transition-opacity hover:border-accent hover:text-ink md:opacity-0 md:group-hover:opacity-100"
                         >
                           {t("course.editRow")}
                         </button>
