@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, type AiConfigInfo } from "../api";
 import { Card } from "../components/Card";
+import { BudgetCard, CategoriesCard } from "../components/Dictionary";
 
 export function SettingsView() {
   const { t } = useTranslation();
@@ -217,6 +218,10 @@ export function SettingsView() {
             <p className="text-[10px] leading-relaxed text-[#c8c4bc]">{t("settings.noVisionHint")}</p>
           ) : null}        </div>
       </Card>
+
+      <BudgetCard />
+
+      <CategoriesCard />
 
       <Card title={t("settings.about")}>
         <dl className="space-y-1.5 text-[11px]">

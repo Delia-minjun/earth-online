@@ -145,6 +145,26 @@
     "dinnerHint": "What did you eat",
     "snackHint": "Snacks"
   },
+  "calendar": {
+    "title": "Calendar",
+    "monthLabel": "{{year}}-{{month}}",
+    "thisMonth": "This month"
+  },
+  "budget": {
+    "title": "Monthly budget",
+    "hint": "Set a monthly total; expand for per-category caps. Overspending turns red on the Today page.",
+    "monthly": "Per month",
+    "perCategory": "Per category",
+    "noCap": "none"
+  },
+  "categories": {
+    "title": "Categories",
+    "hint": "Rename and recolor both time-block and money categories here.",
+    "blocks": "Time blocks",
+    "money": "Money",
+    "addPlaceholder": "New category, Enter to add (time blocks)",
+    "inUse": "This category is still used by time blocks — reassign them first"
+  },
   "sub": {
     "week": "This week's classes and plans",
     "projects": "Break long-running work into projects, then tasks",

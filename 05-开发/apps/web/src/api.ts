@@ -146,6 +146,14 @@ export interface ApiCalendarDay {
   expense: number;
 }
 
+export interface ApiCategory {
+  id: string;
+  name: string;
+  nameEn: string | null;
+  color: string;
+  sort: number;
+}
+
 export interface ApiJournal {
   date: string;
   mood: number | null;
@@ -361,6 +369,18 @@ export const api = {
 
   calendar: (month: string) =>
     request<{ month: string; byDate: Record<string, ApiCalendarDay> }>(`/calendar/${month}`),
+
+  categories: () => request<ApiCategory[]>("/categories"),
+  addCategory: (input: { name: string; color?: string }) =>
+    request<ApiCategory>("/categories", { method: "POST", body: JSON.stringify(input) }),
+  patchCategory: (id: string, patch: { name?: string; color?: string }) =>
+    request<ApiCategory>(`/categories/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
+  deleteCategory: (id: string) => request<{ ok: true }>(`/categories/${id}`, { method: "DELETE" }),
+  patchMoneyCategory: (id: string, patch: { name?: string; color?: string }) =>
+    request<ApiMoneyCategory>(`/money/categories/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(patch),
+    }),
 
   courses: () => request<ApiCourse[]>("/courses"),
   addCourse: (input: {

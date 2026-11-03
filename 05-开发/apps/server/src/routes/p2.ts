@@ -124,6 +124,98 @@ p2.get("/money/categories", (c) => {
     return c.json({ ok: true });
   });
 
+  /* ---------------- 类别字典 ---------------- */
+
+  p2.get("/categories", (c) => {
+    const rows = getDb()
+      .prepare("SELECT id, name, name_en AS nameEn, color, sort FROM category ORDER BY sort")
+      .all();
+    return c.json(rows);
+  });
+
+  p2.post("/categories", async (c) => {
+    const r = await readBody(
+      c,
+      z.object({ name: z.string().trim().min(1).max(12), color: z.string().optional() }),
+    );
+    if (!r.ok) return c.json({ error: r.error }, 400);
+    const db = getDb();
+    const id = uid();
+    const next = (db.prepare("SELECT COALESCE(MAX(sort), 0) + 1 AS n FROM category").get() as { n: number }).n;
+    db.prepare("INSERT INTO category (id, name, color, sort) VALUES (?, ?, ?, ?)").run(
+      id,
+      r.data.name,
+      r.data.color ?? "#9BA7B0",
+      next,
+    );
+    return c.json(db.prepare("SELECT * FROM category WHERE id = ?").get(id), 201);
+  });
+
+  p2.patch("/categories/:id", async (c) => {
+    const id = c.req.param("id");
+    const r = await readBody(
+      c,
+      z.object({ name: z.string().trim().min(1).max(12).optional(), color: z.string().optional() }),
+    );
+    if (!r.ok) return c.json({ error: r.error }, 400);
+
+    const db = getDb();
+    const sets: string[] = [];
+    const vals: unknown[] = [];
+    if (r.data.name !== undefined) {
+      sets.push("name = ?");
+      vals.push(r.data.name);
+    }
+    if (r.data.color !== undefined) {
+      sets.push("color = ?");
+      vals.push(r.data.color);
+    }
+    if (!sets.length) return c.json({ error: "nothing to update" }, 400);
+    vals.push(id);
+    db.prepare(`UPDATE category SET ${sets.join(", ")} WHERE id = ?`).run(...(vals as never[]));
+    return c.json(db.prepare("SELECT * FROM category WHERE id = ?").get(id));
+  });
+
+  p2.delete("/categories/:id", (c) => {
+    // category 表没有 archived 列，这里直接检查有没有被时间块占用
+    const db = getDb();
+    const id = c.req.param("id");
+    const used = db
+      .prepare("SELECT COUNT(*) AS n FROM time_block WHERE category_id = ? AND deleted_at IS NULL")
+      .get(id) as { n: number };
+    if ((used?.n ?? 0) > 0) return c.json({ error: "in use" }, 409);
+    db.prepare("DELETE FROM category WHERE id = ?").run(id);
+    return c.json({ ok: true });
+  });
+
+  p2.patch("/money/categories/:id", async (c) => {
+    const id = c.req.param("id");
+    const r = await readBody(
+      c,
+      z.object({
+        name: z.string().trim().min(1).max(12).optional(),
+        color: z.string().optional(),
+      }),
+    );
+    if (!r.ok) return c.json({ error: r.error }, 400);
+
+    const db = getDb();
+    const sets: string[] = [];
+    const vals: unknown[] = [];
+    if (r.data.name !== undefined) {
+      sets.push("name = ?");
+      vals.push(r.data.name);
+    }
+    if (r.data.color !== undefined) {
+      sets.push("color = ?");
+      vals.push(r.data.color);
+    }
+    if (!sets.length) return c.json({ error: "nothing to update" }, 400);
+    vals.push(id);
+    db.prepare(`UPDATE money_category SET ${sets.join(", ")} WHERE id = ?`).run(...(vals as never[]));
+    return c.json(db.prepare("SELECT * FROM money_category WHERE id = ?").get(id));
+  });
+
   /* ---------------- 预算 ---------------- */
 
   const budgetSchema = z.object({

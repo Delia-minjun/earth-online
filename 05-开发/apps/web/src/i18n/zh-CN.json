@@ -146,6 +146,26 @@
     "dinnerHint": "吃了什么",
     "snackHint": "零食 / 加餐"
   },
+  "calendar": {
+    "title": "月历",
+    "monthLabel": "{{year}} 年 {{month}} 月",
+    "thisMonth": "回到本月"
+  },
+  "budget": {
+    "title": "月度预算",
+    "hint": "填一个月度总额；想细管就展开分类上限。超支会在今日页的记账卡里变红。",
+    "monthly": "每月",
+    "perCategory": "分类上限",
+    "noCap": "不限"
+  },
+  "categories": {
+    "title": "类别字典",
+    "hint": "时间块类别和账单类别都在这里改名字与颜色。",
+    "blocks": "时间块",
+    "money": "记账",
+    "addPlaceholder": "新类别名，回车添加（加到时间块）",
+    "inUse": "这个类别还有时间块在用，先改掉那些记录再删"
+  },
   "sub": {
     "week": "这一周的课程与安排",
     "projects": "把长期的事拆成项目，再拆成任务",

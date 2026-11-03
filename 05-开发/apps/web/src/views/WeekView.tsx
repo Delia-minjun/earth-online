@@ -19,15 +19,136 @@ type Item = {
   location?: string | null;
 };
 
+/** 月历：点某天跳到那一周 */
+function MonthGrid({ onPick }: { onPick: (date: string) => void }) {
+  const { t, i18n } = useTranslation();
+  const today = ymd(new Date());
+  const [month, setMonth] = useState(today.slice(0, 7));
+  const [byDate, setByDate] = useState<Record<string, { blocks: number; tasks: number; done: number; expense: number }>>({});
+
+  useEffect(() => {
+    let alive = true;
+    api
+      .calendar(month)
+      .then((r) => alive && setByDate(r.byDate))
+      .catch(() => alive && setByDate({}));
+    return () => {
+      alive = false;
+    };
+  }, [month]);
+
+  const [yearStr, monStr] = month.split("-");
+  const year = Number(yearStr);
+  const mon = Number(monStr);
+  const first = new Date(year, mon - 1, 1);
+  const lead = (first.getDay() || 7) - 1; // 周一开头
+  const daysInMonth = new Date(year, mon, 0).getDate();
+  const cells: (string | null)[] = [
+    ...Array.from({ length: lead }, () => null),
+    ...Array.from({ length: daysInMonth }, (_, i) => {
+      const d = new Date(year, mon - 1, i + 1);
+      return ymd(d);
+    }),
+  ];
+  while (cells.length % 7 !== 0) cells.push(null);
+
+  const shiftMonth = (delta: number) => {
+    const d = new Date(year, mon - 1 + delta, 1);
+    setMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
+  };
+
+  const wd = i18n.language === "zh-CN" ? WD_ZH : WD_EN;
+
+  return (
+    <section className="rounded-2xl border border-line bg-surface p-3">
+      <header className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => shiftMonth(-1)}
+          className="grid h-6 w-6 place-items-center rounded-full border border-line text-[11px] text-ink-2 hover:border-accent"
+        >
+          ‹
+        </button>
+        <span className="text-[12px] font-semibold tabular-nums text-ink">
+          {t("calendar.monthLabel", { year, month: mon })}
+        </span>
+        <button
+          type="button"
+          onClick={() => shiftMonth(1)}
+          className="grid h-6 w-6 place-items-center rounded-full border border-line text-[11px] text-ink-2 hover:border-accent"
+        >
+          ›
+        </button>
+        {month !== today.slice(0, 7) ? (
+          <button
+            type="button"
+            onClick={() => setMonth(today.slice(0, 7))}
+            className="ml-auto text-[10px] text-ink-3 underline decoration-dotted hover:text-accent"
+          >
+            {t("calendar.thisMonth")}
+          </button>
+        ) : null}
+      </header>
+
+      <div className="mt-2 grid grid-cols-7 gap-1 text-center">
+        {wd.map((w) => (
+          <span key={w} className="text-[9px] text-ink-3">
+            {w.replace("周", "")}
+          </span>
+        ))}
+        {cells.map((date, i) => {
+          if (!date) return <span key={`e-${i}`} />;
+          const info = byDate[date];
+          const isToday = date === today;
+          const day = Number(date.slice(8));
+          return (
+            <button
+              key={date}
+              type="button"
+              onClick={() => onPick(date)}
+              className={`flex h-9 flex-col items-center justify-center rounded-lg text-[10.5px] transition-colors ${
+                isToday
+                  ? "bg-accent-soft font-semibold text-ink"
+                  : "text-ink-2 hover:bg-surface-2"
+              }`}
+            >
+              <span className="tabular-nums">{day}</span>
+              <span className="mt-0.5 flex h-1 items-center gap-[2px]">
+                {info?.blocks ? <span className="h-1 w-1 rounded-full bg-[#9BA7B0]" /> : null}
+                {info?.done ? <span className="h-1 w-1 rounded-full bg-accent" /> : null}
+                {info?.expense ? <span className="h-1 w-1 rounded-full bg-[#CBBB9A]" /> : null}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 export function WeekView() {
   const { t, i18n } = useTranslation();
   const [offset, setOffset] = useState(0);
   const [data, setData] = useState<ApiWeek | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
+  const [calOpen, setCalOpen] = useState(false);
 
   const target = useMemo(() => shiftWeeks(mondayOfThisWeek(), offset), [offset]);
   const { isoYear, isoWeek } = useMemo(() => isoWeekOf(target), [target]);
+
+  /** 跳到某一天所在的那一周 */
+  const jumpToDate = (date: string) => {
+    const d = new Date(`${date}T00:00:00`);
+    const day = d.getDay() || 7; // 1..7
+    const monday = new Date(d.getFullYear(), d.getMonth(), d.getDate() - (day - 1));
+    const base = mondayOfThisWeek();
+    const diff = Math.round(
+      (monday.getTime() - new Date(base.getFullYear(), base.getMonth(), base.getDate()).getTime()) /
+        (7 * 86_400_000),
+    );
+    setOffset(diff);
+  };
 
   const load = useCallback(async () => {
     try {
@@ -93,12 +214,26 @@ export function WeekView() {
 
         <button
           type="button"
+          onClick={() => setCalOpen((v) => !v)}
+          className={`rounded-full border px-2.5 py-1 text-[10.5px] transition-colors ${
+            calOpen
+              ? "border-accent bg-accent text-white"
+              : "border-line bg-surface text-ink-3 hover:border-accent hover:text-ink"
+          }`}
+        >
+          {t("calendar.title")}
+        </button>
+
+        <button
+          type="button"
           onClick={() => setEditorOpen(true)}
-          className="ml-auto rounded-full border border-line bg-surface px-3 py-1.5 text-[10.5px] text-ink-2 transition-colors hover:border-accent hover:text-ink"
+          className="rounded-full border border-line bg-surface px-3 py-1.5 text-[10.5px] text-ink-2 transition-colors hover:border-accent hover:text-ink"
         >
           {t("course.editMode")}
         </button>
       </div>
+
+      {calOpen ? <MonthGrid onPick={(date) => jumpToDate(date)} /> : null}
 
       {error ? <p className="text-[10.5px] text-warn">{error}</p> : null}
 
