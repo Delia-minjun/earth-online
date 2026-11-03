@@ -23,36 +23,9 @@ function Mini({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-line bg-surface p-3.5 shadow-[0_6px_20px_-14px_rgba(88,82,72,0.5)]">
-      <header className="flex items-baseline justify-between">
-        <h2 className="text-[12px] font-semibold text-ink">{title}</h2>
-        {action ? <span className="text-[10px] text-ink-3">{action}</span> : null}
-      </header>
-      <div className="mt-2.5">{children}</div>
-    </section>
-  );
-}
-
-function QuickActions() {
-  const { t } = useTranslation();
-  return (
-    <button
-      type="button"
-      disabled
-      className="flex w-full items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3 text-left opacity-90"
-    >
-      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent-soft text-[13px] text-accent">
-        ◷
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="flex items-baseline gap-1.5">
-          <span className="text-[12px] font-semibold text-ink">{t("today.pomodoro")}</span>
-          <span className="text-[15px] font-semibold tabular-nums text-ink">25:00</span>
-        </span>
-        <span className="mt-0.5 block text-[10px] text-ink-3">{t("today.pomodoroHint")}</span>
-      </span>
-      <span className="shrink-0 rounded-full border border-line px-2 py-0.5 text-[9px] text-ink-3">P3</span>
-    </button>
+    <Card title={title} action={action}>
+      {children}
+    </Card>
   );
 }
 
@@ -321,11 +294,9 @@ export function TodayView() {
     <div className="space-y-3.5">
       {error ? <p className="text-[10px] text-warn">{error}</p> : null}
 
-      <QuickActions />
-
-      <div className="space-y-3.5 lg:grid lg:grid-cols-5 lg:items-start lg:gap-3.5 lg:space-y-0">
-        {/* 左：重点 + 时间轴 */}
-        <div className="space-y-3.5 lg:col-span-3">
+      <div className="space-y-3.5 lg:grid lg:grid-cols-2 lg:items-start lg:gap-3.5 lg:space-y-0">
+        {/* 左：今天的计划 */}
+        <div className="space-y-3.5">
           <Card title={t("today.focus")} action={`${doneCount}/${focus.length}`}>
             <ul className="divide-y divide-line-2">
               {focus.map((f) =>
@@ -581,8 +552,8 @@ export function TodayView() {
           </Card>
         </div>
 
-        {/* 右：习惯 / 记账 / 身体 / 饮食 / 随手记 */}
-        <div className="space-y-3.5 lg:col-span-2">
+        {/* 右：今天的记录 */}
+        <div className="space-y-3.5">
           <Mini
             title={t("today.habits")}
             action={
@@ -622,56 +593,58 @@ export function TodayView() {
           <BodyCard date={day.date} />
 
           <MealsCard date={day.date} />
-
-          <Mini
-            title={t("today.notes")}
-            action={
-              noteState === "saving"
-                ? t("common.saving")
-                : noteState === "saved"
-                  ? t("common.saved")
-                  : noteState === "error"
-                    ? t("common.saveFailed")
-                    : null
-            }
-          >
-            <textarea
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              rows={4}
-              placeholder={t("today.notePlaceholder")}
-              className="w-full resize-none bg-transparent text-[11.5px] leading-relaxed text-ink-2 outline-none placeholder:text-[#c8c4bc]"
-            />
-          </Mini>
-
-          <Mini
-            title={t("today.dayReview")}
-            action={
-              reviewState === "saving"
-                ? t("common.saving")
-                : reviewState === "saved"
-                  ? t("common.saved")
-                  : reviewState === "error"
-                    ? t("common.saveFailed")
-                    : null
-            }
-          >
-            {(["good", "bad", "next"] as const).map((k) => (
-              <label key={k} className="mt-1.5 block first:mt-0">
-                <span className="text-[9.5px] text-ink-3">{t(`dayReview.${k}`)}</span>
-                <textarea
-                  rows={2}
-                  value={dayReview?.[k] ?? ""}
-                  onChange={(e) =>
-                    setDayReview((prev) => (prev ? { ...prev, [k]: e.target.value } : prev))
-                  }
-                  placeholder={t(`dayReview.${k}Hint`)}
-                  className="mt-0.5 w-full resize-none rounded-lg bg-surface-2 px-2 py-1.5 text-[11.5px] leading-relaxed text-ink-2 outline-none placeholder:text-[#c8c4bc]"
-                />
-              </label>
-            ))}
-          </Mini>
         </div>
+      </div>
+
+      <div className="space-y-3.5 lg:grid lg:grid-cols-2 lg:items-start lg:gap-3.5 lg:space-y-0">
+        <Mini
+          title={t("today.notes")}
+          action={
+            noteState === "saving"
+              ? t("common.saving")
+              : noteState === "saved"
+                ? t("common.saved")
+                : noteState === "error"
+                  ? t("common.saveFailed")
+                  : null
+          }
+        >
+          <textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            rows={4}
+            placeholder={t("today.notePlaceholder")}
+            className="w-full resize-none bg-transparent text-[11.5px] leading-relaxed text-ink-2 outline-none placeholder:text-[#c8c4bc]"
+          />
+        </Mini>
+
+        <Mini
+          title={t("today.dayReview")}
+          action={
+            reviewState === "saving"
+              ? t("common.saving")
+              : reviewState === "saved"
+                ? t("common.saved")
+                : reviewState === "error"
+                  ? t("common.saveFailed")
+                  : null
+          }
+        >
+          {(["good", "bad", "next"] as const).map((k) => (
+            <label key={k} className="mt-1.5 block first:mt-0">
+              <span className="text-[9.5px] text-ink-3">{t(`dayReview.${k}`)}</span>
+              <textarea
+                rows={1}
+                value={dayReview?.[k] ?? ""}
+                onChange={(e) =>
+                  setDayReview((prev) => (prev ? { ...prev, [k]: e.target.value } : prev))
+                }
+                placeholder={t(`dayReview.${k}Hint`)}
+                className="mt-0.5 w-full resize-none rounded-lg bg-surface-2 px-2 py-1.5 text-[11.5px] leading-relaxed text-ink-2 outline-none placeholder:text-[#c8c4bc]"
+              />
+            </label>
+          ))}
+        </Mini>
       </div>
 
       {habitOpen ? (
