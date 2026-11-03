@@ -13,6 +13,17 @@ const isOk = (c: CourseCandidate) =>
   c.endMin != null &&
   c.endMin > c.startMin;
 
+/** 这门课在第 N 教学周是否上 */
+const activeInWeek = (c: ApiCourse, week: number) => {
+  if (c.week_type === "odd") return week % 2 === 1;
+  if (c.week_type === "even") return week % 2 === 0;
+  if (c.week_type === "range") {
+    if (c.week_start != null && week < c.week_start) return false;
+    if (c.week_end != null && week > c.week_end) return false;
+  }
+  return true;
+};
+
 const minOf = (v: string): number | null => {
   if (!v) return null;
   const [h, m] = v.split(":").map(Number);
@@ -20,7 +31,13 @@ const minOf = (v: string): number | null => {
   return (h as number) * 60 + (m as number);
 };
 
-export function CourseEditor({ onChanged }: { onChanged?: () => void }) {
+export function CourseEditor({
+  onChanged,
+  baseWeek,
+}: {
+  onChanged?: () => void;
+  baseWeek?: number | null;
+}) {
   const { t, i18n } = useTranslation();
   const zh = i18n.language === "zh-CN";
   const WD = zh
@@ -69,6 +86,13 @@ export function CourseEditor({ onChanged }: { onChanged?: () => void }) {
     weekStart: number;
     weekEnd: number;
   } | null>(null);
+
+  const [week, setWeek] = useState<number>(baseWeek ?? 1);
+  const [showAll, setShowAll] = useState(false);
+
+  useEffect(() => {
+    if (baseWeek != null) setWeek(baseWeek);
+  }, [baseWeek]);
 
   const load = useCallback(async () => {
     try {
@@ -273,10 +297,46 @@ export function CourseEditor({ onChanged }: { onChanged?: () => void }) {
     });
   };
 
+  const visible = showAll ? courses : courses.filter((c) => activeInWeek(c, week));
+
   return (
     <div className="space-y-2.5">
+      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-line bg-surface px-3 py-2">
+        <button
+          type="button"
+          onClick={() => setWeek((w) => Math.max(1, w - 1))}
+          className="grid h-6 w-6 place-items-center rounded-full border border-line text-[11px] text-ink-2 hover:border-accent"
+        >
+          ‹
+        </button>
+        <span className="text-[11.5px] font-semibold tabular-nums text-ink">
+          {t("week.teaching", { n: week })}
+        </span>
+        <button
+          type="button"
+          onClick={() => setWeek((w) => Math.min(30, w + 1))}
+          className="grid h-6 w-6 place-items-center rounded-full border border-line text-[11px] text-ink-2 hover:border-accent"
+        >
+          ›
+        </button>
+        <span className="text-[10px] text-ink-3">
+          {t("course.count", { n: visible.length })}
+        </span>
+        <button
+          type="button"
+          onClick={() => setShowAll((v) => !v)}
+          className={`ml-auto rounded-full border px-2.5 py-1 text-[10.5px] transition-colors ${
+            showAll
+              ? "border-accent bg-accent text-white"
+              : "border-line bg-surface text-ink-3 hover:border-accent"
+          }`}
+        >
+          {t("course.showAll")}
+        </button>
+      </div>
+
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-[10.5px] text-ink-3">{t("course.count", { n: courses.length })}</span>
+        <span className="text-[10.5px] text-ink-3">{t("course.count", { n: visible.length })}</span>
 
         <button
           type="button"
@@ -639,7 +699,7 @@ export function CourseEditor({ onChanged }: { onChanged?: () => void }) {
         </div>
       ) : null}
 
-      {courses.length === 0 ? (
+      {visible.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-line bg-surface-2 px-4 py-8 text-center">
           <p className="text-[11.5px] text-ink-3">{t("course.empty")}</p>
           <p className="mt-1.5 text-[10px] text-[#c8c4bc]">{t("course.emptyHint")}</p>
@@ -647,7 +707,7 @@ export function CourseEditor({ onChanged }: { onChanged?: () => void }) {
       ) : (
         <div className="grid gap-2 lg:grid-cols-2">
           {WD.map((w, i) => {
-            const list = courses.filter((c) => c.weekday === i + 1);
+            const list = visible.filter((c) => c.weekday === i + 1);
             if (list.length === 0) return null;
             return (
               <section key={w} className="rounded-2xl border border-line bg-surface p-3">

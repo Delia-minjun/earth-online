@@ -123,7 +123,8 @@
     "weekEven": "双周",
     "weekRange": "范围",
     "weekSuffix": "周",
-    "clickToEdit": "点一下修改"
+    "clickToEdit": "点一下修改",
+    "showAll": "显示全部"
   },
   "periods": {
     "title": "作息",

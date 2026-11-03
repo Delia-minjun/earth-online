@@ -129,7 +129,7 @@ export function WeekView() {
       {error ? <p className="text-[10.5px] text-warn">{error}</p> : null}
 
       {mode === "course" ? (
-        <CourseEditor onChanged={() => void load()} />
+        <CourseEditor onChanged={() => void load()} baseWeek={data?.teachingWeek ?? null} />
       ) : (
         <>
           <div className="flex flex-wrap gap-2 text-[10.5px] text-ink-3">
