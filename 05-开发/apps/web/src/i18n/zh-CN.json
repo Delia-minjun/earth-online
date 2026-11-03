@@ -39,6 +39,7 @@
     "notes": "随手记",
     "noteAdd": "写一句",
     "focusAdd": "添加今日重点，回车确认",
+    "focusConfirm": "确认添加",
     "focusEmpty": "今天还没有重点",
     "timelineEmpty": "还没有安排时间块",
     "blockTitle": "这段时间做什么",

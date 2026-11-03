@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, hhmm, toMin, type ApiBlock, type ApiDay, type ApiMeta } from "../api";
+import { api, hhmm, type ApiDay, type ApiMeta } from "../api";
 import { Card } from "../components/Card";
 
 function Mini({
@@ -26,45 +26,30 @@ function Mini({
 function QuickActions() {
   const { t } = useTranslation();
   return (
-    <section className="grid gap-2.5 sm:grid-cols-2">
-      <button
-        type="button"
-        disabled
-        className="flex items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3 text-left opacity-90"
-      >
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent-soft text-[13px] text-accent">
-          ◷
+    <button
+      type="button"
+      disabled
+      className="flex w-full items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3 text-left opacity-90"
+    >
+      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent-soft text-[13px] text-accent">
+        ◷
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="flex items-baseline gap-1.5">
+          <span className="text-[12px] font-semibold text-ink">{t("today.pomodoro")}</span>
+          <span className="text-[15px] font-semibold tabular-nums text-ink">25:00</span>
         </span>
-        <span className="min-w-0 flex-1">
-          <span className="flex items-baseline gap-1.5">
-            <span className="text-[12px] font-semibold text-ink">{t("today.pomodoro")}</span>
-            <span className="text-[15px] font-semibold tabular-nums text-ink">25:00</span>
-          </span>
-          <span className="mt-0.5 block text-[10px] text-ink-3">{t("today.pomodoroHint")}</span>
-        </span>
-        <span className="shrink-0 rounded-full border border-line px-2 py-0.5 text-[9px] text-ink-3">P3</span>
-      </button>
-
-      <button
-        type="button"
-        disabled
-        className="flex items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3 text-left opacity-90"
-      >
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#eef0f4] text-[13px] text-[#9BA7B0]">
-          ▤
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="flex items-baseline gap-1.5">
-            <span className="text-[12px] font-semibold text-ink">{t("today.reviewCards")}</span>
-            <span className="text-[15px] font-semibold tabular-nums text-ink">0</span>
-          </span>
-          <span className="mt-0.5 block text-[10px] text-ink-3">{t("today.reviewHint")}</span>
-        </span>
-        <span className="shrink-0 rounded-full border border-line px-2 py-0.5 text-[9px] text-ink-3">P5</span>
-      </button>
-    </section>
+        <span className="mt-0.5 block text-[10px] text-ink-3">{t("today.pomodoroHint")}</span>
+      </span>
+      <span className="shrink-0 rounded-full border border-line px-2 py-0.5 text-[9px] text-ink-3">P3</span>
+    </button>
   );
 }
+
+/** 半小时刻度：00:00 – 23:30 */
+const SLOTS = Array.from({ length: 48 }, (_, i) => i * 30);
+/** 结束时间可选 00:30 – 24:00 */
+const END_SLOTS = Array.from({ length: 48 }, (_, i) => (i + 1) * 30);
 
 const DONE = "done";
 
@@ -111,15 +96,20 @@ export function TodayView() {
 
   /* ---- 时间块 ---- */
   const [blockOpen, setBlockOpen] = useState(false);
-  const [blockForm, setBlockForm] = useState({ start: "08:00", end: "09:00", title: "", categoryId: "cat-study" });
+  const [blockForm, setBlockForm] = useState({
+    startMin: 480,
+    endMin: 540,
+    title: "",
+    categoryId: "cat-study",
+  });
 
   const submitBlock = async () => {
     const title = blockForm.title.trim();
     if (!title) return;
     try {
       await api.addBlock({
-        startMin: toMin(blockForm.start),
-        endMin: toMin(blockForm.end),
+        startMin: blockForm.startMin,
+        endMin: blockForm.endMin,
         title,
         categoryId: blockForm.categoryId,
       });
@@ -240,6 +230,19 @@ export function TodayView() {
                 placeholder={t("today.focusAdd")}
                 className="w-full bg-transparent text-[12px] text-ink outline-none placeholder:text-[#c8c4bc]"
               />
+              <button
+                type="button"
+                onClick={() => void addFocus()}
+                disabled={!draft.trim()}
+                className={`grid h-6 w-6 shrink-0 place-items-center rounded-full text-[11px] transition-colors ${
+                  draft.trim()
+                    ? "bg-accent text-white hover:opacity-90"
+                    : "border border-line text-[#d6d2ca]"
+                }`}
+                aria-label={t("today.focusConfirm")}
+              >
+                ✓
+              </button>
             </div>
           </Card>
 
@@ -289,19 +292,36 @@ export function TodayView() {
             {blockOpen ? (
               <div className="mt-2 space-y-2 rounded-xl border border-line-2 bg-surface-2 p-2.5">
                 <div className="flex items-center gap-1.5">
-                  <input
-                    type="time"
-                    value={blockForm.start}
-                    onChange={(e) => setBlockForm((f) => ({ ...f, start: e.target.value }))}
-                    className="rounded-lg border border-line bg-surface px-1.5 py-1 text-[11px] text-ink outline-none"
-                  />
+                  <select
+                    value={blockForm.startMin}
+                    onChange={(e) => {
+                      const v = Number(e.target.value);
+                      setBlockForm((f) => ({
+                        ...f,
+                        startMin: v,
+                        endMin: Math.max(f.endMin, Math.min(v + 60, 1440)),
+                      }));
+                    }}
+                    className="rounded-lg border border-line bg-surface px-1.5 py-1 text-[11px] tabular-nums text-ink outline-none"
+                  >
+                    {SLOTS.map((m) => (
+                      <option key={m} value={m}>
+                        {hhmm(m)}
+                      </option>
+                    ))}
+                  </select>
                   <span className="text-[10px] text-ink-3">–</span>
-                  <input
-                    type="time"
-                    value={blockForm.end}
-                    onChange={(e) => setBlockForm((f) => ({ ...f, end: e.target.value }))}
-                    className="rounded-lg border border-line bg-surface px-1.5 py-1 text-[11px] text-ink outline-none"
-                  />
+                  <select
+                    value={blockForm.endMin}
+                    onChange={(e) => setBlockForm((f) => ({ ...f, endMin: Number(e.target.value) }))}
+                    className="rounded-lg border border-line bg-surface px-1.5 py-1 text-[11px] tabular-nums text-ink outline-none"
+                  >
+                    {END_SLOTS.map((m) => (
+                      <option key={m} value={m} disabled={m <= blockForm.startMin}>
+                        {hhmm(m)}
+                      </option>
+                    ))}
+                  </select>
                   <select
                     value={blockForm.categoryId}
                     onChange={(e) => setBlockForm((f) => ({ ...f, categoryId: e.target.value }))}

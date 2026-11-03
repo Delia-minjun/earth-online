@@ -39,6 +39,7 @@
     "notes": "Notes",
     "noteAdd": "Write",
     "focusAdd": "Add today's focus, press Enter",
+    "focusConfirm": "Confirm",
     "focusEmpty": "No focus yet today",
     "timelineEmpty": "No time blocks yet",
     "blockTitle": "What happens in this slot",
