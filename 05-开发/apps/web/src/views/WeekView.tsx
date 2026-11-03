@@ -207,15 +207,6 @@ export function WeekView({
         >
           ›
         </button>
-        {offset !== 0 ? (
-          <button
-            type="button"
-            onClick={() => setOffset(0)}
-            className="rounded-full border border-line bg-surface px-2.5 py-1 text-[10.5px] text-ink-3 hover:border-accent hover:text-ink"
-          >
-            {t("week.backToday")}
-          </button>
-        ) : null}
 
         <button
           type="button"
