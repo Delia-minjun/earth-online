@@ -275,7 +275,11 @@ export function TodayView() {
               <button
                 type="button"
                 onClick={() => setBlockOpen((v) => !v)}
-                className="text-[10px] text-ink-3 transition-colors hover:text-ink"
+                className={`rounded-full border px-2.5 py-1 text-[10.5px] transition-colors ${
+                  blockOpen
+                    ? "border-accent bg-accent text-white"
+                    : "border-line bg-surface text-ink-3 hover:border-accent hover:text-ink"
+                }`}
               >
                 {t("action.add")}
               </button>

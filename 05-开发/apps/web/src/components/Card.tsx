@@ -18,7 +18,9 @@ export function Card({
       {title ? (
         <header className="flex items-center justify-between">
           <h2 className="text-[13px] font-semibold text-ink">{title}</h2>
-          {action ? <span className="text-[11px] text-ink-3">{action}</span> : null}
+          {action ? (
+            <div className="flex items-center gap-1.5 text-[11px] text-ink-3">{action}</div>
+          ) : null}
         </header>
       ) : null}
       <div className={title ? "mt-3" : ""}>{children}</div>
