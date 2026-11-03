@@ -5,6 +5,8 @@ import { setLang, type Lang } from "./i18n";
 import { BottomNav, Sidebar, type ViewKey } from "./components/Nav";
 import { TodayView } from "./views/TodayView";
 import { RewardView } from "./views/RewardView";
+import { WeekView } from "./views/WeekView";
+import { ReviewView } from "./views/ReviewView";
 import { PlaceholderView } from "./views/PlaceholderView";
 
 export default function App() {
@@ -89,8 +91,12 @@ export default function App() {
 
         <main className="mx-auto w-full max-w-3xl flex-1 px-5 pt-5 md:px-8 md:pt-6">
           {isToday && <TodayView />}
+          {view === "week" && <WeekView />}
+          {view === "review" && <ReviewView />}
           {isReward && <RewardView />}
-          {!isToday && !isReward && <PlaceholderView nameKey={`nav.${view}`} />}
+          {!isToday && !isReward && view !== "week" && view !== "review" && (
+            <PlaceholderView nameKey={`nav.${view}`} />
+          )}
         </main>
 
         <footer className="mx-auto w-full max-w-3xl px-5 pb-6 pt-6 md:px-8">

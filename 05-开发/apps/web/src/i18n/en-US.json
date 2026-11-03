@@ -84,7 +84,27 @@
   },
   "week": {
     "label": "Week {{week}}",
-    "range": "{{start}} — {{end}}"
+    "range": "{{start}} — {{end}}",
+    "hour": "h",
+    "min": "m",
+    "blocks": "blocks",
+    "focus": "focus",
+    "backToday": "This week",
+    "empty": "Nothing planned"
+  },
+  "review": {
+    "summary": "This week",
+    "blocks": "Time blocks",
+    "duration": "Total time",
+    "focus": "Focus done",
+    "keep": "KEEP",
+    "keepHint": "What worked — do it again",
+    "improve": "IMPROVE",
+    "improveHint": "What fell short, and how to fix it",
+    "stop": "STOP",
+    "stopHint": "What drains you — stop it",
+    "start": "START",
+    "startHint": "What to begin next week"
   },
   "status": {
     "online": "Server online",

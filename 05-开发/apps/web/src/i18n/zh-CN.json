@@ -84,7 +84,27 @@
   },
   "week": {
     "label": "第 {{week}} 周",
-    "range": "{{start}} — {{end}}"
+    "range": "{{start}} — {{end}}",
+    "hour": " 小时",
+    "min": " 分",
+    "blocks": "个时间块",
+    "focus": "重点",
+    "backToday": "回到本周",
+    "empty": "没有安排"
+  },
+  "review": {
+    "summary": "本周数据",
+    "blocks": "时间块",
+    "duration": "总时长",
+    "focus": "重点完成",
+    "keep": "KEEP · 保持",
+    "keepHint": "哪些做法有效，下周继续",
+    "improve": "IMPROVE · 改进",
+    "improveHint": "哪里不够好，具体怎么改",
+    "stop": "STOP · 停止",
+    "stopHint": "哪些事在消耗你，该停掉",
+    "start": "START · 开始",
+    "startHint": "下周要开始做什么"
   },
   "status": {
     "online": "服务正常",

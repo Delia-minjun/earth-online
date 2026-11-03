@@ -84,9 +84,47 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return (await res.json()) as T;
 }
 
+export interface ApiWeekBlock {
+  id: string;
+  date: string;
+  start_min: number;
+  end_min: number;
+  title: string;
+  category_id: string | null;
+  category_color: string | null;
+}
+
+export interface ApiWeekTask {
+  id: string;
+  title: string;
+  status: string;
+  scheduled_date: string | null;
+  priority: number;
+  is_focus: number;
+}
+
+export interface ApiWeek {
+  week: WeekInfo;
+  weekId: string;
+  tasks: ApiWeekTask[];
+  blocks: ApiWeekBlock[];
+}
+
+export interface ApiReview {
+  week_id: string;
+  keep: string;
+  improve: string;
+  stop: string;
+  start: string;
+}
+
 export const api = {
   meta: () => request<ApiMeta>("/meta"),
   day: (date?: string) => request<ApiDay>(`/day${date ? `?date=${date}` : ""}`),
+  week: (isoYear: number, isoWeek: number) => request<ApiWeek>(`/week/${isoYear}/${isoWeek}`),
+  review: (weekId: string) => request<ApiReview>(`/review/${weekId}`),
+  saveReview: (weekId: string, patch: Partial<Omit<ApiReview, "week_id">>) =>
+    request<ApiReview>(`/review/${weekId}`, { method: "PUT", body: JSON.stringify(patch) }),
 
   addTask: (title: string, date?: string) =>
     request<ApiTask>("/tasks", { method: "POST", body: JSON.stringify({ title, date }) }),
@@ -115,3 +153,26 @@ export const toMin = (value: string) => {
   const [h, m] = value.split(":").map(Number);
   return (h ?? 0) * 60 + (m ?? 0);
 };
+
+/** ISO 周：与 server/src/week.ts 保持一致 */
+export function isoWeekOf(date: Date): { isoYear: number; isoWeek: number } {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const isoYear = d.getUTCFullYear();
+  const yearStart = Date.UTC(isoYear, 0, 1);
+  const isoWeek = Math.ceil(((d.getTime() - yearStart) / 86400000 + 1) / 7);
+  return { isoYear, isoWeek };
+}
+
+/** 本周一（本地零点） */
+export function mondayOfThisWeek(): Date {
+  const now = new Date();
+  const dayNum = now.getDay() || 7;
+  const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (dayNum - 1));
+  return monday;
+}
+
+export function shiftWeeks(date: Date, delta: number): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + delta * 7);
+}
