@@ -31,7 +31,11 @@
     "meals": "Meals",
     "notRecorded": "not logged",
     "notes": "Notes",
-    "noteAdd": "Write"
+    "noteAdd": "Write",
+    "pomodoro": "Pomodoro",
+    "pomodoroHint": "Focus now; a time block is logged when you finish",
+    "reviewCards": "Review",
+    "reviewHint": "Cards due today; finishing counts toward mastery"
   },
   "area": {
     "health": "Health",

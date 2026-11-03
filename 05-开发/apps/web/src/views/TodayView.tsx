@@ -32,6 +32,54 @@ function Mini({
   );
 }
 
+/** 预留位置：番茄钟（P3）与今日复习（P5），现在只占结构不接功能 */
+function QuickActions() {
+  const { t } = useTranslation();
+  return (
+    <section className="grid gap-2.5 sm:grid-cols-2">
+      <button
+        type="button"
+        disabled
+        className="flex items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3 text-left opacity-90"
+      >
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent-soft text-[13px] text-accent">
+          ◷
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="flex items-baseline gap-1.5">
+            <span className="text-[12px] font-semibold text-ink">{t("today.pomodoro")}</span>
+            <span className="text-[15px] font-semibold tabular-nums text-ink">25:00</span>
+          </span>
+          <span className="mt-0.5 block text-[10px] text-ink-3">{t("today.pomodoroHint")}</span>
+        </span>
+        <span className="shrink-0 rounded-full border border-line px-2 py-0.5 text-[9px] text-ink-3">
+          P3
+        </span>
+      </button>
+
+      <button
+        type="button"
+        disabled
+        className="flex items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3 text-left opacity-90"
+      >
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#eef0f4] text-[13px] text-[#9BA7B0]">
+          ▤
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="flex items-baseline gap-1.5">
+            <span className="text-[12px] font-semibold text-ink">{t("today.reviewCards")}</span>
+            <span className="text-[15px] font-semibold tabular-nums text-ink">0</span>
+          </span>
+          <span className="mt-0.5 block text-[10px] text-ink-3">{t("today.reviewHint")}</span>
+        </span>
+        <span className="shrink-0 rounded-full border border-line px-2 py-0.5 text-[9px] text-ink-3">
+          P5
+        </span>
+      </button>
+    </section>
+  );
+}
+
 const minutes = (a: string, b: string) => {
   const [h1, m1] = a.split(":").map(Number);
   const [h2, m2] = b.split(":").map(Number);
@@ -44,6 +92,8 @@ export function TodayView({ week }: { week: WeekInfo | null }) {
   return (
     <div className="space-y-3.5">
       <p className="text-[10px] text-[#bcb8b0]">{t("demo.tag")}</p>
+
+      <QuickActions />
 
       <div className="space-y-3.5 lg:grid lg:grid-cols-5 lg:items-start lg:gap-3.5 lg:space-y-0">
         {/* 左：重点 + 时间轴 */}
@@ -108,7 +158,10 @@ export function TodayView({ week }: { week: WeekInfo | null }) {
 
         {/* 右：习惯 / 记账 / 身体 / 饮食 / 随手记 */}
         <div className="space-y-3.5 lg:col-span-2">
-          <Mini title={t("today.habits")} action={`${DEMO_HABITS.filter((h) => h.done).length}/${DEMO_HABITS.length}`}>
+          <Mini
+            title={t("today.habits")}
+            action={`${DEMO_HABITS.filter((h) => h.done).length}/${DEMO_HABITS.length}`}
+          >
             <div className="flex flex-wrap gap-1.5">
               {DEMO_HABITS.map((h) => (
                 <span
@@ -150,8 +203,7 @@ export function TodayView({ week }: { week: WeekInfo | null }) {
           <Mini title={t("today.body")}>
             <div className="flex items-center justify-between text-[11.5px]">
               <span className="text-ink-2">
-                {t("today.weight")}{" "}
-                <span className="text-ink">{DEMO_BODY.weight}</span> kg
+                {t("today.weight")} <span className="text-ink">{DEMO_BODY.weight}</span> kg
               </span>
               <span className="rounded-full bg-[#f0ece4] px-2 py-0.5 text-[10px] text-ink-2">
                 {DEMO_BODY.workout}

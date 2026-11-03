@@ -31,7 +31,11 @@
     "meals": "饮食",
     "notRecorded": "未记录",
     "notes": "随手记",
-    "noteAdd": "写一句"
+    "noteAdd": "写一句",
+    "pomodoro": "番茄钟",
+    "pomodoroHint": "开始专注，完成后自动记一条时间块",
+    "reviewCards": "今日复习",
+    "reviewHint": "到期的知识卡片，刷完计入掌握度"
   },
   "area": {
     "health": "健康",
