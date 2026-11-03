@@ -67,8 +67,6 @@ export function CourseEditor({
     count: 12,
   });
   const [periodsOpen, setPeriodsOpen] = useState(false);
-  const [semester, setSemester] = useState<SemesterConfig>({ startDate: null });
-  const [semesterOpen, setSemesterOpen] = useState(false);
 
   const [importing, setImporting] = useState(false);
   const [candidates, setCandidates] = useState<CourseCandidate[] | null>(null);
@@ -88,7 +86,6 @@ export function CourseEditor({
   } | null>(null);
 
   const [week, setWeek] = useState<number>(baseWeek ?? 1);
-  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     if (baseWeek != null) setWeek(baseWeek);
@@ -96,10 +93,9 @@ export function CourseEditor({
 
   const load = useCallback(async () => {
     try {
-      const [cs, ps, sem] = await Promise.all([api.courses(), api.periods(), api.semester()]);
+      const [cs, ps] = await Promise.all([api.courses(), api.periods()]);
       setCourses(cs);
       setPeriods(ps);
-      setSemester(sem);
       setError(null);
     } catch (e) {
       setError((e as Error).message);
@@ -188,17 +184,6 @@ export function CourseEditor({
     try {
       setPeriods(await api.savePeriods(periods));
       setNotice(t("periods.saved"));
-      window.setTimeout(() => setNotice(null), 2000);
-    } catch (e) {
-      setError((e as Error).message);
-    }
-  };
-
-  const saveSemester = async () => {
-    try {
-      setSemester(await api.saveSemester(semester));
-      setNotice(t("semester.saved"));
-      onChanged?.();
       window.setTimeout(() => setNotice(null), 2000);
     } catch (e) {
       setError((e as Error).message);
@@ -297,7 +282,7 @@ export function CourseEditor({
     });
   };
 
-  const visible = showAll ? courses : courses.filter((c) => activeInWeek(c, week));
+  const visible = courses.filter((c) => activeInWeek(c, week));
 
   return (
     <div className="space-y-2.5">
@@ -322,17 +307,9 @@ export function CourseEditor({
         <span className="text-[10px] text-ink-3">
           {t("course.count", { n: visible.length })}
         </span>
-        <button
-          type="button"
-          onClick={() => setShowAll((v) => !v)}
-          className={`ml-auto rounded-full border px-2.5 py-1 text-[10.5px] transition-colors ${
-            showAll
-              ? "border-accent bg-accent text-white"
-              : "border-line bg-surface text-ink-3 hover:border-accent"
-          }`}
-        >
-          {t("course.showAll")}
-        </button>
+        {baseWeek == null ? (
+          <span className="ml-auto text-[10px] text-[#c8c4bc]">{t("course.setSemesterHint")}</span>
+        ) : null}
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -346,16 +323,6 @@ export function CourseEditor({
           }`}
         >
           {t("periods.title")}
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setSemesterOpen((v) => !v)}
-          className={`rounded-full border px-2.5 py-1 text-[10.5px] transition-colors ${
-            semesterOpen ? "border-accent bg-accent text-white" : "border-line bg-surface text-ink-3 hover:border-accent"
-          }`}
-        >
-          {t("semester.title")}
         </button>
 
         <button
@@ -435,42 +402,6 @@ export function CourseEditor({
             >
               {t("common.save")}
             </button>
-          </div>
-        </div>
-      ) : null}
-
-      {semesterOpen ? (
-        <div className="space-y-2 rounded-2xl border border-line bg-surface p-3">
-          <p className="text-[10.5px] text-ink-3">{t("semester.hint")}</p>
-          <div className="flex flex-wrap items-center gap-2 text-[11px] text-ink-2">
-            <label className="flex items-center gap-1">
-              {t("semester.first")}
-              <input
-                type="date"
-                value={semester.startDate ?? ""}
-                onChange={(e) => setSemester({ startDate: e.target.value || null })}
-                className="rounded-lg border border-line bg-surface-2 px-1.5 py-1 tabular-nums outline-none"
-              />
-            </label>
-            <button
-              type="button"
-              onClick={() => void saveSemester()}
-              className="ml-auto rounded-lg bg-accent px-3 py-1.5 text-[10.5px] font-semibold text-white"
-            >
-              {t("common.save")}
-            </button>
-            {semester.startDate ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setSemester({ startDate: null });
-                  void api.saveSemester({ startDate: null }).then(() => onChanged?.());
-                }}
-                className="rounded-lg border border-line px-3 py-1.5 text-[10.5px] text-ink-3"
-              >
-                {t("semester.clear")}
-              </button>
-            ) : null}
           </div>
         </div>
       ) : null}
@@ -701,8 +632,12 @@ export function CourseEditor({
 
       {visible.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-line bg-surface-2 px-4 py-8 text-center">
-          <p className="text-[11.5px] text-ink-3">{t("course.empty")}</p>
-          <p className="mt-1.5 text-[10px] text-[#c8c4bc]">{t("course.emptyHint")}</p>
+          <p className="text-[11.5px] text-ink-3">
+            {courses.length > 0 ? t("course.noneThisWeek", { n: week }) : t("course.empty")}
+          </p>
+          <p className="mt-1.5 text-[10px] text-[#c8c4bc]">
+            {courses.length > 0 ? t("course.noneThisWeekHint") : t("course.emptyHint")}
+          </p>
         </div>
       ) : (
         <div className="grid gap-2 lg:grid-cols-2">

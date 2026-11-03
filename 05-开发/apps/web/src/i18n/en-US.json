@@ -124,7 +124,10 @@
     "weekRange": "Range",
     "weekSuffix": "w",
     "clickToEdit": "Click to edit",
-    "showAll": "Show all"
+    "showAll": "Show all",
+    "setSemesterHint": "No term set — add week 1's Monday in Settings",
+    "noneThisWeek": "No classes in week {{n}}",
+    "noneThisWeekHint": "If there should be some, check that course's week rule"
   },
   "periods": {
     "title": "Periods",
@@ -139,6 +142,8 @@
     "hint": "Set the Monday of week 1; the week counter follows it. Leave empty to hide.",
     "first": "Week 1 Monday",
     "saved": "Term saved",
+    "cleared": "Term cleared",
+    "unset": "Not set",
     "clear": "Clear"
   },
   "settings": {
