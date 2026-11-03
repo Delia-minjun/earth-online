@@ -592,35 +592,37 @@ export function TodayView() {
                 return (
                   <li
                     key={h.id}
-                    className="group rounded-lg px-1 py-1.5 transition-colors hover:bg-surface-2"
+                    className="group flex items-center gap-2 rounded-lg px-1 py-1.5 transition-colors hover:bg-surface-2"
                   >
-                    <div className="flex items-center gap-2">
-                      <span className="flex-1 text-[12px] text-ink">{h.name}</span>
-                      {(grid?.streak[h.id] ?? 0) > 1 ? (
-                        <span className="text-[9.5px] tabular-nums text-ink-3">
-                          {t("habit.streak", { n: grid?.streak[h.id] })}
-                        </span>
-                      ) : null}
-                      <button
-                        type="button"
-                        onClick={() => void removeHabit(h.id)}
-                        className="text-[12px] text-[#a9a49b] opacity-100 transition-opacity hover:text-warn md:opacity-0 md:group-hover:opacity-100"
-                        aria-label="delete"
-                      >
-                        ×
-                      </button>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-baseline gap-2">
+                        <span className="truncate text-[12px] text-ink">{h.name}</span>
+                        {(grid?.streak[h.id] ?? 0) > 1 ? (
+                          <span className="shrink-0 text-[9.5px] tabular-nums text-ink-3">
+                            {t("habit.streak", { n: grid?.streak[h.id] })}
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className="mt-1 flex gap-[3px]">
+                        {last14.map((d) => (
+                          <span
+                            key={d}
+                            title={d}
+                            className={`h-2 w-[13px] rounded-[2px] ${
+                              marks.has(d) ? "bg-accent" : "bg-[#e8e4dc]"
+                            }`}
+                          />
+                        ))}
+                      </div>
                     </div>
-                    <div className="mt-1 flex gap-[3px]">
-                      {last14.map((d) => (
-                        <span
-                          key={d}
-                          title={d}
-                          className={`h-2 w-[13px] rounded-[2px] ${
-                            marks.has(d) ? "bg-accent" : "bg-[#e8e4dc]"
-                          }`}
-                        />
-                      ))}
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => void removeHabit(h.id)}
+                      className="shrink-0 self-center text-[12px] leading-none text-[#a9a49b] opacity-100 transition-opacity hover:text-warn md:opacity-0 md:group-hover:opacity-100"
+                      aria-label="delete"
+                    >
+                      ×
+                    </button>
                   </li>
                 );
               })}
