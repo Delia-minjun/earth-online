@@ -69,8 +69,8 @@ export default function App() {
 
   const short = (d: string) => d.slice(5).replace("-", "/");
   const isToday = view === "today";
-  /** 今日页在宽屏下放宽，好放下右侧的时间轴栏 */
-  const shellWidth = isToday ? "max-w-[1180px]" : "max-w-3xl";
+  /** 所有栏目共用同一个正文宽度：1180px，和「今日」保持一致 */
+  const shellWidth = "max-w-[1180px]";
   /** 月历开关放在标题旁，由周视图消费 */
   const [calOpen, setCalOpen] = useState(false);
   const isReward = view === "reward";
