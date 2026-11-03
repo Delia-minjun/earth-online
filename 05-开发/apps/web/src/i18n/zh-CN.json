@@ -118,6 +118,34 @@
     "badHint": "哪件没做到，为什么",
     "nextHint": "明天只改一件什么"
   },
+  "money": {
+    "title": "记账",
+    "todaySpent": "今日",
+    "add": "记一笔",
+    "uncategorized": "未分类",
+    "monthSpent": "本月 {{n}}",
+    "left": "剩 {{n}}",
+    "over": "超支 {{n}}",
+    "detail": "分类",
+    "collapse": "收起",
+    "noRecords": "本月还没有记录"
+  },
+  "body": {
+    "title": "身体",
+    "weightPlaceholder": "体重",
+    "twoWeeks": "近两周"
+  },
+  "meals": {
+    "title": "饮食",
+    "breakfast": "早",
+    "lunch": "午",
+    "dinner": "晚",
+    "snack": "加",
+    "breakfastHint": "吃了什么",
+    "lunchHint": "吃了什么",
+    "dinnerHint": "吃了什么",
+    "snackHint": "零食 / 加餐"
+  },
   "sub": {
     "week": "这一周的课程与安排",
     "projects": "把长期的事拆成项目，再拆成任务",

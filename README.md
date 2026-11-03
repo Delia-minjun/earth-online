@@ -19,7 +19,7 @@
 - **原型**：三张高保真图在 `02-设计/原型/`（周视图 / 手机今日 / 奖赏页）。
 - **技术**：已定方案，见 `04-技术方案/技术方案.md`（P0–P8 分阶段）。服务器先跑本机，两周后再定是否升级。
 - **代码**：P1 已完成（除学习模块与奖惩经济，属 P3/P5）。启动：双击 `05-开发/start.cmd`，或 `node 05-开发/apps/server/src/index.ts` 后打开 http://127.0.0.1:7788 。
-- **测试**：双击 `05-开发/test.cmd`，或 `node --test --test-isolation=none test/*.test.ts`（在 `05-开发/apps/server` 下）。23 个用例覆盖周次规则与主要接口。
+- **测试**：双击 `05-开发/test.cmd`，或 `node --test test/weeks.test.ts test/api.test.ts test/p2.test.ts`（在 `05-开发/apps/server` 下）。32 个用例覆盖周次规则、记账/身体/饮食与主要接口。每个测试文件用独立的临时数据库，**不要用 `--test-isolation=none` 合并跑**，否则会共用同一个库。
 
 ## 需求速览
 

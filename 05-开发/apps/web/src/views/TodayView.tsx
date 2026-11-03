@@ -11,6 +11,7 @@ import {
   type ApiTask,
 } from "../api";
 import { Card } from "../components/Card";
+import { BodyCard, MealsCard, MoneyCard } from "../components/Records";
 
 function Mini({
   title,
@@ -616,17 +617,11 @@ export function TodayView() {
             </div>
           </Mini>
 
-          <Mini title={t("today.money")} action={<span className="text-[9.5px] text-[#c8c4bc]">P2</span>}>
-            <p className="text-[11px] text-ink-3">{t("today.moneyPending")}</p>
-          </Mini>
+          <MoneyCard date={day.date} />
 
-          <Mini title={t("today.body")} action={<span className="text-[9.5px] text-[#c8c4bc]">P2</span>}>
-            <p className="text-[11px] text-ink-3">{t("today.bodyPending")}</p>
-          </Mini>
+          <BodyCard date={day.date} />
 
-          <Mini title={t("today.meals")} action={<span className="text-[9.5px] text-[#c8c4bc]">P2</span>}>
-            <p className="text-[11px] text-ink-3">{t("today.mealsPending")}</p>
-          </Mini>
+          <MealsCard date={day.date} />
 
           <Mini
             title={t("today.notes")}

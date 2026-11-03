@@ -117,6 +117,34 @@
     "badHint": "What didn't, and why",
     "nextHint": "One thing to change tomorrow"
   },
+  "money": {
+    "title": "Money",
+    "todaySpent": "today",
+    "add": "Add",
+    "uncategorized": "Uncategorized",
+    "monthSpent": "{{n}} this month",
+    "left": "{{n}} left",
+    "over": "{{n}} over",
+    "detail": "Breakdown",
+    "collapse": "Collapse",
+    "noRecords": "Nothing recorded this month"
+  },
+  "body": {
+    "title": "Body",
+    "weightPlaceholder": "Weight",
+    "twoWeeks": "2-week"
+  },
+  "meals": {
+    "title": "Meals",
+    "breakfast": "AM",
+    "lunch": "Noon",
+    "dinner": "PM",
+    "snack": "Snack",
+    "breakfastHint": "What did you eat",
+    "lunchHint": "What did you eat",
+    "dinnerHint": "What did you eat",
+    "snackHint": "Snacks"
+  },
   "sub": {
     "week": "This week's classes and plans",
     "projects": "Break long-running work into projects, then tasks",

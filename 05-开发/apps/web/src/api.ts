@@ -89,6 +89,63 @@ export interface ApiProjectTask {
   scheduledDate: string | null;
 }
 
+export interface ApiMoneyCategory {
+  id: string;
+  name: string;
+  nameEn: string | null;
+  kind: "expense" | "income";
+  color: string | null;
+  sort: number;
+}
+
+export interface ApiMoneyEntry {
+  id: string;
+  date: string;
+  kind: "expense" | "income";
+  amount: number;
+  categoryId: string | null;
+  note: string | null;
+  categoryName: string | null;
+  categoryColor: string | null;
+}
+
+export interface ApiMoneyMonth {
+  month: string;
+  entries: ApiMoneyEntry[];
+  summary: {
+    expense: number;
+    income: number;
+    byCategory: Record<string, { name: string; amount: number; color: string | null }>;
+  };
+}
+
+export interface ApiBudget {
+  total: number;
+  byCategory: Record<string, number>;
+}
+
+export interface ApiBodyLog {
+  date: string;
+  weight: number | null;
+  workout: string | null;
+}
+
+export interface ApiMealDay {
+  date: string;
+  breakfast: string;
+  lunch: string;
+  dinner: string;
+  snack: string;
+}
+
+export interface ApiCalendarDay {
+  blocks: number;
+  minutes: number;
+  tasks: number;
+  done: number;
+  expense: number;
+}
+
 export interface ApiJournal {
   date: string;
   mood: number | null;
@@ -273,6 +330,37 @@ export const api = {
   ) => request<ApiProject>(`/projects/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
   deleteProject: (id: string) => request<{ ok: true }>(`/projects/${id}`, { method: "DELETE" }),
   projectTasks: (id: string) => request<ApiProjectTask[]>(`/projects/${id}/tasks`),
+
+  moneyCategories: () => request<ApiMoneyCategory[]>("/money/categories"),
+  addMoneyCategory: (input: { name: string; kind?: "expense" | "income" }) =>
+    request<ApiMoneyCategory>("/money/categories", { method: "POST", body: JSON.stringify(input) }),
+  deleteMoneyCategory: (id: string) =>
+    request<{ ok: true }>(`/money/categories/${id}`, { method: "DELETE" }),
+
+  moneyMonth: (month: string) => request<ApiMoneyMonth>(`/money?month=${month}`),
+  addMoney: (input: {
+    date?: string;
+    kind?: "expense" | "income";
+    amount: number;
+    categoryId?: string;
+    note?: string;
+  }) => request<ApiMoneyEntry>("/money", { method: "POST", body: JSON.stringify(input) }),
+  deleteMoney: (id: string) => request<{ ok: true }>(`/money/${id}`, { method: "DELETE" }),
+
+  budget: () => request<ApiBudget>("/settings/budget"),
+  saveBudget: (patch: ApiBudget) =>
+    request<ApiBudget>("/settings/budget", { method: "PUT", body: JSON.stringify(patch) }),
+
+  bodyLog: (from: string, to: string) => request<ApiBodyLog[]>(`/body?from=${from}&to=${to}`),
+  saveBody: (date: string, patch: { weight?: number | null; workout?: string | null }) =>
+    request<ApiBodyLog>(`/body/${date}`, { method: "PUT", body: JSON.stringify(patch) }),
+
+  meals: (date: string) => request<ApiMealDay>(`/meals/${date}`),
+  saveMeals: (date: string, patch: Partial<Omit<ApiMealDay, "date">>) =>
+    request<ApiMealDay>(`/meals/${date}`, { method: "PUT", body: JSON.stringify(patch) }),
+
+  calendar: (month: string) =>
+    request<{ month: string; byDate: Record<string, ApiCalendarDay> }>(`/calendar/${month}`),
 
   courses: () => request<ApiCourse[]>("/courses"),
   addCourse: (input: {
