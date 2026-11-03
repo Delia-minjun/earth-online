@@ -132,7 +132,9 @@
   "body": {
     "title": "Body",
     "weightPlaceholder": "Weight",
-    "twoWeeks": "2-week"
+    "twoWeeks": "2-week",
+    "last30": "Last 30 days",
+    "noWeight": "No weight logged yet — enter one above and the curve appears"
   },
   "meals": {
     "title": "Meals",

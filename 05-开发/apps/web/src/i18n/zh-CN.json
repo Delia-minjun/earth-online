@@ -133,7 +133,9 @@
   "body": {
     "title": "身体",
     "weightPlaceholder": "体重",
-    "twoWeeks": "近两周"
+    "twoWeeks": "近两周",
+    "last30": "近 30 天",
+    "noWeight": "还没有体重记录，在上面填一次就会出现曲线"
   },
   "meals": {
     "title": "饮食",

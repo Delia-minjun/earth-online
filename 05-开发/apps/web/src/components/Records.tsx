@@ -194,7 +194,7 @@ export function BodyCard({ date }: { date: string }) {
 
   const load = useCallback(async () => {
     const from = new Date(`${date}T00:00:00`);
-    from.setDate(from.getDate() - 13);
+    from.setDate(from.getDate() - 29);
     const fromStr = `${from.getFullYear()}-${String(from.getMonth() + 1).padStart(2, "0")}-${String(
       from.getDate(),
     ).padStart(2, "0")}`;
@@ -236,25 +236,13 @@ export function BodyCard({ date }: { date: string }) {
   const first = weighed[0];
   const delta = last && first && weighed.length > 1 ? last.weight! - first.weight! : null;
 
-  // 迷你曲线
-  const points = weighed.map((h) => h.weight as number);
-  const min = points.length ? Math.min(...points) : 0;
-  const max = points.length ? Math.max(...points) : 0;
-  const path = weighed
-    .map((h, i) => {
-      const x = weighed.length === 1 ? 50 : (i / (weighed.length - 1)) * 100;
-      const y = max === min ? 50 : 100 - ((h.weight! - min) / (max - min)) * 100;
-      return `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`;
-    })
-    .join(" ");
-
   return (
     <Card
       title={t("body.title")}
       action={
         delta != null ? (
           <span className="tabular-nums">
-            {t("body.twoWeeks")} {delta > 0 ? "+" : ""}
+            {t("body.last30")} {delta > 0 ? "+" : ""}
             {delta.toFixed(1)}
           </span>
         ) : null
@@ -273,11 +261,6 @@ export function BodyCard({ date }: { date: string }) {
           className="w-20 rounded-lg border border-line bg-surface-2 px-2 py-1 text-[12px] tabular-nums text-ink outline-none placeholder:text-[#c8c4bc]"
         />
         <span className="text-[10px] text-ink-3">kg</span>
-        {path ? (
-          <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="ml-1 h-7 flex-1">
-            <path d={path} fill="none" stroke="#9BA7B0" strokeWidth="2" vectorEffect="non-scaling-stroke" />
-          </svg>
-        ) : null}
       </div>
 
       <div className="mt-2 flex flex-wrap gap-1">
@@ -299,7 +282,78 @@ export function BodyCard({ date }: { date: string }) {
           );
         })}
       </div>
+
+      <div className="mt-3 border-t border-line-2 pt-2.5">
+        {weighed.length ? (
+          <WeightChart points={weighed} />
+        ) : (
+          <p className="text-[10px] text-[#c8c4bc]">{t("body.noWeight")}</p>
+        )}
+      </div>
     </Card>
+  );
+}
+
+/** 近一个月的体重曲线 */
+function WeightChart({ points }: { points: ApiBodyLog[] }) {
+  const W = 320;
+  const H = 88;
+  const PX = 6;
+  const PY = 16;
+
+  const vals = points.map((p) => p.weight as number);
+  const min = Math.min(...vals);
+  const max = Math.max(...vals);
+  const span = max - min || 1;
+  const n = points.length;
+
+  const xAt = (i: number) => (n === 1 ? W / 2 : PX + (i / (n - 1)) * (W - 2 * PX));
+  const yAt = (v: number) => PY + (1 - (v - min) / span) * (H - 2 * PY);
+
+  const line =
+    n === 1
+      ? `M${xAt(0) - 14},${yAt(vals[0]!)} L${xAt(0) + 14},${yAt(vals[0]!)}`
+      : points
+          .map((p, i) => `${i ? "L" : "M"}${xAt(i).toFixed(1)},${yAt(p.weight as number).toFixed(1)}`)
+          .join(" ");
+  const area =
+    n === 1
+      ? ""
+      : `${line} L${xAt(n - 1).toFixed(1)},${H - PY} L${xAt(0).toFixed(1)},${H - PY} Z`;
+
+  return (
+    <div>
+      <div className="relative">
+        <svg
+          viewBox={`0 0 ${W} ${H}`}
+          preserveAspectRatio="none"
+          className="h-[88px] w-full"
+          role="img"
+          aria-label="weight chart"
+        >
+          {area ? <path d={area} fill="#8FA38E" fillOpacity="0.10" /> : null}
+          <path
+            d={line}
+            fill="none"
+            stroke="#8FA38E"
+            strokeWidth="2"
+            strokeLinejoin="round"
+            strokeLinecap="round"
+            vectorEffect="non-scaling-stroke"
+          />
+        </svg>
+        <span className="absolute right-0 top-0 text-[9px] tabular-nums text-ink-3">
+          {max.toFixed(1)}
+        </span>
+        <span className="absolute bottom-0 right-0 text-[9px] tabular-nums text-ink-3">
+          {min.toFixed(1)}
+        </span>
+      </div>
+      <div className="mt-1 flex items-center justify-between text-[9px] tabular-nums text-ink-3">
+        <span>{points[0]?.date.slice(5)}</span>
+        <span>{points[n - 1]?.date.slice(5)}</span>
+      </div>
+    </div>
   );
 }
 
