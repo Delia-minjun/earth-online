@@ -298,11 +298,11 @@ export function TodayView() {
                     </div>
                   </li>
                 ) : (
-                  <li key={f.id} className="group flex items-start gap-3 py-2.5 first:pt-0">
+                  <li key={f.id} className="group flex items-center gap-3 py-2.5 first:pt-0">
                     <button
                       type="button"
                       onClick={() => void toggleTask(f.id, f.status)}
-                      className={`mt-0.5 grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full border text-[9px] transition-colors ${
+                      className={`grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full border text-[9px] transition-colors ${
                         f.status === DONE
                           ? "border-accent bg-accent text-white"
                           : "border-line text-transparent hover:border-accent"
@@ -319,29 +319,29 @@ export function TodayView() {
                       >
                         {f.title}
                       </p>
-                      {f.overdue ? (
-                        <span className="mt-0.5 mr-1.5 inline-block rounded-full bg-warn-soft px-1.5 py-[1px] text-[9px] tabular-nums text-warn">
-                          {t("task.overdue")} {f.scheduled_date?.slice(5)}
-                        </span>
-                      ) : null}
                       {f.priority > 0 ? (
                         <span className="mt-0.5 inline-block text-[9px] text-[#b08b6a]">
                           {f.priority >= 2 ? t("task.priority2") : t("task.priority1")}
                         </span>
                       ) : null}
                     </div>
+                    {f.overdue ? (
+                      <span className="shrink-0 rounded-full bg-warn-soft px-1.5 py-[2px] text-[9px] tabular-nums text-warn">
+                        {t("task.overdue")} {f.scheduled_date?.slice(5)}
+                      </span>
+                    ) : null}
                     <button
                       type="button"
                       onClick={() => startEditTask(f)}
-                      className="shrink-0 text-[11px] text-[#a9a49b] opacity-100 transition-opacity hover:text-accent md:opacity-0 md:group-hover:opacity-100"
+                      className="shrink-0 rounded-full border border-line px-1.5 py-[1px] text-[9px] text-[#a9a49b] opacity-100 transition-colors hover:border-accent hover:bg-accent-soft hover:text-accent md:opacity-0 md:group-hover:opacity-100"
                       aria-label="edit"
                     >
-                      改
+                      {t("course.editRow")}
                     </button>
                     <button
                       type="button"
                       onClick={() => void removeTask(f.id)}
-                      className="shrink-0 text-[12px] text-[#a9a49b] opacity-100 transition-opacity hover:text-warn md:opacity-0 md:group-hover:opacity-100"
+                      className="shrink-0 text-[12px] leading-none text-[#a9a49b] opacity-100 transition-colors hover:text-warn md:opacity-0 md:group-hover:opacity-100"
                       aria-label="delete"
                     >
                       ×
