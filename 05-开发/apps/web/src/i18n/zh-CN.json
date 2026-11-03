@@ -124,6 +124,8 @@
     "weekRange": "范围",
     "weekSuffix": "周",
     "clickToEdit": "点一下修改",
+    "editMode": "编辑",
+    "editRow": "改",
     "showAll": "显示全部",
     "setSemesterHint": "还没设学期：去「设置」里填第 1 周的周一",
     "noneThisWeek": "第 {{n}} 周没有课",

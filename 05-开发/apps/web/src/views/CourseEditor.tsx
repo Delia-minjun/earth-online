@@ -67,6 +67,9 @@ export function CourseEditor({
     count: 12,
   });
   const [periodsOpen, setPeriodsOpen] = useState(false);
+  const [semester, setSemester] = useState<SemesterConfig>({ startDate: null });
+  const [semesterOpen, setSemesterOpen] = useState(false);
+  const [editMode, setEditMode] = useState(false);
 
   const [importing, setImporting] = useState(false);
   const [candidates, setCandidates] = useState<CourseCandidate[] | null>(null);
@@ -93,9 +96,10 @@ export function CourseEditor({
 
   const load = useCallback(async () => {
     try {
-      const [cs, ps] = await Promise.all([api.courses(), api.periods()]);
+      const [cs, ps, sem] = await Promise.all([api.courses(), api.periods(), api.semester()]);
       setCourses(cs);
       setPeriods(ps);
+      setSemester(sem);
       setError(null);
     } catch (e) {
       setError((e as Error).message);
@@ -184,6 +188,17 @@ export function CourseEditor({
     try {
       setPeriods(await api.savePeriods(periods));
       setNotice(t("periods.saved"));
+      window.setTimeout(() => setNotice(null), 2000);
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  };
+
+  const saveSemester = async () => {
+    try {
+      setSemester(await api.saveSemester(semester));
+      setNotice(t("semester.saved"));
+      onChanged?.();
       window.setTimeout(() => setNotice(null), 2000);
     } catch (e) {
       setError((e as Error).message);
@@ -327,6 +342,19 @@ export function CourseEditor({
 
         <button
           type="button"
+          onClick={() => setSemesterOpen((v) => !v)}
+          className={`rounded-full border px-2.5 py-1 text-[10.5px] transition-colors ${
+            semesterOpen ? "border-accent bg-accent text-white" : "border-line bg-surface text-ink-3 hover:border-accent"
+          }`}
+        >
+          {t("semester.title")}
+          {semester.startDate ? (
+            <span className="ml-1 text-[9px] opacity-70">{semester.startDate.slice(5)}</span>
+          ) : null}
+        </button>
+
+        <button
+          type="button"
           onClick={() => fileRef.current?.click()}
           disabled={importing}
           className="rounded-full border border-line bg-surface px-2.5 py-1 text-[10.5px] text-ink-3 transition-colors hover:border-accent hover:text-ink disabled:opacity-60"
@@ -344,6 +372,21 @@ export function CourseEditor({
             e.target.value = "";
           }}
         />
+
+        <button
+          type="button"
+          onClick={() => {
+            setEditMode((v) => !v);
+            setEditing(null);
+          }}
+          className={`rounded-full border px-2.5 py-1 text-[10.5px] transition-colors ${
+            editMode
+              ? "border-accent bg-accent text-white"
+              : "border-line bg-surface text-ink-3 hover:border-accent"
+          }`}
+        >
+          {t("course.editMode")}
+        </button>
 
         <button
           type="button"
@@ -402,6 +445,42 @@ export function CourseEditor({
             >
               {t("common.save")}
             </button>
+          </div>
+        </div>
+      ) : null}
+
+      {semesterOpen ? (
+        <div className="space-y-2 rounded-2xl border border-line bg-surface p-3">
+          <p className="text-[10.5px] text-ink-3">{t("semester.hint")}</p>
+          <div className="flex flex-wrap items-center gap-2 text-[11px] text-ink-2">
+            <label className="flex items-center gap-1">
+              {t("semester.first")}
+              <input
+                type="date"
+                value={semester.startDate ?? ""}
+                onChange={(e) => setSemester({ startDate: e.target.value || null })}
+                className="rounded-lg border border-line bg-surface-2 px-1.5 py-1 tabular-nums outline-none"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={() => void saveSemester()}
+              className="ml-auto rounded-lg bg-accent px-3 py-1.5 text-[10.5px] font-semibold text-white"
+            >
+              {t("common.save")}
+            </button>
+            {semester.startDate ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setSemester({ startDate: null });
+                  void api.saveSemester({ startDate: null }).then(() => onChanged?.());
+                }}
+                className="rounded-lg border border-line px-3 py-1.5 text-[10.5px] text-ink-3"
+              >
+                {t("semester.clear")}
+              </button>
+            ) : null}
           </div>
         </div>
       ) : null}
@@ -760,9 +839,13 @@ export function CourseEditor({
                     ) : (
                       <li
                         key={c.id}
-                        onClick={() => startEdit(c)}
-                        className="flex cursor-pointer items-center gap-2 rounded-md px-1 py-0.5 transition-colors hover:bg-surface-2"
-                        title={t("course.clickToEdit")}
+                        onClick={() => {
+                          if (editMode) startEdit(c);
+                        }}
+                        className={`flex items-center gap-2 rounded-md px-1 py-0.5 transition-colors ${
+                          editMode ? "cursor-pointer hover:bg-surface-2" : ""
+                        }`}
+                        title={editMode ? t("course.clickToEdit") : undefined}
                       >
                         <span className="w-[80px] shrink-0 text-[10px] tabular-nums text-ink-3">
                           {hhmm(c.start_min)}–{hhmm(c.end_min)}
@@ -780,6 +863,18 @@ export function CourseEditor({
                                 ? t("course.weekEven")
                                 : `${c.week_start ?? 1}-${c.week_end ?? "?"}${t("course.weekSuffix")}`}
                           </span>
+                        ) : null}
+                        {editMode ? (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              startEdit(c);
+                            }}
+                            className="shrink-0 rounded-full border border-line px-1.5 py-0.5 text-[9px] text-ink-3 transition-colors hover:border-accent hover:text-ink"
+                          >
+                            {t("course.editRow")}
+                          </button>
                         ) : null}
                         <button
                           type="button"

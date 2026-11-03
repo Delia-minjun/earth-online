@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, type AiConfigInfo, type SemesterConfig } from "../api";
+import { api, type AiConfigInfo } from "../api";
 import { Card } from "../components/Card";
 
 export function SettingsView() {
@@ -12,14 +12,12 @@ export function SettingsView() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
   const [models, setModels] = useState<{ all: string[]; vision: string[] } | null>(null);
-  const [semester, setSemester] = useState<SemesterConfig>({ startDate: null });
 
   const load = async () => {
-    const [next, sem] = await Promise.all([api.aiSettings(), api.semester()]);
+    const next = await api.aiSettings();
     setInfo(next);
     setModel(next.model);
     setBase(next.base);
-    setSemester(sem);
   };
 
   useEffect(() => {
@@ -92,34 +90,6 @@ export function SettingsView() {
       } else {
         setMessage({ kind: "err", text: `${t("settings.testFail")}：${res.detail}` });
       }
-    } catch (e) {
-      setMessage({ kind: "err", text: (e as Error).message });
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const saveSemester = async () => {
-    setBusy(true);
-    setMessage(null);
-    try {
-      const saved = await api.saveSemester({ startDate: semester.startDate });
-      setSemester(saved);
-      setMessage({ kind: "ok", text: t("semester.saved") });
-    } catch (e) {
-      setMessage({ kind: "err", text: (e as Error).message });
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const clearSemester = async () => {
-    setBusy(true);
-    setMessage(null);
-    try {
-      const saved = await api.saveSemester({ startDate: null });
-      setSemester(saved);
-      setMessage({ kind: "ok", text: t("semester.cleared") });
     } catch (e) {
       setMessage({ kind: "err", text: (e as Error).message });
     } finally {
@@ -246,42 +216,6 @@ export function SettingsView() {
           {models && models.vision.length === 0 ? (
             <p className="text-[10px] leading-relaxed text-[#c8c4bc]">{t("settings.noVisionHint")}</p>
           ) : null}        </div>
-      </Card>
-
-      <Card
-        title={t("semester.title")}
-        action={semester.startDate ? semester.startDate : t("semester.unset")}
-      >
-        <p className="text-[10.5px] leading-relaxed text-ink-3">{t("semester.hint")}</p>
-        <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-ink-2">
-          <label className="flex items-center gap-1">
-            {t("semester.first")}
-            <input
-              type="date"
-              value={semester.startDate ?? ""}
-              onChange={(e) => setSemester({ startDate: e.target.value || null })}
-              className="rounded-lg border border-line bg-surface-2 px-1.5 py-1 tabular-nums outline-none"
-            />
-          </label>
-          <button
-            type="button"
-            onClick={() => void saveSemester()}
-            disabled={busy}
-            className="rounded-lg bg-accent px-3 py-1.5 text-[10.5px] font-semibold text-white disabled:opacity-60"
-          >
-            {t("common.save")}
-          </button>
-          {semester.startDate ? (
-            <button
-              type="button"
-              onClick={() => void clearSemester()}
-              disabled={busy}
-              className="rounded-lg border border-line px-3 py-1.5 text-[10.5px] text-ink-3 disabled:opacity-60"
-            >
-              {t("semester.clear")}
-            </button>
-          ) : null}
-        </div>
       </Card>
 
       <Card title={t("settings.about")}>

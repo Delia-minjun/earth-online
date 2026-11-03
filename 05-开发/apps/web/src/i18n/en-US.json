@@ -124,6 +124,8 @@
     "weekRange": "Range",
     "weekSuffix": "w",
     "clickToEdit": "Click to edit",
+    "editMode": "Edit",
+    "editRow": "Edit",
     "showAll": "Show all",
     "setSemesterHint": "No term set — add week 1's Monday in Settings",
     "noneThisWeek": "No classes in week {{n}}",
