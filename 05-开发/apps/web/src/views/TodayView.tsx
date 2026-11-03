@@ -294,7 +294,7 @@ export function TodayView() {
     <div className="space-y-3.5">
       {error ? <p className="text-[10px] text-warn">{error}</p> : null}
 
-      <div className="space-y-3.5 lg:grid lg:grid-cols-2 lg:items-start lg:gap-3.5 lg:space-y-0 min-[1150px]:grid-cols-[1fr_1fr_17rem]">
+      <div className="today-grid space-y-3.5 lg:grid lg:grid-cols-2 lg:items-start lg:gap-3.5 lg:space-y-0">
         {/* 左：今天的计划 */}
         <div className="space-y-3.5">
           <Card title={t("today.focus")} action={`${doneCount}/${focus.length}`}>

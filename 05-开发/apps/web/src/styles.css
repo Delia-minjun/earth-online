@@ -32,3 +32,15 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
+
+/*
+ * 今日页三列：正文两列 + 右侧时间轴栏。
+ * 写在这里而不是用 min-[1150px]: 任意断点 —— Tailwind 会把任意断点排在 lg 之前，
+ * 结果永远被 lg:grid-cols-2 覆盖。这里不带 layer，优先级高于 utilities。
+ */
+@media (min-width: 1150px) {
+  .today-grid {
+    grid-template-columns: 1fr 1fr 17rem;
+  }
+}
+
