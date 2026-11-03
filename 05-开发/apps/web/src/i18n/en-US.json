@@ -195,7 +195,8 @@
   },
   "status": {
     "online": "Server online",
-    "offline": "Server offline"
+    "offline": "Server offline",
+    "offlineBanner": "Cannot reach the local server — changes may not be saved. This disappears once the server is back."
   },
   "action": {
     "lang": "中文 / EN",

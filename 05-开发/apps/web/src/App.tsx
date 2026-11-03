@@ -40,6 +40,21 @@ export default function App() {
     document.documentElement.lang = i18n.language;
   }, [i18n.language]);
 
+  // 连不上时每 5 秒重试一次，服务恢复后提示自动消失
+  useEffect(() => {
+    if (!failed) return;
+    const timer = window.setInterval(() => {
+      fetch("/api/health")
+        .then((r) => r.json() as Promise<HealthInfo>)
+        .then((h) => {
+          setHealth(h);
+          setFailed(false);
+        })
+        .catch(() => undefined);
+    }, 5000);
+    return () => window.clearInterval(timer);
+  }, [failed]);
+
   const lang = i18n.language as Lang;
   const dateText = useMemo(
     () =>
@@ -65,6 +80,12 @@ export default function App() {
       />
 
       <div className="flex min-h-full flex-1 flex-col pb-[72px] md:pb-0">
+        {failed && !health ? (
+          <div className="border-b border-[#f0d9d2] bg-warn-soft px-5 py-2 text-center text-[10.5px] leading-relaxed text-warn md:px-8">
+            {t("status.offlineBanner")}
+          </div>
+        ) : null}
+
         <header className="mx-auto flex w-full max-w-3xl items-start justify-between gap-4 px-5 pt-7 md:px-8 md:pt-9">
           <div className="min-w-0">
             <p className="text-[10px] uppercase tracking-[0.2em] text-ink-3">

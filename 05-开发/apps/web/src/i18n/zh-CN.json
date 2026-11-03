@@ -195,7 +195,8 @@
   },
   "status": {
     "online": "服务正常",
-    "offline": "服务未连接"
+    "offline": "服务未连接",
+    "offlineBanner": "连不上本地服务：改动可能保存不了。确认服务在运行后，这里会自动消失。"
   },
   "action": {
     "lang": "中文 / EN",
