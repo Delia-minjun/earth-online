@@ -462,25 +462,21 @@ export function TodayView() {
           <MealsCard date={day.date} />
         </div>
 
-        {/* 时间轴：宽屏时作为第三列固定在右侧，窄屏回到正文流里 */}
-        <aside className="min-[1150px]:sticky min-[1150px]:top-24 min-[1150px]:self-start">
-          <Card
-            title={t("today.timeline")}
-            action={
-              <button
-                type="button"
-                onClick={() => setBlockOpen((v) => !v)}
-                className={`rounded-full border px-2.5 py-1 text-[10.5px] transition-colors ${
-                  blockOpen
-                    ? "border-accent bg-accent text-white"
-                    : "border-line bg-surface text-ink-3 hover:border-accent hover:text-ink"
-                }`}
-              >
-                {t("action.add")}
-              </button>
-            }
-          >
-            <ul>
+        {/* 时间轴：宽屏时作为右侧固定栏，样式与左侧导航一致，不加卡片 */}
+        <aside className="min-[1150px]:sticky min-[1150px]:top-0 min-[1150px]:h-[calc(100vh-6rem)] min-[1150px]:self-start min-[1150px]:overflow-y-auto min-[1150px]:border-l min-[1150px]:border-line min-[1150px]:pl-5">
+          <header className="flex items-center justify-between">
+            <h2 className="text-[12px] font-semibold text-ink">{t("today.timeline")}</h2>
+            <button
+              type="button"
+              onClick={() => setBlockOpen((v) => !v)}
+              className="text-[14px] leading-none text-[#c2beb6] transition-colors hover:text-accent"
+              aria-label={t("action.add")}
+            >
+              {blockOpen ? "−" : "＋"}
+            </button>
+          </header>
+
+          <ul className="mt-3">
               {day.courses.map((c) => (
                 <li key={`course-${c.id}`} className="flex gap-3 py-2 first:pt-0">
                   <span className="w-10 shrink-0 pt-0.5 text-[10px] tabular-nums text-ink-3">
@@ -524,9 +520,6 @@ export function TodayView() {
                   </button>
                 </li>
               ))}
-              {day.blocks.length === 0 && day.courses.length === 0 ? (
-                <li className="py-2 text-[11.5px] text-ink-3">{t("today.timelineEmpty")}</li>
-              ) : null}
             </ul>
 
             {blockOpen ? (
@@ -594,7 +587,6 @@ export function TodayView() {
                 </div>
               </div>
             ) : null}
-          </Card>
         </aside>
       </div>
 
