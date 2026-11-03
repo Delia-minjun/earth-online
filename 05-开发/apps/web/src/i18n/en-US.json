@@ -102,6 +102,7 @@
   },
   "course": {
     "name": "Course name, e.g. Communication Studies",
+    "nameShort": "Course",
     "location": "Room",
     "count": "{{n}} classes",
     "empty": "No classes yet",

@@ -102,6 +102,7 @@
   },
   "course": {
     "name": "课程名，如：传播学概论",
+    "nameShort": "课程名",
     "location": "地点",
     "count": "{{n}} 节课",
     "empty": "还没有课程",

@@ -5,6 +5,21 @@ import { api, hhmm, type ApiCourse, type CourseCandidate, type PeriodsConfig, ty
 const SLOTS = Array.from({ length: 144 }, (_, i) => i * 10);
 const END_SLOTS = Array.from({ length: 144 }, (_, i) => (i + 1) * 10);
 
+/** 一条候选是否可以被导入 */
+const isOk = (c: CourseCandidate) =>
+  Boolean(c.name.trim()) &&
+  c.weekday != null &&
+  c.startMin != null &&
+  c.endMin != null &&
+  c.endMin > c.startMin;
+
+const minOf = (v: string): number | null => {
+  if (!v) return null;
+  const [h, m] = v.split(":").map(Number);
+  if (!Number.isFinite(h) || !Number.isFinite(m)) return null;
+  return (h as number) * 60 + (m as number);
+};
+
 export function CourseEditor({ onChanged }: { onChanged?: () => void }) {
   const { t, i18n } = useTranslation();
   const zh = i18n.language === "zh-CN";
@@ -146,13 +161,13 @@ export function CourseEditor({ onChanged }: { onChanged?: () => void }) {
   const confirmImport = async () => {
     if (!candidates) return;
     const list = candidates
-      .filter((c) => selected.has(c.key) && c.ok && c.weekday && c.startMin !== null && c.endMin !== null)
+      .filter((c) => selected.has(c.key) && isOk(c))
       .map((c) => ({
-        name: c.name,
+        name: c.name.trim(),
         weekday: c.weekday as number,
         startMin: c.startMin as number,
         endMin: c.endMin as number,
-        location: c.location || undefined,
+        location: c.location.trim() || undefined,
       }));
     if (list.length === 0) return;
     try {
@@ -171,6 +186,25 @@ export function CourseEditor({ onChanged }: { onChanged?: () => void }) {
       const next = new Set(prev);
       if (next.has(key)) next.delete(key);
       else next.add(key);
+      return next;
+    });
+  };
+
+  const updateCandidate = (key: string, patch: Partial<CourseCandidate>) => {
+    const cur = candidates?.find((c) => c.key === key);
+    setCandidates((prev) => (prev ? prev.map((c) => (c.key === key ? { ...c, ...patch } : c)) : prev));
+    // 改到有效了，就顺手勾上
+    if (cur) {
+      const merged = { ...cur, ...patch };
+      if (isOk(merged)) setSelected((s) => (s.has(key) ? s : new Set(s).add(key)));
+    }
+  };
+
+  const removeCandidate = (key: string) => {
+    setCandidates((prev) => (prev ? prev.filter((c) => c.key !== key) : prev));
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.delete(key);
       return next;
     });
   };
@@ -320,30 +354,75 @@ export function CourseEditor({ onChanged }: { onChanged?: () => void }) {
       {candidates ? (
         <div className="space-y-2 rounded-2xl border border-accent-soft bg-surface p-3">
           <p className="text-[11px] text-ink-2">{t("course.importHint")}</p>
-          <ul className="max-h-64 space-y-1 overflow-y-auto">
-            {candidates.map((c) => (
-              <li key={c.key} className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={selected.has(c.key)}
-                  disabled={!c.ok}
-                  onChange={() => toggle(c.key)}
-                  className="accent-[#8FA38E]"
-                />
-                <span className={`w-8 shrink-0 text-[10px] ${c.ok ? "text-ink-3" : "text-[#c8c4bc]"}`}>
-                  {c.weekday ? WD[c.weekday - 1] : "—"}
-                </span>
-                <span className={`w-[92px] shrink-0 text-[10px] tabular-nums ${c.ok ? "text-ink-3" : "text-[#c8c4bc]"}`}>
-                  {c.startMin !== null && c.endMin !== null
-                    ? `${hhmm(c.startMin)}–${hhmm(c.endMin)}`
-                    : t("course.unknownTime")}
-                </span>
-                <span className={`min-w-0 flex-1 truncate text-[11px] ${c.ok ? "text-ink" : "text-[#c8c4bc]"}`}>
-                  {c.name || "—"}
-                </span>
-                <span className="shrink-0 text-[9.5px] text-ink-3">{c.location}</span>
-              </li>
-            ))}
+          <ul className="max-h-80 space-y-1 overflow-y-auto">
+            {candidates.map((c) => {
+              const ok = isOk(c);
+              return (
+                <li
+                  key={c.key}
+                  className="flex flex-wrap items-center gap-1.5 rounded-lg px-1 py-1 odd:bg-surface-2"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selected.has(c.key)}
+                    disabled={!ok}
+                    onChange={() => toggle(c.key)}
+                    className="accent-[#8FA38E]"
+                  />
+                  <select
+                    value={c.weekday ?? ""}
+                    onChange={(e) =>
+                      updateCandidate(c.key, {
+                        weekday: e.target.value ? Number(e.target.value) : null,
+                      })
+                    }
+                    className="w-[62px] rounded-md border border-line bg-surface px-1 py-0.5 text-[10.5px] text-ink outline-none"
+                  >
+                    <option value="">—</option>
+                    {WD.map((w, i) => (
+                      <option key={w} value={i + 1}>
+                        {w}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="time"
+                    step={600}
+                    value={c.startMin !== null ? hhmm(c.startMin) : ""}
+                    onChange={(e) => updateCandidate(c.key, { startMin: minOf(e.target.value) })}
+                    className="w-[84px] rounded-md border border-line bg-surface px-1 py-0.5 text-[10.5px] tabular-nums text-ink outline-none"
+                  />
+                  <span className="text-[10px] text-ink-3">–</span>
+                  <input
+                    type="time"
+                    step={600}
+                    value={c.endMin !== null ? hhmm(c.endMin) : ""}
+                    onChange={(e) => updateCandidate(c.key, { endMin: minOf(e.target.value) })}
+                    className="w-[84px] rounded-md border border-line bg-surface px-1 py-0.5 text-[10.5px] tabular-nums text-ink outline-none"
+                  />
+                  <input
+                    value={c.name}
+                    onChange={(e) => updateCandidate(c.key, { name: e.target.value })}
+                    placeholder={t("course.nameShort")}
+                    className="min-w-[120px] flex-1 rounded-md border border-line bg-surface px-1.5 py-0.5 text-[11px] text-ink outline-none placeholder:text-[#c8c4bc]"
+                  />
+                  <input
+                    value={c.location}
+                    onChange={(e) => updateCandidate(c.key, { location: e.target.value })}
+                    placeholder={t("course.location")}
+                    className="w-[96px] rounded-md border border-line bg-surface px-1.5 py-0.5 text-[10.5px] text-ink outline-none placeholder:text-[#c8c4bc]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeCandidate(c.key)}
+                    className="shrink-0 text-[12px] text-[#a9a49b] transition-colors hover:text-warn"
+                    aria-label="remove"
+                  >
+                    ×
+                  </button>
+                </li>
+              );
+            })}
           </ul>
           <div className="flex items-center gap-2">
             <span className="text-[10px] text-ink-3">{t("course.selected", { n: selected.size })}</span>
