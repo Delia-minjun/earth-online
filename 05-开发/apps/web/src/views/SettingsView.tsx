@@ -11,6 +11,7 @@ export function SettingsView() {
   const [base, setBase] = useState("https://api.moonshot.cn/v1");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+  const [models, setModels] = useState<string[] | null>(null);
 
   const load = async () => {
     const next = await api.aiSettings();
@@ -67,6 +68,24 @@ export function SettingsView() {
           ? { kind: "ok", text: t("settings.testOk") }
           : { kind: "err", text: `${t("settings.testFail")}：${res.detail}` },
       );
+    } catch (e) {
+      setMessage({ kind: "err", text: (e as Error).message });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const fetchModels = async () => {
+    setBusy(true);
+    setMessage(null);
+    try {
+      const res = await api.listAiModels();
+      if (res.ok) {
+        setModels(res.models);
+        setMessage({ kind: "ok", text: t("settings.modelsFound", { n: res.models.length }) });
+      } else {
+        setMessage({ kind: "err", text: `${t("settings.testFail")}：${res.detail}` });
+      }
     } catch (e) {
       setMessage({ kind: "err", text: (e as Error).message });
     } finally {
@@ -131,11 +150,11 @@ export function SettingsView() {
             </button>
             <button
               type="button"
-              onClick={() => void test()}
+              onClick={() => void fetchModels()}
               disabled={busy || !info?.configured}
               className="rounded-lg border border-line px-3 py-1.5 text-[10.5px] text-ink-2 disabled:opacity-50"
             >
-              {t("settings.test")}
+              {t("settings.fetchModels")}
             </button>
             {info?.configured ? (
               <button
@@ -153,6 +172,25 @@ export function SettingsView() {
             <p className={`text-[10.5px] ${message.kind === "ok" ? "text-accent" : "text-warn"}`}>
               {message.text}
             </p>
+          ) : null}
+
+          {models ? (
+            <div className="flex flex-wrap gap-1.5 pt-0.5">
+              {models.map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setModel(m)}
+                  className={`rounded-full border px-2.5 py-1 text-[10px] transition-colors ${
+                    model === m
+                      ? "border-accent bg-accent text-white"
+                      : "border-line bg-surface text-ink-3 hover:border-accent"
+                  }`}
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
           ) : null}
         </div>
       </Card>

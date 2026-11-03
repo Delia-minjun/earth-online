@@ -113,7 +113,7 @@
     "imported": "Imported {{n}}, skipped {{m}}",
     "selected": "{{n}} selected",
     "unknownTime": "time unknown",
-    "nokey": "No Kimi API key yet — put it in 05-开发/data/kimi-key.txt or set LIFE_KIMI_API_KEY"
+    "nokey": "No API key yet — add one in Settings, or set LIFE_AI_API_KEY"
   },
   "periods": {
     "title": "Periods",
@@ -132,7 +132,9 @@
   },
   "settings": {
     "ai": "Model API",
-    "aiHint": "Reading a timetable screenshot needs a vision model (Kimi's kimi-latest supports images). The key stays on this machine.",
+    "aiHint": "Any OpenAI-compatible endpoint works; defaults to DeepSeek. Reading a timetable screenshot needs a vision model (DeepSeek's V4-Flash-Vision series) — plain text models like deepseek-chat cannot read images. The key stays on this machine.",
+    "fetchModels": "Fetch models",
+    "modelsFound": "Found {{n}} models — click one to fill it in",
     "configured": "Configured",
     "notConfigured": "Not configured",
     "current": "In use",

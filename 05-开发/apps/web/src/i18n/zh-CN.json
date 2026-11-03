@@ -113,7 +113,7 @@
     "imported": "已导入 {{n}} 节，跳过 {{m}} 节",
     "selected": "已选 {{n}} 条",
     "unknownTime": "时间未知",
-    "nokey": "还没配置 Kimi API Key：把 key 写进 05-开发/data/kimi-key.txt，或设环境变量 LIFE_KIMI_API_KEY"
+    "nokey": "还没配置 API Key：去「设置」里填，或设环境变量 LIFE_AI_API_KEY"
   },
   "periods": {
     "title": "作息",
@@ -132,7 +132,9 @@
   },
   "settings": {
     "ai": "模型 API",
-    "aiHint": "课表截图识别需要能读图的模型（Kimi 的 kimi-latest 支持图片）。Key 只存在这台电脑上。",
+    "aiHint": "兼容 OpenAI 接口的服务都能用，默认指向 DeepSeek。课表截图识别需要选能读图的模型（DeepSeek 的 V4-Flash-Vision 系列），deepseek-chat 这类纯文本模型读不了图。Key 只存在这台电脑上。",
+    "fetchModels": "获取可用模型",
+    "modelsFound": "找到 {{n}} 个模型，点一下填入",
     "configured": "已配置",
     "notConfigured": "未配置",
     "current": "当前使用",

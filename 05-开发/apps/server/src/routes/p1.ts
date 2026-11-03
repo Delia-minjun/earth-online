@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { getDb } from "../db.ts";
 import { buildWeek, isoWeekOf, weekId } from "../week.ts";
-import { parseTimetableImage, resolveAiConfig, testAiConfig } from "../lib/kimi.ts";
+import { listModels, parseTimetableImage, resolveAiConfig, testAiConfig } from "../lib/ai.ts";
 import {
   DEFAULT_PERIODS,
   getSetting,
@@ -466,6 +466,11 @@ api.post("/settings/ai/test", async (c) => {
   return c.json(result, result.ok ? 200 : 400);
 });
 
+api.get("/settings/ai/models", async (c) => {
+  const result = await listModels(resolveAiConfig());
+  return c.json(result, result.ok ? 200 : 400);
+});
+
 /* ---------------- periods & timetable import ---------------- */
 
 api.get("/settings/periods", (c) => c.json(getSetting<PeriodsConfig>("periods", DEFAULT_PERIODS)));
@@ -505,7 +510,7 @@ api.post("/courses/parse-image", async (c) => {
   } catch (e) {
     const msg = (e as Error).message;
     if (msg === "NOKEY") {
-      return c.json({ error: "nokey", message: "没有配置 Kimi API Key" }, 400);
+      return c.json({ error: "nokey", message: "没有配置 API Key" }, 400);
     }
     return c.json({ error: "vision_failed", message: msg }, 502);
   }

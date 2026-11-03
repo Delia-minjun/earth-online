@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { DATA_DIR } from "../db.ts";
 import { getSetting } from "./settings.ts";
 
-const KEY_FILE = join(DATA_DIR, "kimi-key.txt");
+const KEY_FILES = [join(DATA_DIR, "ai-key.txt"), join(DATA_DIR, "kimi-key.txt")];
 
 export interface AiConfig {
   apiKey: string;
@@ -19,19 +19,30 @@ interface StoredAi {
   base?: string;
 }
 
+const DEFAULT_BASE = "https://api.deepseek.com/v1";
+const DEFAULT_MODEL = "deepseek-chat";
+
 function fileKey(): string {
-  try {
-    if (existsSync(KEY_FILE)) return readFileSync(KEY_FILE, "utf8").trim();
-  } catch {
-    /* ignore */
+  for (const f of KEY_FILES) {
+    try {
+      if (existsSync(f)) {
+        const v = readFileSync(f, "utf8").trim();
+        if (v) return v;
+      }
+    } catch {
+      /* ignore */
+    }
   }
   return "";
 }
 
-/** 优先级：环境变量 → 数据库设置 → data/kimi-key.txt */
+/** 优先级：环境变量 → 数据库设置 → data/ai-key.txt（兼容旧的 kimi-key.txt） */
 export function resolveAiConfig(): AiConfig {
   const stored = getSetting<StoredAi>("ai", {});
-  const envKey = process.env.LIFE_KIMI_API_KEY?.trim() ?? "";
+  const envKey =
+    process.env.LIFE_AI_API_KEY?.trim() ||
+    process.env.LIFE_KIMI_API_KEY?.trim() ||
+    "";
   const dbKey = (stored.apiKey ?? "").trim();
   const fKey = fileKey();
 
@@ -41,8 +52,8 @@ export function resolveAiConfig(): AiConfig {
   return {
     apiKey,
     source,
-    model: stored.model?.trim() || process.env.LIFE_KIMI_MODEL?.trim() || "kimi-latest",
-    base: stored.base?.trim() || process.env.LIFE_KIMI_BASE?.trim() || "https://api.moonshot.cn/v1",
+    model: stored.model?.trim() || process.env.LIFE_AI_MODEL?.trim() || DEFAULT_MODEL,
+    base: stored.base?.trim() || process.env.LIFE_AI_BASE?.trim() || DEFAULT_BASE,
   };
 }
 
@@ -96,7 +107,7 @@ export async function parseTimetableImage(base64: string, mime: string): Promise
   const res = await fetch(`${cfg.base.replace(/\/$/, "")}/chat/completions`, {
     method: "POST",
     headers: { "content-type": "application/json", authorization: `Bearer ${cfg.apiKey}` },
-    signal: AbortSignal.timeout(90_000),
+    signal: AbortSignal.timeout(120_000),
     body: JSON.stringify({
       model: cfg.model,
       temperature: 0,
@@ -114,7 +125,7 @@ export async function parseTimetableImage(base64: string, mime: string): Promise
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`Kimi ${res.status}: ${text.slice(0, 180)}`);
+    throw new Error(`${res.status}: ${text.slice(0, 200)}`);
   }
 
   const data = (await res.json()) as { choices?: { message?: { content?: string } }[] };
@@ -128,11 +139,32 @@ export async function testAiConfig(cfg: AiConfig): Promise<{ ok: boolean; detail
   try {
     const res = await fetch(`${cfg.base.replace(/\/$/, "")}/models`, {
       headers: { authorization: `Bearer ${cfg.apiKey}` },
-      signal: AbortSignal.timeout(15_000),
+      signal: AbortSignal.timeout(20_000),
     });
     if (res.ok) return { ok: true, detail: "ok" };
     return { ok: false, detail: `${res.status} ${(await res.text()).slice(0, 120)}` };
   } catch (e) {
     return { ok: false, detail: (e as Error).message };
+  }
+}
+
+/** 列出账号下可用模型，顺便帮用户挑带视觉的那个 */
+export async function listModels(
+  cfg: AiConfig,
+): Promise<{ ok: boolean; models: string[]; detail: string }> {
+  if (!cfg.apiKey) return { ok: false, models: [], detail: "NOKEY" };
+  try {
+    const res = await fetch(`${cfg.base.replace(/\/$/, "")}/models`, {
+      headers: { authorization: `Bearer ${cfg.apiKey}` },
+      signal: AbortSignal.timeout(20_000),
+    });
+    if (!res.ok) {
+      return { ok: false, models: [], detail: `${res.status} ${(await res.text()).slice(0, 120)}` };
+    }
+    const data = (await res.json()) as { data?: { id?: string }[] };
+    const models = (data.data ?? []).map((m) => m.id ?? "").filter(Boolean).sort();
+    return { ok: true, models, detail: "ok" };
+  } catch (e) {
+    return { ok: false, models: [], detail: (e as Error).message };
   }
 }

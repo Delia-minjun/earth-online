@@ -214,6 +214,14 @@ export const api = {
     };
     return { ...body, status: res.status };
   },
+  listAiModels: async (): Promise<{ ok: boolean; models: string[]; detail: string }> => {
+    const res = await fetch(BASE + "/settings/ai/models", { signal: AbortSignal.timeout(25_000) });
+    return (await res.json().catch(() => ({ ok: false, models: [], detail: "bad response" }))) as {
+      ok: boolean;
+      models: string[];
+      detail: string;
+    };
+  },
   parseTimetable: (imageBase64: string, mimeType: string) =>
     request<{ candidates: CourseCandidate[]; periods: PeriodsConfig }>("/courses/parse-image", {
       method: "POST",
