@@ -286,6 +286,26 @@ export const api = {
     request<ApiJournal>(`/journal/${date}`, { method: "PUT", body: JSON.stringify({ body }) }),
 };
 
+/** 课程配色：莫兰迪色板，按课程 id 稳定取色（同一门课到哪都是同一个颜色） */
+const COURSE_COLORS = [
+  "#9BA7B0",
+  "#CBBB9A",
+  "#A8B5A2",
+  "#B0A6BC",
+  "#C9A9A6",
+  "#8FA8A0",
+  "#B5A88F",
+  "#A0A8B8",
+];
+
+export function courseColor(c: { id: string; name: string; color?: string | null }): string {
+  if (c.color) return c.color;
+  const s = c.id || c.name;
+  let h = 0;
+  for (let i = 0; i < s.length; i += 1) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return COURSE_COLORS[h % COURSE_COLORS.length] ?? "#9BA7B0";
+}
+
 export const hhmm = (min: number) =>
   `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
 

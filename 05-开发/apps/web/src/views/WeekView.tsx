@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, hhmm, isoWeekOf, mondayOfThisWeek, shiftWeeks, type ApiWeek } from "../api";
+import { api, courseColor, hhmm, isoWeekOf, mondayOfThisWeek, shiftWeeks, type ApiWeek } from "../api";
 import { CourseEditor } from "./CourseEditor";
 
 const WD_ZH = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
@@ -156,7 +156,7 @@ export function WeekView() {
                     title: c.name,
                     start: c.start_min,
                     end: c.end_min,
-                    color: c.color,
+                    color: courseColor(c),
                     location: c.location,
                   }));
                 const blocks: Item[] = (data?.blocks ?? [])
@@ -191,7 +191,7 @@ export function WeekView() {
                         <div key={`${it.kind}-${it.id}`} className="flex gap-1.5">
                           <span
                             className="mt-1 h-3 w-[2px] shrink-0 rounded-full"
-                            style={{ background: it.kind === "course" ? "#9BA7B0" : (it.color ?? "#d8d4cc") }}
+                            style={{ background: it.color ?? "#d8d4cc" }}
                           />
                           <div className="min-w-0">
                             <p

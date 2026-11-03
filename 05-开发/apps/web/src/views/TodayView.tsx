@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, hhmm, type ApiDay, type ApiMeta } from "../api";
+import { api, courseColor, hhmm, type ApiDay, type ApiMeta } from "../api";
 import { Card } from "../components/Card";
 
 function Mini({
@@ -292,7 +292,10 @@ export function TodayView() {
                   <span className="w-10 shrink-0 pt-0.5 text-[10px] tabular-nums text-ink-3">
                     {hhmm(c.start_min)}
                   </span>
-                  <span className="w-[3px] shrink-0 rounded-full bg-[#9BA7B0]" />
+                  <span
+                    className="w-[3px] shrink-0 rounded-full"
+                    style={{ background: courseColor(c) }}
+                  />
                   <div className="min-w-0 flex-1 pt-0.5">
                     <p className="truncate text-[12px] text-ink-2">{c.name}</p>
                     <p className="mt-0.5 text-[10px] text-ink-3">
