@@ -46,10 +46,10 @@ function QuickActions() {
   );
 }
 
-/** 半小时刻度：00:00 – 23:30 */
-const SLOTS = Array.from({ length: 48 }, (_, i) => i * 30);
-/** 结束时间可选 00:30 – 24:00 */
-const END_SLOTS = Array.from({ length: 48 }, (_, i) => (i + 1) * 30);
+/** 10 分钟刻度：00:00 – 23:50 */
+const SLOTS = Array.from({ length: 144 }, (_, i) => i * 10);
+/** 结束时间可选 00:10 – 24:00 */
+const END_SLOTS = Array.from({ length: 144 }, (_, i) => (i + 1) * 10);
 
 const DONE = "done";
 
@@ -117,7 +117,8 @@ export function TodayView() {
       setBlockOpen(false);
       await reload();
     } catch (e) {
-      setError((e as Error).message);
+      const msg = (e as Error).message;
+      setError(msg.includes("overlap") ? t("today.overlap") : msg);
     }
   };
 
@@ -180,6 +181,18 @@ export function TodayView() {
 
   const focus = day.tasks;
   const doneCount = focus.filter((x) => x.status === DONE).length;
+
+  /** 与已有时间块是否重叠 */
+  const hits = (start: number, end: number) =>
+    day.blocks.some((b) => start < b.end_min && end > b.start_min);
+
+  /** 从某个开始时间往后找第一个不冲突的结束时间 */
+  const firstFreeEnd = (start: number) => {
+    for (let end = start + 10; end <= 1440; end += 10) {
+      if (!hits(start, end)) return end;
+    }
+    return Math.min(start + 10, 1440);
+  };
 
   return (
     <div className="space-y-3.5">
@@ -306,16 +319,12 @@ export function TodayView() {
                     value={blockForm.startMin}
                     onChange={(e) => {
                       const v = Number(e.target.value);
-                      setBlockForm((f) => ({
-                        ...f,
-                        startMin: v,
-                        endMin: Math.max(f.endMin, Math.min(v + 60, 1440)),
-                      }));
+                      setBlockForm((f) => ({ ...f, startMin: v, endMin: firstFreeEnd(v) }));
                     }}
                     className="rounded-lg border border-line bg-surface px-1.5 py-1 text-[11px] tabular-nums text-ink outline-none"
                   >
                     {SLOTS.map((m) => (
-                      <option key={m} value={m}>
+                      <option key={m} value={m} disabled={hits(m, m + 10)}>
                         {hhmm(m)}
                       </option>
                     ))}
@@ -327,7 +336,11 @@ export function TodayView() {
                     className="rounded-lg border border-line bg-surface px-1.5 py-1 text-[11px] tabular-nums text-ink outline-none"
                   >
                     {END_SLOTS.map((m) => (
-                      <option key={m} value={m} disabled={m <= blockForm.startMin}>
+                      <option
+                        key={m}
+                        value={m}
+                        disabled={m <= blockForm.startMin || hits(blockForm.startMin, m)}
+                      >
                         {hhmm(m)}
                       </option>
                     ))}

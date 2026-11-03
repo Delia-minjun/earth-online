@@ -193,6 +193,25 @@ api.post("/blocks", async (c) => {
   if (!r.ok) return c.json({ error: r.error }, 400);
 
   const date = r.data.date ?? today();
+  const db = getDb();
+
+  // 同一时刻不能有两件事：服务端也拒一次，别只靠前端置灰
+  const clash = db
+    .prepare(
+      `SELECT id, title, start_min, end_min FROM time_block
+        WHERE date = ? AND deleted_at IS NULL AND ? < end_min AND ? > start_min
+        LIMIT 1`,
+    )
+    .get(date, r.data.startMin, r.data.endMin) as
+    | { id: string; title: string; start_min: number; end_min: number }
+    | undefined;
+  if (clash) {
+    return c.json(
+      { error: "overlap", clash: { title: clash.title, startMin: clash.start_min, endMin: clash.end_min } },
+      409,
+    );
+  }
+
   const id = uid();
   getDb()
     .prepare(

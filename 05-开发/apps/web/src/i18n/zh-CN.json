@@ -44,6 +44,7 @@
     "focusEmpty": "今天还没有重点",
     "timelineEmpty": "还没有安排时间块",
     "blockTitle": "这段时间做什么",
+    "overlap": "这段时间已经有安排了",
     "moneyPending": "P2 接入收支与预算",
     "bodyPending": "P2 接入体重与训练",
     "mealsPending": "P2 接入三餐记录",

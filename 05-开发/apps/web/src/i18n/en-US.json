@@ -44,6 +44,7 @@
     "focusEmpty": "No focus yet today",
     "timelineEmpty": "No time blocks yet",
     "blockTitle": "What happens in this slot",
+    "overlap": "That slot is already taken",
     "moneyPending": "P2 wires up money and budget",
     "bodyPending": "P2 wires up weight and training",
     "mealsPending": "P2 wires up meals",
