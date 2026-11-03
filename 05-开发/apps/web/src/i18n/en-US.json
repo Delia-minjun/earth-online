@@ -78,6 +78,14 @@
     "ledger": "Recent ledger",
     "ledgerAll": "See all"
   },
+  "sub": {
+    "week": "This week's classes and plans",
+    "review": "Look back: keep, improve, stop, start",
+    "reward": "Earn coins from real work, spend them on rewards you define",
+    "settings": "Models, term and preferences",
+    "habits": "Small things daily, long-term direction",
+    "study": "Organise, revise, quiz"
+  },
   "placeholder": {
     "title": "Still building",
     "sub": "Ships during P1",

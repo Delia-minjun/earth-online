@@ -102,9 +102,7 @@ export default function App() {
                       { start: short(week.startDate), end: short(week.endDate) },
                     )}`
                   : "—"
-                : isReward
-                  ? t("reward.sub")
-                  : t("placeholder.sub")}
+                : t(`sub.${view}`)}
             </p>
           </div>
           <button

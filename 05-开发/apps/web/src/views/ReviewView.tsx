@@ -1,17 +1,25 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, isoWeekOf, mondayOfThisWeek, shiftWeeks, type ApiWeek } from "../api";
-import { Card } from "../components/Card";
 
 type Review = { keep: string; improve: string; stop: string; start: string };
 const EMPTY: Review = { keep: "", improve: "", stop: "", start: "" };
 
-const QUADRANTS: { key: keyof Review; label: string; hint: string }[] = [
-  { key: "keep", label: "review.keep", hint: "review.keepHint" },
-  { key: "improve", label: "review.improve", hint: "review.improveHint" },
-  { key: "stop", label: "review.stop", hint: "review.stopHint" },
-  { key: "start", label: "review.start", hint: "review.startHint" },
+const QUADRANTS: { key: keyof Review; label: string; hint: string; color: string }[] = [
+  { key: "keep", label: "review.keep", hint: "review.keepHint", color: "#A8B5A2" },
+  { key: "improve", label: "review.improve", hint: "review.improveHint", color: "#CBBB9A" },
+  { key: "stop", label: "review.stop", hint: "review.stopHint", color: "#C9A9A6" },
+  { key: "start", label: "review.start", hint: "review.startHint", color: "#9BA7B0" },
 ];
+
+function Stat({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="rounded-2xl border border-line bg-surface px-3.5 py-3">
+      <p className="text-[10px] text-ink-3">{label}</p>
+      <p className="mt-1 text-[17px] font-semibold leading-none tabular-nums text-ink">{value}</p>
+    </div>
+  );
+}
 
 export function ReviewView() {
   const { t } = useTranslation();
@@ -77,33 +85,33 @@ export function ReviewView() {
     return () => window.clearTimeout(timer);
   }, [form, weekId]);
 
-  const totals = useMemo(() => {
+  const stats = useMemo(() => {
     const blocks = weekData?.blocks ?? [];
     const tasks = weekData?.tasks ?? [];
     const minutes = blocks.reduce((s, b) => s + (b.end_min - b.start_min), 0);
-    const byCat = new Map<string, number>();
-    for (const b of blocks) {
-      const key = b.category_id ?? "none";
-      byCat.set(key, (byCat.get(key) ?? 0) + (b.end_min - b.start_min));
-    }
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
     return {
       blocks: blocks.length,
-      minutes,
+      duration:
+        h > 0 ? `${h}${t("week.hour")}${m > 0 ? ` ${m}${t("week.min")}` : ""}` : `${m}${t("week.min")}`,
       done: tasks.filter((x) => x.status === "done").length,
       tasks: tasks.length,
-      byCat,
     };
-  }, [weekData]);
+  }, [weekData, t]);
 
-  const dur = (min: number) => {
-    const h = Math.floor(min / 60);
-    const m = min % 60;
-    return h > 0 ? `${h}${t("week.hour")}${m > 0 ? ` ${m}${t("week.min")}` : ""}` : `${m}${t("week.min")}`;
-  };
+  const stateText =
+    state === "saving"
+      ? t("common.saving")
+      : state === "saved"
+        ? t("common.saved")
+        : state === "error"
+          ? t("common.saveFailed")
+          : null;
 
   return (
-    <div className="space-y-3.5">
-      <div className="flex items-center gap-2">
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
           onClick={() => setOffset((v) => v - 1)}
@@ -122,56 +130,34 @@ export function ReviewView() {
         >
           ›
         </button>
-        <span className="ml-auto text-[10px] text-ink-3">
-          {state === "saving"
-            ? t("common.saving")
-            : state === "saved"
-              ? t("common.saved")
-              : state === "error"
-                ? t("common.saveFailed")
-                : null}
-        </span>
+        {stateText ? <span className="ml-auto text-[10px] text-ink-3">{stateText}</span> : null}
       </div>
 
-      <div className="space-y-3.5 lg:grid lg:grid-cols-5 lg:items-start lg:gap-3.5 lg:space-y-0">
-        <div className="space-y-3.5 lg:col-span-2">
-          <Card title={t("review.summary")}>
-            <dl className="space-y-2 text-[11.5px]">
-              <div className="flex justify-between">
-                <dt className="text-ink-3">{t("review.blocks")}</dt>
-                <dd className="text-ink">{totals.blocks}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-ink-3">{t("review.duration")}</dt>
-                <dd className="text-ink">{dur(totals.minutes)}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-ink-3">{t("review.focus")}</dt>
-                <dd className="text-ink">
-                  {totals.done} / {totals.tasks}
-                </dd>
-              </div>
-            </dl>
-          </Card>
-        </div>
+      <div className="grid grid-cols-3 gap-2.5">
+        <Stat label={t("review.blocks")} value={stats.blocks} />
+        <Stat label={t("review.duration")} value={stats.duration} />
+        <Stat label={t("review.focus")} value={`${stats.done}/${stats.tasks}`} />
+      </div>
 
-        <div className="grid gap-3.5 sm:grid-cols-2 lg:col-span-3">
-          {QUADRANTS.map((q) => (
-            <section
-              key={q.key}
-              className="rounded-2xl border border-line bg-surface p-3.5 shadow-[0_6px_20px_-14px_rgba(88,82,72,0.5)]"
-            >
+      <div className="grid gap-3 sm:grid-cols-2">
+        {QUADRANTS.map((q) => (
+          <section
+            key={q.key}
+            className="rounded-2xl border border-line bg-surface p-3.5 shadow-[0_6px_20px_-14px_rgba(88,82,72,0.5)]"
+          >
+            <header className="flex items-center gap-2">
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: q.color }} />
               <h3 className="text-[12px] font-semibold text-ink">{t(q.label)}</h3>
-              <textarea
-                value={form[q.key]}
-                onChange={(e) => setForm((f) => ({ ...f, [q.key]: e.target.value }))}
-                rows={5}
-                placeholder={t(q.hint)}
-                className="mt-2 w-full resize-none bg-transparent text-[11.5px] leading-relaxed text-ink-2 outline-none placeholder:text-[#c8c4bc]"
-              />
-            </section>
-          ))}
-        </div>
+            </header>
+            <textarea
+              value={form[q.key]}
+              onChange={(e) => setForm((f) => ({ ...f, [q.key]: e.target.value }))}
+              rows={4}
+              placeholder={t(q.hint)}
+              className="mt-2 min-h-[88px] w-full resize-y bg-transparent text-[12px] leading-relaxed text-ink-2 outline-none placeholder:text-[#c8c4bc]"
+            />
+          </section>
+        ))}
       </div>
     </div>
   );
