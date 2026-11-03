@@ -126,13 +126,18 @@ function MonthGrid({ onPick }: { onPick: (date: string) => void }) {
   );
 }
 
-export function WeekView() {
+export function WeekView({
+  calOpen,
+  onCalOpenChange,
+}: {
+  calOpen: boolean;
+  onCalOpenChange: (open: boolean) => void;
+}) {
   const { t, i18n } = useTranslation();
   const [offset, setOffset] = useState(0);
   const [data, setData] = useState<ApiWeek | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
-  const [calOpen, setCalOpen] = useState(false);
 
   const target = useMemo(() => shiftWeeks(mondayOfThisWeek(), offset), [offset]);
   const { isoYear, isoWeek } = useMemo(() => isoWeekOf(target), [target]);
@@ -214,20 +219,8 @@ export function WeekView() {
 
         <button
           type="button"
-          onClick={() => setCalOpen((v) => !v)}
-          className={`rounded-full border px-2.5 py-1 text-[10.5px] transition-colors ${
-            calOpen
-              ? "border-accent bg-accent text-white"
-              : "border-line bg-surface text-ink-3 hover:border-accent hover:text-ink"
-          }`}
-        >
-          {t("calendar.title")}
-        </button>
-
-        <button
-          type="button"
           onClick={() => setEditorOpen(true)}
-          className="rounded-full border border-line bg-surface px-3 py-1.5 text-[10.5px] text-ink-2 transition-colors hover:border-accent hover:text-ink"
+          className="ml-auto rounded-full border border-line bg-surface px-3 py-1.5 text-[10.5px] text-ink-2 transition-colors hover:border-accent hover:text-ink"
         >
           {t("course.editMode")}
         </button>

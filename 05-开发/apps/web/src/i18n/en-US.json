@@ -147,6 +147,7 @@
   },
   "calendar": {
     "title": "Calendar",
+    "btn": "Month",
     "monthLabel": "{{year}}-{{month}}",
     "thisMonth": "This month"
   },

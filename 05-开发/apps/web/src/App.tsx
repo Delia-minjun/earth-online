@@ -71,6 +71,8 @@ export default function App() {
   const isToday = view === "today";
   /** 今日页在宽屏下放宽，好放下右侧的时间轴栏 */
   const shellWidth = isToday ? "max-w-[1180px]" : "max-w-3xl";
+  /** 月历开关放在标题旁，由周视图消费 */
+  const [calOpen, setCalOpen] = useState(false);
   const isReward = view === "reward";
 
   return (
@@ -96,9 +98,25 @@ export default function App() {
             <p className="text-[10px] uppercase tracking-[0.2em] text-ink-3">
               {isToday ? t("today.title") : t("app.title")}
             </p>
-            <h1 className="mt-1.5 truncate text-[22px] font-semibold leading-tight text-ink">
-              {isToday ? dateText : t(`nav.${view}`)}
-            </h1>
+            <div className="mt-1.5 flex items-center gap-2.5">
+              <h1 className="truncate text-[22px] font-semibold leading-tight text-ink">
+                {isToday ? dateText : t(`nav.${view}`)}
+              </h1>
+              {view === "week" ? (
+                <button
+                  type="button"
+                  onClick={() => setCalOpen((v) => !v)}
+                  aria-pressed={calOpen}
+                  className={`shrink-0 rounded-full border px-2.5 py-1 text-[10.5px] transition-colors ${
+                    calOpen
+                      ? "border-accent bg-accent text-white"
+                      : "border-line bg-surface text-ink-3 hover:border-accent hover:text-ink"
+                  }`}
+                >
+                  {t("calendar.btn")}
+                </button>
+              ) : null}
+            </div>
             <p className="mt-1 text-[11px] text-ink-3">
               {isToday
                 ? week
@@ -123,7 +141,7 @@ export default function App() {
           className={`mx-auto w-full flex-1 px-5 pt-5 md:px-8 md:pt-6 ${shellWidth}`}
         >
           {isToday && <TodayView />}
-          {view === "week" && <WeekView />}
+          {view === "week" && <WeekView calOpen={calOpen} onCalOpenChange={setCalOpen} />}
           {view === "projects" && <ProjectsView />}
           {view === "review" && <ReviewView />}
           {isReward && <RewardView />}

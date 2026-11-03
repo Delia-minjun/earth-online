@@ -148,6 +148,7 @@
   },
   "calendar": {
     "title": "月历",
+    "btn": "本月",
     "monthLabel": "{{year}} 年 {{month}} 月",
     "thisMonth": "回到本月"
   },
