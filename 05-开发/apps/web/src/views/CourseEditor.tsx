@@ -694,7 +694,7 @@ export function CourseEditor({
                       <li
                         key={c.id}
                         onClick={() => startEdit(c)}
-                        className="flex cursor-pointer items-center gap-2 rounded-md px-1 py-0.5 transition-colors hover:bg-surface-2"
+                        className="flex cursor-pointer items-center gap-2 rounded-md px-1 py-0.5 transition-colors hover:bg-surface-2 group"
                         title={t("course.clickToEdit")}
                       >
                         <span className="w-[80px] shrink-0 text-[10px] tabular-nums text-ink-3">
@@ -733,7 +733,7 @@ export function CourseEditor({
                             e.stopPropagation();
                             void remove(c.id);
                           }}
-                          className="shrink-0 text-[11px] text-[#a9a49b] transition-colors hover:text-warn"
+                          className="shrink-0 text-[11px] text-[#a9a49b] opacity-100 transition-opacity hover:text-warn md:opacity-0 md:group-hover:opacity-100"
                           aria-label="delete"
                         >
                           ×
