@@ -1,0 +1,27 @@
+{
+  "app": {
+    "title": "Life OS",
+    "badge": "P0 scaffold"
+  },
+  "today": {
+    "title": "Today",
+    "focus": "Today's focus",
+    "focusEmpty": "Nothing yet",
+    "habits": "Habits",
+    "habitsEmpty": "No habits yet",
+    "reward": "Rewards",
+    "rewardEmpty": "0 coins"
+  },
+  "week": {
+    "label": "Week {{week}}",
+    "range": "{{start}} — {{end}}"
+  },
+  "status": {
+    "online": "Server online",
+    "offline": "Server offline"
+  },
+  "action": {
+    "lang": "中文 / EN",
+    "add": "＋ Add"
+  }
+}

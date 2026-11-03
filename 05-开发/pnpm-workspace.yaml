@@ -1,0 +1,7 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# pnpm 10+ 把构建脚本许可放在这里；esbuild 需要跑 postinstall 放置平台二进制
+onlyBuiltDependencies:
+  - esbuild

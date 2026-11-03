@@ -1,0 +1,19 @@
+{
+  "name": "life-os",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "packageManager": "pnpm@11.28.5",
+  "scripts": {
+    "dev": "pnpm --parallel --filter \"./apps/*\" dev",
+    "dev:server": "pnpm --filter @life/server dev",
+    "dev:web": "pnpm --filter @life/web dev",
+    "build": "pnpm --filter @life/web build",
+    "start": "pnpm --filter @life/server start",
+    "migrate": "pnpm --filter @life/server migrate",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0"
+  }
+}

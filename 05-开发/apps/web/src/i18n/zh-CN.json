@@ -1,0 +1,27 @@
+{
+  "app": {
+    "title": "人生管理",
+    "badge": "P0 脚手架"
+  },
+  "today": {
+    "title": "今日",
+    "focus": "今日重点",
+    "focusEmpty": "还没有重点",
+    "habits": "习惯打卡",
+    "habitsEmpty": "还没有设置习惯",
+    "reward": "奖赏",
+    "rewardEmpty": "0 币"
+  },
+  "week": {
+    "label": "第 {{week}} 周",
+    "range": "{{start}} — {{end}}"
+  },
+  "status": {
+    "online": "服务正常",
+    "offline": "服务未连接"
+  },
+  "action": {
+    "lang": "中文 / EN",
+    "add": "＋ 添加"
+  }
+}
