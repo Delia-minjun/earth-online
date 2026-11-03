@@ -67,6 +67,8 @@ const BASE = "/api";
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(BASE + path, {
     headers: init?.body ? { "content-type": "application/json" } : undefined,
+    // 超时兜底：请求挂住时会走 catch，界面能显示「保存失败」而不是一直转
+    signal: AbortSignal.timeout(10_000),
     ...init,
   });
   if (!res.ok) {

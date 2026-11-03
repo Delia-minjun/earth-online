@@ -134,31 +134,41 @@ export function TodayView() {
 
   /* ---- 随手记（自动保存） ---- */
   const [note, setNote] = useState("");
-  const [noteState, setNoteState] = useState<"idle" | "saving" | "saved">("idle");
-  const noteInit = useRef(false);
+  const [noteState, setNoteState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const dateRef = useRef<string | null>(null);
+  const savedRef = useRef("");
 
+  // 只在「日期变化」时同步一次输入框，避免被后台刷新覆盖
   useEffect(() => {
-    if (day && !noteInit.current) {
-      setNote(day.journal?.body ?? "");
-      noteInit.current = true;
-    }
+    if (!day) return;
+    if (dateRef.current === day.date) return;
+    dateRef.current = day.date;
+    const body = day.journal?.body ?? "";
+    savedRef.current = body;
+    setNote(body);
+    setNoteState(body ? "saved" : "idle");
   }, [day]);
 
+  // 只依赖输入内容：不因 day 的刷新而打断定时器
   useEffect(() => {
-    if (!noteInit.current || !day) return;
-    if (note === (day.journal?.body ?? "")) return;
+    const date = dateRef.current;
+    if (!date) return;
+    if (note === savedRef.current) return;
+
     setNoteState("saving");
-    const timer = setTimeout(() => {
-      void api
-        .saveJournal(day.date, note)
+    const timer = window.setTimeout(() => {
+      const value = note;
+      api
+        .saveJournal(date, value)
         .then(() => {
+          savedRef.current = value;
           setNoteState("saved");
-          setDay((d) => (d ? { ...d, journal: { date: d.date, mood: null, body: note } } : d));
         })
-        .catch(() => setNoteState("idle"));
-    }, 700);
-    return () => clearTimeout(timer);
-  }, [note, day]);
+        .catch(() => setNoteState("error"));
+    }, 600);
+
+    return () => window.clearTimeout(timer);
+  }, [note]);
 
   if (!day) {
     return (
@@ -394,7 +404,18 @@ export function TodayView() {
             <p className="text-[11px] text-ink-3">{t("today.mealsPending")}</p>
           </Mini>
 
-          <Mini title={t("today.notes")} action={noteState === "saving" ? t("common.saving") : noteState === "saved" ? t("common.saved") : null}>
+          <Mini
+            title={t("today.notes")}
+            action={
+              noteState === "saving"
+                ? t("common.saving")
+                : noteState === "saved"
+                  ? t("common.saved")
+                  : noteState === "error"
+                    ? t("common.saveFailed")
+                    : null
+            }
+          >
             <textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}

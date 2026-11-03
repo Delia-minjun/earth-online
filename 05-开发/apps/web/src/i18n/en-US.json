@@ -16,7 +16,8 @@
     "loading": "Loading…",
     "save": "Save",
     "saving": "Saving…",
-    "saved": "Saved"
+    "saved": "Saved",
+    "saveFailed": "Save failed"
   },
   "demo": {
     "tag": "Sample data · replaced once real records are wired"
