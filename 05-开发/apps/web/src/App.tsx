@@ -98,23 +98,33 @@ export default function App() {
             <p className="text-[10px] uppercase tracking-[0.2em] text-ink-3">
               {isToday ? t("today.title") : t("app.title")}
             </p>
-            <div className="mt-1.5 flex items-center gap-2.5">
+            <div className="mt-1.5 flex items-center gap-3">
               <h1 className="truncate text-[22px] font-semibold leading-tight text-ink">
                 {isToday ? dateText : t(`nav.${view}`)}
               </h1>
               {view === "week" ? (
-                <button
-                  type="button"
-                  onClick={() => setCalOpen((v) => !v)}
-                  aria-pressed={calOpen}
-                  className={`shrink-0 rounded-full border px-2.5 py-1 text-[10.5px] transition-colors ${
-                    calOpen
-                      ? "border-accent bg-accent text-white"
-                      : "border-line bg-surface text-ink-3 hover:border-accent hover:text-ink"
-                  }`}
-                >
-                  {t("calendar.btn")}
-                </button>
+                <div className="flex shrink-0 items-center rounded-full border border-line bg-surface p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setCalOpen(false)}
+                    aria-pressed={!calOpen}
+                    className={`rounded-full px-3 py-1 text-[10.5px] transition-colors ${
+                      calOpen ? "text-ink-3 hover:text-ink" : "bg-accent text-white"
+                    }`}
+                  >
+                    {t("calendar.week")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCalOpen(true)}
+                    aria-pressed={calOpen}
+                    className={`rounded-full px-3 py-1 text-[10.5px] transition-colors ${
+                      calOpen ? "bg-accent text-white" : "text-ink-3 hover:text-ink"
+                    }`}
+                  >
+                    {t("calendar.month")}
+                  </button>
+                </div>
               ) : null}
             </div>
             <p className="mt-1 text-[11px] text-ink-3">

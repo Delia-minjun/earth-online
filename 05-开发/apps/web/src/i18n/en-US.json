@@ -5,7 +5,7 @@
   },
   "nav": {
     "today": "Today",
-    "week": "Week",
+    "week": "Calendar",
     "projects": "Projects",
     "habits": "Habits",
     "review": "Review",
@@ -150,6 +150,8 @@
   "calendar": {
     "title": "Calendar",
     "btn": "Month",
+    "week": "Week",
+    "month": "Month",
     "monthLabel": "{{year}}-{{month}}",
     "thisMonth": "This month"
   },
@@ -169,7 +171,7 @@
     "inUse": "This category is still used by time blocks — reassign them first"
   },
   "sub": {
-    "week": "This week's classes and plans",
+    "week": "See this week by day; switch to Month for the whole month",
     "projects": "Break long-running work into projects, then tasks",
     "review": "Look back: keep, improve, stop, start",
     "reward": "Earn coins from real work, spend them on rewards you define",
