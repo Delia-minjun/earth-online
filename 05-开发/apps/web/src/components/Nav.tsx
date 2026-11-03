@@ -119,11 +119,6 @@ export function Sidebar({
               >
                 ⠿
               </span>
-              <span
-                className={`h-[3px] w-[3px] rounded-full ${
-                  isActive ? "bg-accent" : "bg-[#cecac2]"
-                }`}
-              />
               <span>{t(`nav.${key}`)}</span>
               {item && !item.implemented ? (
                 <span className="ml-auto text-[9px] text-[#c8c4bc]">P1</span>
