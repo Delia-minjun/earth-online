@@ -12,6 +12,12 @@
     "reward": "奖赏",
     "settings": "设置"
   },
+  "common": {
+    "loading": "加载中…",
+    "save": "保存",
+    "saving": "保存中…",
+    "saved": "已保存"
+  },
   "demo": {
     "tag": "示例数据 · 接入真实记录后自动替换"
   },
@@ -32,6 +38,14 @@
     "notRecorded": "未记录",
     "notes": "随手记",
     "noteAdd": "写一句",
+    "focusAdd": "添加今日重点，回车确认",
+    "focusEmpty": "今天还没有重点",
+    "timelineEmpty": "还没有安排时间块",
+    "blockTitle": "这段时间做什么",
+    "moneyPending": "P2 接入收支与预算",
+    "bodyPending": "P2 接入体重与训练",
+    "mealsPending": "P2 接入三餐记录",
+    "notePlaceholder": "写一句今天的…",
     "pomodoro": "番茄钟",
     "pomodoroHint": "开始专注，完成后自动记一条时间块",
     "reviewCards": "今日复习",

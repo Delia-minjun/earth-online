@@ -1,16 +1,7 @@
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { WeekInfo } from "@life/shared";
+import { api, hhmm, toMin, type ApiBlock, type ApiDay, type ApiMeta } from "../api";
 import { Card } from "../components/Card";
-import {
-  CAT_COLOR,
-  DEMO_BLOCKS,
-  DEMO_BODY,
-  DEMO_FOCUS,
-  DEMO_HABITS,
-  DEMO_MEALS,
-  DEMO_MONEY,
-  DEMO_NOTE,
-} from "../demo";
 
 function Mini({
   title,
@@ -18,7 +9,7 @@ function Mini({
   children,
 }: {
   title: string;
-  action?: string;
+  action?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
@@ -32,7 +23,6 @@ function Mini({
   );
 }
 
-/** 预留位置：番茄钟（P3）与今日复习（P5），现在只占结构不接功能 */
 function QuickActions() {
   const { t } = useTranslation();
   return (
@@ -52,9 +42,7 @@ function QuickActions() {
           </span>
           <span className="mt-0.5 block text-[10px] text-ink-3">{t("today.pomodoroHint")}</span>
         </span>
-        <span className="shrink-0 rounded-full border border-line px-2 py-0.5 text-[9px] text-ink-3">
-          P3
-        </span>
+        <span className="shrink-0 rounded-full border border-line px-2 py-0.5 text-[9px] text-ink-3">P3</span>
       </button>
 
       <button
@@ -72,87 +60,280 @@ function QuickActions() {
           </span>
           <span className="mt-0.5 block text-[10px] text-ink-3">{t("today.reviewHint")}</span>
         </span>
-        <span className="shrink-0 rounded-full border border-line px-2 py-0.5 text-[9px] text-ink-3">
-          P5
-        </span>
+        <span className="shrink-0 rounded-full border border-line px-2 py-0.5 text-[9px] text-ink-3">P5</span>
       </button>
     </section>
   );
 }
 
-const minutes = (a: string, b: string) => {
-  const [h1, m1] = a.split(":").map(Number);
-  const [h2, m2] = b.split(":").map(Number);
-  return (h2 ?? 0) * 60 + (m2 ?? 0) - ((h1 ?? 0) * 60 + (m1 ?? 0));
-};
+const DONE = "done";
 
-export function TodayView({ week }: { week: WeekInfo | null }) {
+export function TodayView() {
   const { t } = useTranslation();
+  const [day, setDay] = useState<ApiDay | null>(null);
+  const [meta, setMeta] = useState<ApiMeta | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const reload = useCallback(async () => {
+    try {
+      const d = await api.day();
+      setDay(d);
+      setError(null);
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }, []);
+
+  useEffect(() => {
+    void reload();
+    void api.meta().then(setMeta).catch(() => undefined);
+  }, [reload]);
+
+  /* ---- 今日重点 ---- */
+  const [draft, setDraft] = useState("");
+  const addFocus = async () => {
+    const title = draft.trim();
+    if (!title) return;
+    setDraft("");
+    await api.addTask(title);
+    await reload();
+  };
+
+  const toggleTask = async (id: string, status: string) => {
+    await api.setTaskStatus(id, status === DONE ? "todo" : "done");
+    await reload();
+  };
+
+  const removeTask = async (id: string) => {
+    await api.deleteTask(id);
+    await reload();
+  };
+
+  /* ---- 时间块 ---- */
+  const [blockOpen, setBlockOpen] = useState(false);
+  const [blockForm, setBlockForm] = useState({ start: "08:00", end: "09:00", title: "", categoryId: "cat-study" });
+
+  const submitBlock = async () => {
+    const title = blockForm.title.trim();
+    if (!title) return;
+    try {
+      await api.addBlock({
+        startMin: toMin(blockForm.start),
+        endMin: toMin(blockForm.end),
+        title,
+        categoryId: blockForm.categoryId,
+      });
+      setBlockForm((f) => ({ ...f, title: "" }));
+      setBlockOpen(false);
+      await reload();
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  };
+
+  const removeBlock = async (id: string) => {
+    await api.deleteBlock(id);
+    await reload();
+  };
+
+  /* ---- 习惯 ---- */
+  const toggleHabit = async (id: string) => {
+    await api.toggleHabit(id);
+    await reload();
+  };
+
+  /* ---- 随手记（自动保存） ---- */
+  const [note, setNote] = useState("");
+  const [noteState, setNoteState] = useState<"idle" | "saving" | "saved">("idle");
+  const noteInit = useRef(false);
+
+  useEffect(() => {
+    if (day && !noteInit.current) {
+      setNote(day.journal?.body ?? "");
+      noteInit.current = true;
+    }
+  }, [day]);
+
+  useEffect(() => {
+    if (!noteInit.current || !day) return;
+    if (note === (day.journal?.body ?? "")) return;
+    setNoteState("saving");
+    const timer = setTimeout(() => {
+      void api
+        .saveJournal(day.date, note)
+        .then(() => {
+          setNoteState("saved");
+          setDay((d) => (d ? { ...d, journal: { date: d.date, mood: null, body: note } } : d));
+        })
+        .catch(() => setNoteState("idle"));
+    }, 700);
+    return () => clearTimeout(timer);
+  }, [note, day]);
+
+  if (!day) {
+    return (
+      <Card title={t("today.focus")}>
+        <p className="py-4 text-center text-[11.5px] text-ink-3">{error ?? t("common.loading")}</p>
+      </Card>
+    );
+  }
+
+  const focus = day.tasks;
+  const doneCount = focus.filter((x) => x.status === DONE).length;
 
   return (
     <div className="space-y-3.5">
-      <p className="text-[10px] text-[#bcb8b0]">{t("demo.tag")}</p>
+      {error ? <p className="text-[10px] text-warn">{error}</p> : null}
 
       <QuickActions />
 
       <div className="space-y-3.5 lg:grid lg:grid-cols-5 lg:items-start lg:gap-3.5 lg:space-y-0">
         {/* 左：重点 + 时间轴 */}
         <div className="space-y-3.5 lg:col-span-3">
-          <Card title={t("today.focus")} action={t("action.add")}>
+          <Card title={t("today.focus")} action={`${doneCount}/${focus.length}`}>
             <ul className="divide-y divide-line-2">
-              {DEMO_FOCUS.map((f) => (
-                <li key={f.id} className="flex items-start gap-3 py-2.5 first:pt-0 last:pb-0">
-                  <span
-                    className={`mt-0.5 grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full border text-[9px] ${
-                      f.done
+              {focus.map((f) => (
+                <li key={f.id} className="group flex items-start gap-3 py-2.5 first:pt-0">
+                  <button
+                    type="button"
+                    onClick={() => void toggleTask(f.id, f.status)}
+                    className={`mt-0.5 grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full border text-[9px] transition-colors ${
+                      f.status === DONE
                         ? "border-accent bg-accent text-white"
-                        : "border-line text-transparent"
+                        : "border-line text-transparent hover:border-accent"
                     }`}
+                    aria-label={f.title}
                   >
                     ✓
-                  </span>
+                  </button>
                   <div className="min-w-0 flex-1">
                     <p
                       className={`truncate text-[12.5px] ${
-                        f.done ? "text-ink-3 line-through" : "text-ink"
+                        f.status === DONE ? "text-ink-3 line-through" : "text-ink"
                       }`}
                     >
                       {f.title}
                     </p>
-                    <p className="mt-0.5 text-[10px] text-ink-3">{f.time}</p>
                   </div>
-                  <span
-                    className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full"
-                    style={{ background: CAT_COLOR[f.cat] }}
-                  />
+                  <button
+                    type="button"
+                    onClick={() => void removeTask(f.id)}
+                    className="shrink-0 text-[11px] text-[#d6d2ca] transition-colors hover:text-warn"
+                    aria-label="delete"
+                  >
+                    ×
+                  </button>
                 </li>
               ))}
+              {focus.length === 0 ? (
+                <li className="py-2 text-[11.5px] text-ink-3">{t("today.focusEmpty")}</li>
+              ) : null}
             </ul>
+            <div className="mt-2 flex items-center gap-2 border-t border-line-2 pt-2.5">
+              <span className="text-[11px] text-[#c8c4bc]">＋</span>
+              <input
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") void addFocus();
+                }}
+                placeholder={t("today.focusAdd")}
+                className="w-full bg-transparent text-[12px] text-ink outline-none placeholder:text-[#c8c4bc]"
+              />
+            </div>
           </Card>
 
           <Card
             title={t("today.timeline")}
-            action={week ? t("week.label", { week: week.isoWeek }) : "—"}
+            action={
+              <button
+                type="button"
+                onClick={() => setBlockOpen((v) => !v)}
+                className="text-[10px] text-ink-3 transition-colors hover:text-ink"
+              >
+                {t("action.add")}
+              </button>
+            }
           >
             <ul>
-              {DEMO_BLOCKS.map((b) => (
-                <li key={b.id} className="flex gap-3 py-2 first:pt-0 last:pb-0">
+              {day.blocks.map((b) => (
+                <li key={b.id} className="group flex gap-3 py-2 first:pt-0">
                   <span className="w-10 shrink-0 pt-0.5 text-[10px] tabular-nums text-ink-3">
-                    {b.start}
+                    {hhmm(b.start_min)}
                   </span>
                   <span
                     className="w-[3px] shrink-0 rounded-full"
-                    style={{ background: CAT_COLOR[b.cat] }}
+                    style={{ background: b.category_color ?? "#d8d4cc" }}
                   />
                   <div className="min-w-0 flex-1 pt-0.5">
                     <p className="truncate text-[12px] text-ink">{b.title}</p>
                     <p className="mt-0.5 text-[10px] text-ink-3">
-                      {b.start}–{b.end} · {minutes(b.start, b.end)} {t("today.min")}
+                      {hhmm(b.start_min)}–{hhmm(b.end_min)} · {b.end_min - b.start_min} {t("today.min")}
                     </p>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => void removeBlock(b.id)}
+                    className="shrink-0 text-[11px] text-[#d6d2ca] transition-colors hover:text-warn"
+                    aria-label="delete"
+                  >
+                    ×
+                  </button>
                 </li>
               ))}
+              {day.blocks.length === 0 ? (
+                <li className="py-2 text-[11.5px] text-ink-3">{t("today.timelineEmpty")}</li>
+              ) : null}
             </ul>
+
+            {blockOpen ? (
+              <div className="mt-2 space-y-2 rounded-xl border border-line-2 bg-surface-2 p-2.5">
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="time"
+                    value={blockForm.start}
+                    onChange={(e) => setBlockForm((f) => ({ ...f, start: e.target.value }))}
+                    className="rounded-lg border border-line bg-surface px-1.5 py-1 text-[11px] text-ink outline-none"
+                  />
+                  <span className="text-[10px] text-ink-3">–</span>
+                  <input
+                    type="time"
+                    value={blockForm.end}
+                    onChange={(e) => setBlockForm((f) => ({ ...f, end: e.target.value }))}
+                    className="rounded-lg border border-line bg-surface px-1.5 py-1 text-[11px] text-ink outline-none"
+                  />
+                  <select
+                    value={blockForm.categoryId}
+                    onChange={(e) => setBlockForm((f) => ({ ...f, categoryId: e.target.value }))}
+                    className="ml-auto rounded-lg border border-line bg-surface px-1.5 py-1 text-[11px] text-ink-2 outline-none"
+                  >
+                    {(meta?.categories ?? []).map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    value={blockForm.title}
+                    onChange={(e) => setBlockForm((f) => ({ ...f, title: e.target.value }))}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") void submitBlock();
+                    }}
+                    placeholder={t("today.blockTitle")}
+                    className="w-full rounded-lg border border-line bg-surface px-2 py-1.5 text-[11.5px] text-ink outline-none placeholder:text-[#c8c4bc]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void submitBlock()}
+                    className="shrink-0 rounded-lg bg-accent px-2.5 py-1.5 text-[10.5px] font-semibold text-white"
+                  >
+                    {t("common.save")}
+                  </button>
+                </div>
+              </div>
+            ) : null}
           </Card>
         </div>
 
@@ -160,72 +341,47 @@ export function TodayView({ week }: { week: WeekInfo | null }) {
         <div className="space-y-3.5 lg:col-span-2">
           <Mini
             title={t("today.habits")}
-            action={`${DEMO_HABITS.filter((h) => h.done).length}/${DEMO_HABITS.length}`}
+            action={`${day.habits.filter((h) => h.done).length}/${day.habits.length}`}
           >
             <div className="flex flex-wrap gap-1.5">
-              {DEMO_HABITS.map((h) => (
-                <span
+              {day.habits.map((h) => (
+                <button
                   key={h.id}
-                  className={`rounded-full px-2.5 py-1 text-[10.5px] ${
+                  type="button"
+                  onClick={() => void toggleHabit(h.id)}
+                  className={`rounded-full px-2.5 py-1 text-[10.5px] transition-colors ${
                     h.done
                       ? "bg-accent text-white"
-                      : "border border-line bg-surface text-ink-3"
+                      : "border border-line bg-surface text-ink-3 hover:border-accent"
                   }`}
                 >
                   {h.done ? "✓ " : ""}
                   {h.name}
-                </span>
+                </button>
               ))}
             </div>
           </Mini>
 
-          <Mini title={t("today.money")} action={t("today.addRecord")}>
-            <div className="flex items-end justify-between">
-              <div>
-                <p className="text-[19px] font-semibold leading-none text-ink">
-                  −{DEMO_MONEY.spentToday}
-                </p>
-                <p className="mt-1.5 text-[10px] text-ink-3">
-                  {t("today.left")} {DEMO_MONEY.budgetLeft}
-                </p>
-              </div>
-              <div className="flex gap-1">
-                <span className="rounded-full bg-warn-soft px-2 py-1 text-[9.5px] text-warn">
-                  {t("today.expense")}
-                </span>
-                <span className="rounded-full bg-accent-soft px-2 py-1 text-[9.5px] text-accent">
-                  {t("today.income")}
-                </span>
-              </div>
-            </div>
+          <Mini title={t("today.money")} action={<span className="text-[9.5px] text-[#c8c4bc]">P2</span>}>
+            <p className="text-[11px] text-ink-3">{t("today.moneyPending")}</p>
           </Mini>
 
-          <Mini title={t("today.body")}>
-            <div className="flex items-center justify-between text-[11.5px]">
-              <span className="text-ink-2">
-                {t("today.weight")} <span className="text-ink">{DEMO_BODY.weight}</span> kg
-              </span>
-              <span className="rounded-full bg-[#f0ece4] px-2 py-0.5 text-[10px] text-ink-2">
-                {DEMO_BODY.workout}
-              </span>
-            </div>
+          <Mini title={t("today.body")} action={<span className="text-[9.5px] text-[#c8c4bc]">P2</span>}>
+            <p className="text-[11px] text-ink-3">{t("today.bodyPending")}</p>
           </Mini>
 
-          <Mini title={t("today.meals")}>
-            <ul className="space-y-1.5">
-              {DEMO_MEALS.map((m) => (
-                <li key={m.id} className="flex gap-2 text-[11px]">
-                  <span className="w-3 shrink-0 text-ink-3">{m.slot}</span>
-                  <span className={m.text ? "text-ink-2" : "text-[#c8c4bc]"}>
-                    {m.text || t("today.notRecorded")}
-                  </span>
-                </li>
-              ))}
-            </ul>
+          <Mini title={t("today.meals")} action={<span className="text-[9.5px] text-[#c8c4bc]">P2</span>}>
+            <p className="text-[11px] text-ink-3">{t("today.mealsPending")}</p>
           </Mini>
 
-          <Mini title={t("today.notes")} action={t("today.noteAdd")}>
-            <p className="text-[11.5px] leading-relaxed text-ink-2">{DEMO_NOTE}</p>
+          <Mini title={t("today.notes")} action={noteState === "saving" ? t("common.saving") : noteState === "saved" ? t("common.saved") : null}>
+            <textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              rows={4}
+              placeholder={t("today.notePlaceholder")}
+              className="w-full resize-none bg-transparent text-[11.5px] leading-relaxed text-ink-2 outline-none placeholder:text-[#c8c4bc]"
+            />
           </Mini>
         </div>
       </div>

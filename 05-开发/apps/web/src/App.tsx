@@ -88,7 +88,7 @@ export default function App() {
         </header>
 
         <main className="mx-auto w-full max-w-3xl flex-1 px-5 pt-5 md:px-8 md:pt-6">
-          {isToday && <TodayView week={week} />}
+          {isToday && <TodayView />}
           {isReward && <RewardView />}
           {!isToday && !isReward && <PlaceholderView nameKey={`nav.${view}`} />}
         </main>

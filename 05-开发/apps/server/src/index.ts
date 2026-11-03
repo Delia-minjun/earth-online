@@ -1,11 +1,11 @@
-﻿import { serve } from "@hono/node-server";
+import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { Hono } from "hono";
 import { join } from "node:path";
-import type { HealthInfo, WeekInfo } from "@life/shared";
-import { PROJECT_ROOT, dbFile, getDb } from "./db.ts";
+import type { HealthInfo } from "@life/shared";
+import { PROJECT_ROOT, dbFile } from "./db.ts";
 import { migrate } from "./migrate.ts";
-import { buildWeek, isoWeekOf } from "./week.ts";
+import { api } from "./routes/p1.ts";
 
 migrate();
 
@@ -14,32 +14,17 @@ const PORT = Number(process.env.PORT ?? 7788);
 
 const app = new Hono();
 
-function ensureWeek(isoYear: number, isoWeek: number): WeekInfo {
-  const info = buildWeek(isoYear, isoWeek);
-  getDb()
-    .prepare(
-      `INSERT INTO week (id, iso_year, iso_week, start_date)
-       VALUES (?, ?, ?, ?)
-       ON CONFLICT(id) DO NOTHING`,
-    )
-    .run(info.id, isoYear, isoWeek, info.startDate);
-  return info;
-}
-
 app.get("/api/health", (c) => {
   const body: HealthInfo = {
     ok: true,
-    version: "0.0.1",
+    version: "0.1.0",
     now: new Date().toISOString(),
     db: dbFile(),
   };
   return c.json(body);
 });
 
-app.get("/api/week/current", (c) => {
-  const { isoYear, isoWeek } = isoWeekOf(new Date());
-  return c.json(ensureWeek(isoYear, isoWeek));
-});
+app.route("/api", api);
 
 // 生产模式：托管前端构建产物；开发模式由 Vite 单独跑并代理 /api
 app.use("/*", serveStatic({ root: WEB_DIST }));

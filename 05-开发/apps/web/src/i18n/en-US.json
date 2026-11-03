@@ -12,6 +12,12 @@
     "reward": "Rewards",
     "settings": "Settings"
   },
+  "common": {
+    "loading": "Loading…",
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Saved"
+  },
   "demo": {
     "tag": "Sample data · replaced once real records are wired"
   },
@@ -32,6 +38,14 @@
     "notRecorded": "not logged",
     "notes": "Notes",
     "noteAdd": "Write",
+    "focusAdd": "Add today's focus, press Enter",
+    "focusEmpty": "No focus yet today",
+    "timelineEmpty": "No time blocks yet",
+    "blockTitle": "What happens in this slot",
+    "moneyPending": "P2 wires up money and budget",
+    "bodyPending": "P2 wires up weight and training",
+    "mealsPending": "P2 wires up meals",
+    "notePlaceholder": "One line about today…",
     "pomodoro": "Pomodoro",
     "pomodoroHint": "Focus now; a time block is logged when you finish",
     "reviewCards": "Review",
