@@ -65,20 +65,26 @@ export interface ParsedCourse {
   startTime?: string;
   endTime?: string;
   location?: string;
+  weekType?: string;
+  weekStart?: number;
+  weekEnd?: number;
 }
 
 const PROMPT = `你是课表识别器。请从这张课表截图里提取所有课程，只输出 JSON，不要 markdown 代码块，不要解释。
 
 格式：
-{"courses":[{"name":"课程名","weekday":1,"startPeriod":1,"endPeriod":2,"startTime":"","endTime":"","location":"教室"}]}
+{"courses":[{"name":"课程名","weekday":1,"startPeriod":1,"endPeriod":2,"startTime":"","endTime":"","location":"教室","weekType":"all","weekStart":null,"weekEnd":null}]}
 
 规则：
 - weekday 用 1-7 表示周一到周日
 - 图上写「第3-4节」这类节次，就填 startPeriod/endPeriod，startTime/endTime 留空字符串
 - 图上写具体时间，就填 startTime/endTime（HH:MM 24 小时制），节次留空
+- weekType 取值：all（每周）、odd（单周）、even（双周）、range（指定周次范围）
+- 图上写「1-8周」「9-16周」这种，weekType 填 range，weekStart/weekEnd 填数字
+- 图上写「单周」「双周」「1-15周单周」这类，weekType 填 odd 或 even，weekStart/weekEnd 能看出范围就填
 - 一个格子里有多门课就输出多条
 - 地点认不出就留空
-- 认不出的字段一律留空，宁可少填也不要编造`;
+- 认不出的字段一律留空（weekType 认不出填 all），宁可少填也不要编造`;
 
 function extractCourses(text: string): ParsedCourse[] {
   const cleaned = text.replace(/```json/gi, "").replace(/```/g, "").trim();

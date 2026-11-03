@@ -117,7 +117,12 @@
     "nokey": "还没配置 API Key：去「设置」里填，或设环境变量 LIFE_AI_API_KEY",
     "noVision": "当前模型读不了图：去「设置」换一个带 ◉ 标记的模型",
     "timeout": "识别超时了：图片可能太大或网络慢。把截图裁到只剩课表、或压小一点再试。",
-    "tooLarge": "图片超过 4MB，请先裁剪或压缩再上传"
+    "tooLarge": "图片超过 4MB，请先裁剪或压缩再上传",
+    "weekAll": "每周",
+    "weekOdd": "单周",
+    "weekEven": "双周",
+    "weekRange": "范围",
+    "weekSuffix": "周"
   },
   "periods": {
     "title": "作息",

@@ -32,7 +32,16 @@ export function CourseEditor({ onChanged }: { onChanged?: () => void }) {
   const [notice, setNotice] = useState<string | null>(null);
 
   const [addOpen, setAddOpen] = useState(false);
-  const [form, setForm] = useState({ name: "", weekday: 1, startMin: 480, endMin: 570, location: "" });
+  const [form, setForm] = useState({
+    name: "",
+    weekday: 1,
+    startMin: 480,
+    endMin: 570,
+    location: "",
+    weekType: "all",
+    weekStart: 1,
+    weekEnd: 16,
+  });
 
   const [periods, setPeriods] = useState<PeriodsConfig>({
     firstStart: "08:00",
@@ -82,6 +91,9 @@ export function CourseEditor({ onChanged }: { onChanged?: () => void }) {
         startMin: form.startMin,
         endMin: form.endMin,
         location: form.location.trim() || undefined,
+        weekType: form.weekType,
+        weekStart: form.weekType === "range" ? form.weekStart : null,
+        weekEnd: form.weekType === "range" ? form.weekEnd : null,
       });
       setForm((f) => ({ ...f, name: "", location: "" }));
       setAddOpen(false);
@@ -168,6 +180,9 @@ export function CourseEditor({ onChanged }: { onChanged?: () => void }) {
         startMin: c.startMin as number,
         endMin: c.endMin as number,
         location: c.location.trim() || undefined,
+        weekType: c.weekType,
+        weekStart: c.weekType === "range" ? c.weekStart : null,
+        weekEnd: c.weekType === "range" ? c.weekEnd : null,
       }));
     if (list.length === 0) return;
     try {
@@ -412,6 +427,37 @@ export function CourseEditor({ onChanged }: { onChanged?: () => void }) {
                     placeholder={t("course.location")}
                     className="w-[96px] rounded-md border border-line bg-surface px-1.5 py-0.5 text-[10.5px] text-ink outline-none placeholder:text-[#c8c4bc]"
                   />
+                  <select
+                    value={c.weekType}
+                    onChange={(e) => updateCandidate(c.key, { weekType: e.target.value })}
+                    className="w-[64px] rounded-md border border-line bg-surface px-1 py-0.5 text-[10.5px] text-ink outline-none"
+                  >
+                    <option value="all">{t("course.weekAll")}</option>
+                    <option value="odd">{t("course.weekOdd")}</option>
+                    <option value="even">{t("course.weekEven")}</option>
+                    <option value="range">{t("course.weekRange")}</option>
+                  </select>
+                  {c.weekType === "range" ? (
+                    <>
+                      <input
+                        type="number"
+                        min={1}
+                        max={30}
+                        value={c.weekStart ?? 1}
+                        onChange={(e) => updateCandidate(c.key, { weekStart: Number(e.target.value) })}
+                        className="w-11 rounded-md border border-line bg-surface px-1 py-0.5 text-[10.5px] tabular-nums text-ink outline-none"
+                      />
+                      <span className="text-[10px] text-ink-3">–</span>
+                      <input
+                        type="number"
+                        min={1}
+                        max={30}
+                        value={c.weekEnd ?? 16}
+                        onChange={(e) => updateCandidate(c.key, { weekEnd: Number(e.target.value) })}
+                        className="w-11 rounded-md border border-line bg-surface px-1 py-0.5 text-[10.5px] tabular-nums text-ink outline-none"
+                      />
+                    </>
+                  ) : null}
                   <button
                     type="button"
                     onClick={() => removeCandidate(c.key)}
@@ -499,6 +545,37 @@ export function CourseEditor({ onChanged }: { onChanged?: () => void }) {
               placeholder={t("course.location")}
               className="w-24 rounded-lg border border-line bg-surface px-2 py-1 text-[11px] text-ink outline-none placeholder:text-[#c8c4bc]"
             />
+            <select
+              value={form.weekType}
+              onChange={(e) => setForm((f) => ({ ...f, weekType: e.target.value }))}
+              className="rounded-lg border border-line bg-surface px-1.5 py-1 text-[11px] text-ink-2 outline-none"
+            >
+              <option value="all">{t("course.weekAll")}</option>
+              <option value="odd">{t("course.weekOdd")}</option>
+              <option value="even">{t("course.weekEven")}</option>
+              <option value="range">{t("course.weekRange")}</option>
+            </select>
+            {form.weekType === "range" ? (
+              <>
+                <input
+                  type="number"
+                  min={1}
+                  max={30}
+                  value={form.weekStart}
+                  onChange={(e) => setForm((f) => ({ ...f, weekStart: Number(e.target.value) }))}
+                  className="w-12 rounded-lg border border-line bg-surface px-1 py-1 text-[11px] tabular-nums text-ink outline-none"
+                />
+                <span className="text-[10px] text-ink-3">–</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={30}
+                  value={form.weekEnd}
+                  onChange={(e) => setForm((f) => ({ ...f, weekEnd: Number(e.target.value) }))}
+                  className="w-12 rounded-lg border border-line bg-surface px-1 py-1 text-[11px] tabular-nums text-ink outline-none"
+                />
+              </>
+            ) : null}
             <button
               type="button"
               onClick={() => void submit()}
@@ -539,6 +616,15 @@ export function CourseEditor({ onChanged }: { onChanged?: () => void }) {
                       <span className="min-w-0 flex-1 truncate text-[11px] text-ink">{c.name}</span>
                       {c.location ? (
                         <span className="shrink-0 text-[9.5px] text-ink-3">{c.location}</span>
+                      ) : null}
+                      {c.week_type !== "all" ? (
+                        <span className="shrink-0 rounded-full bg-[#eef0f4] px-1.5 py-0.5 text-[9px] text-[#7c8792]">
+                          {c.week_type === "odd"
+                            ? t("course.weekOdd")
+                            : c.week_type === "even"
+                              ? t("course.weekEven")
+                              : `${c.week_start ?? 1}-${c.week_end ?? "?"}${t("course.weekSuffix")}`}
+                        </span>
                       ) : null}
                       <button
                         type="button"

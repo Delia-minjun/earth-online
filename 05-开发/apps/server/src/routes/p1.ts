@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getDb } from "../db.ts";
 import { buildWeek, isoWeekOf, weekId } from "../week.ts";
 import { listModels, parseTimetableImage, resolveAiConfig, testAiConfig } from "../lib/ai.ts";
+import { activeIn, weeksOverlap, type WeekRule } from "../lib/weeks.ts";
 import {
   DEFAULT_PERIODS,
   getSetting,
@@ -113,13 +114,14 @@ api.get("/day", (c) => {
     .prepare("SELECT date, mood, body FROM journal_entry WHERE date = ?")
     .get(date) ?? null) as Row | null;
 
-  const courses = db
+  const courses = (db
     .prepare(
-      `SELECT id, name, weekday, start_min, end_min, location, color
-         FROM course WHERE archived = 0 AND weekday = ?
+      `SELECT ${COURSE_COLS} FROM course WHERE archived = 0 AND weekday = ?
         ORDER BY start_min`,
     )
-    .all(weekdayOf(date)) as Row[];
+    .all(weekdayOf(date)) as Row[]).filter((c) =>
+    activeIn(c as unknown as WeekRule, teachingWeekOf(date)),
+  );
 
   return c.json({ date, week, tasks, blocks, habits, journal, courses, teachingWeek: teachingWeekOf(date) });
 });
@@ -233,16 +235,20 @@ api.post("/blocks", async (c) => {
     );
   }
 
-  // 课表时间也属于已占用
-  const courseClash = db
-    .prepare(
-      `SELECT name, start_min, end_min FROM course
-        WHERE archived = 0 AND weekday = ? AND ? < end_min AND ? > start_min
-        LIMIT 1`,
-    )
-    .get(weekdayOf(date), r.data.startMin, r.data.endMin) as
-    | { name: string; start_min: number; end_min: number }
-    | undefined;
+  // 课表时间也属于已占用（只算这一教学周真的上的课）
+  const blockWeek = teachingWeekOf(date);
+  const courseClash = (
+    db
+      .prepare(
+        `SELECT name, start_min, end_min, week_type, week_start, week_end FROM course
+          WHERE archived = 0 AND weekday = ? AND ? < end_min AND ? > start_min`,
+      )
+      .all(weekdayOf(date), r.data.startMin, r.data.endMin) as unknown as (WeekRule & {
+      name: string;
+      start_min: number;
+      end_min: number;
+    })[]
+  ).find((c) => activeIn(c, blockWeek));
   if (courseClash) {
     return c.json(
       {
@@ -322,7 +328,7 @@ api.put("/journal/:date", async (c) => {
 
 /* ---------------- courses ---------------- */
 
-const COURSE_COLS = "id, name, weekday, start_min, end_min, location, color";
+const COURSE_COLS = "id, name, weekday, start_min, end_min, location, color, week_type, week_start, week_end";
 
 api.get("/courses", (c) => {
   const rows = getDb()
@@ -333,6 +339,12 @@ api.get("/courses", (c) => {
   return c.json(rows);
 });
 
+const weekFields = {
+  weekType: z.enum(["all", "odd", "even", "range"]).optional(),
+  weekStart: z.number().int().min(1).max(30).nullable().optional(),
+  weekEnd: z.number().int().min(1).max(30).nullable().optional(),
+};
+
 const courseCreate = z
   .object({
     name: z.string().trim().min(1).max(60),
@@ -340,6 +352,7 @@ const courseCreate = z
     startMin: z.number().int().min(0).max(1440),
     endMin: z.number().int().min(0).max(1440),
     location: z.string().trim().max(60).optional(),
+    ...weekFields,
   })
   .refine((v) => v.endMin > v.startMin, { message: "endMin must be > startMin" });
 
@@ -348,15 +361,25 @@ api.post("/courses", async (c) => {
   if (!r.ok) return c.json({ error: r.error }, 400);
   const db = getDb();
 
-  const clash = db
+  const incoming: WeekRule = {
+    week_type: r.data.weekType ?? "all",
+    week_start: r.data.weekStart ?? null,
+    week_end: r.data.weekEnd ?? null,
+  };
+
+  // 时间重叠的候选里，只有周次也交叠才算冲突（单周课 vs 双周课不该互相阻挡）
+  const sameSlot = db
     .prepare(
-      `SELECT name, start_min, end_min FROM course
-        WHERE archived = 0 AND weekday = ? AND ? < end_min AND ? > start_min
-        LIMIT 1`,
+      `SELECT name, start_min, end_min, week_type, week_start, week_end FROM course
+        WHERE archived = 0 AND weekday = ? AND ? < end_min AND ? > start_min`,
     )
-    .get(r.data.weekday, r.data.startMin, r.data.endMin) as
-    | { name: string; start_min: number; end_min: number }
-    | undefined;
+    .all(r.data.weekday, r.data.startMin, r.data.endMin) as unknown as (WeekRule & {
+    name: string;
+    start_min: number;
+    end_min: number;
+  })[];
+
+  const clash = sameSlot.find((c) => weeksOverlap(c, incoming));
   if (clash) {
     return c.json(
       {
@@ -369,9 +392,19 @@ api.post("/courses", async (c) => {
 
   const id = uid();
   db.prepare(
-    `INSERT INTO course (id, name, weekday, start_min, end_min, location)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-  ).run(id, r.data.name, r.data.weekday, r.data.startMin, r.data.endMin, r.data.location ?? null);
+    `INSERT INTO course (id, name, weekday, start_min, end_min, location, week_type, week_start, week_end)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).run(
+    id,
+    r.data.name,
+    r.data.weekday,
+    r.data.startMin,
+    r.data.endMin,
+    r.data.location ?? null,
+    incoming.week_type,
+    incoming.week_start,
+    incoming.week_end,
+  );
 
   return c.json(db.prepare(`SELECT ${COURSE_COLS} FROM course WHERE id = ?`).get(id), 201);
 });
@@ -526,6 +559,8 @@ api.post("/courses/parse-image", async (c) => {
     const startMin = byPeriod ? byPeriod.startMin : toMinOf(p.startTime);
     const endMin = byPeriod ? byPeriod.endMin : toMinOf(p.endTime);
     const name = (p.name ?? "").trim();
+    const wt = String(p.weekType ?? "all");
+    const weekType = ["all", "odd", "even", "range"].includes(wt) ? wt : "all";
     const ok =
       Boolean(name) &&
       Number.isInteger(weekday) &&
@@ -541,6 +576,9 @@ api.post("/courses/parse-image", async (c) => {
       startMin,
       endMin,
       location: (p.location ?? "").trim(),
+      weekType,
+      weekStart: typeof p.weekStart === "number" ? p.weekStart : null,
+      weekEnd: typeof p.weekEnd === "number" ? p.weekEnd : null,
       ok,
     };
   });
@@ -560,6 +598,7 @@ api.post("/courses/bulk", async (c) => {
             startMin: z.number().int().min(0).max(1440),
             endMin: z.number().int().min(0).max(1440),
             location: z.string().trim().max(60).optional(),
+            ...weekFields,
           }),
         )
         .min(1)
@@ -577,20 +616,37 @@ api.post("/courses/bulk", async (c) => {
       skipped.push({ name: course.name, reason: "invalid-range" });
       continue;
     }
-    const clash = db
+    const incoming: WeekRule = {
+      week_type: course.weekType ?? "all",
+      week_start: course.weekStart ?? null,
+      week_end: course.weekEnd ?? null,
+    };
+    const sameSlot = db
       .prepare(
-        `SELECT id FROM course WHERE archived = 0 AND weekday = ?
-           AND ? < end_min AND ? > start_min LIMIT 1`,
+        `SELECT name, start_min, end_min, week_type, week_start, week_end FROM course
+          WHERE archived = 0 AND weekday = ? AND ? < end_min AND ? > start_min`,
       )
-      .get(course.weekday, course.startMin, course.endMin);
-    if (clash) {
+      .all(course.weekday, course.startMin, course.endMin) as unknown as (WeekRule & {
+      name: string;
+    })[];
+    if (sameSlot.some((c) => weeksOverlap(c, incoming))) {
       skipped.push({ name: course.name, reason: "overlap" });
       continue;
     }
     db.prepare(
-      `INSERT INTO course (id, name, weekday, start_min, end_min, location)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-    ).run(uid(), course.name, course.weekday, course.startMin, course.endMin, course.location ?? null);
+      `INSERT INTO course (id, name, weekday, start_min, end_min, location, week_type, week_start, week_end)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(
+      uid(),
+      course.name,
+      course.weekday,
+      course.startMin,
+      course.endMin,
+      course.location ?? null,
+      incoming.week_type,
+      incoming.week_start,
+      incoming.week_end,
+    );
     inserted += 1;
   }
 
@@ -631,11 +687,12 @@ api.get("/week/:year/:week", (c) => {
     )
     .all(info.startDate, info.endDate) as Row[];
 
-  const courses = db
-    .prepare(
-      `SELECT ${COURSE_COLS} FROM course WHERE archived = 0 ORDER BY weekday, start_min`,
-    )
-    .all() as Row[];
+  const weekNo = teachingWeekOf(info.startDate);
+  const courses = (
+    db
+      .prepare(`SELECT ${COURSE_COLS} FROM course WHERE archived = 0 ORDER BY weekday, start_min`)
+      .all() as Row[]
+  ).filter((c) => activeIn(c as unknown as WeekRule, weekNo));
 
   return c.json({
     week: info,
@@ -643,7 +700,7 @@ api.get("/week/:year/:week", (c) => {
     tasks,
     blocks,
     courses,
-    teachingWeek: teachingWeekOf(info.startDate),
+    teachingWeek: weekNo,
   });
 });
 

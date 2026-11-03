@@ -117,7 +117,12 @@
     "nokey": "No API key yet — add one in Settings, or set LIFE_AI_API_KEY",
     "noVision": "This model cannot read images — pick one marked ◉ in Settings",
     "timeout": "Recognition timed out: the image may be large or the network slow. Crop to just the timetable and retry.",
-    "tooLarge": "Image is over 4MB — crop or compress it first"
+    "tooLarge": "Image is over 4MB — crop or compress it first",
+    "weekAll": "Weekly",
+    "weekOdd": "Odd wks",
+    "weekEven": "Even wks",
+    "weekRange": "Range",
+    "weekSuffix": "w"
   },
   "periods": {
     "title": "Periods",

@@ -61,6 +61,9 @@ export interface ApiCourse {
   end_min: number;
   location: string | null;
   color: string | null;
+  week_type: string;
+  week_start: number | null;
+  week_end: number | null;
 }
 
 export interface ApiDay {
@@ -159,6 +162,9 @@ export interface CourseCandidate {
   startMin: number | null;
   endMin: number | null;
   location: string;
+  weekType: string;
+  weekStart: number | null;
+  weekEnd: number | null;
   ok: boolean;
 }
 
@@ -195,8 +201,16 @@ export const api = {
     }),
 
   courses: () => request<ApiCourse[]>("/courses"),
-  addCourse: (input: { name: string; weekday: number; startMin: number; endMin: number; location?: string }) =>
-    request<ApiCourse>("/courses", { method: "POST", body: JSON.stringify(input) }),
+  addCourse: (input: {
+    name: string;
+    weekday: number;
+    startMin: number;
+    endMin: number;
+    location?: string;
+    weekType?: string;
+    weekStart?: number | null;
+    weekEnd?: number | null;
+  }) => request<ApiCourse>("/courses", { method: "POST", body: JSON.stringify(input) }),
   deleteCourse: (id: string) => request<{ ok: true }>(`/courses/${id}`, { method: "DELETE" }),
 
   periods: () => request<PeriodsConfig>("/settings/periods"),
@@ -239,7 +253,16 @@ export const api = {
       180_000,
     ),
   bulkCourses: (
-    courses: { name: string; weekday: number; startMin: number; endMin: number; location?: string }[],
+    courses: {
+      name: string;
+      weekday: number;
+      startMin: number;
+      endMin: number;
+      location?: string;
+      weekType?: string;
+      weekStart?: number | null;
+      weekEnd?: number | null;
+    }[],
   ) =>
     request<{ inserted: number; skipped: { name: string; reason: string }[] }>("/courses/bulk", {
       method: "POST",
