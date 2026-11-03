@@ -81,7 +81,12 @@ export function Sidebar({
   return (
     <aside className="hidden w-52 shrink-0 flex-col border-r border-line bg-surface-2 px-4 py-6 md:flex">
       <div className="flex items-center gap-2.5 px-1">
-        <span className="h-2.5 w-2.5 rounded-full bg-accent" />
+        <img
+          src="/icons/icon-48.png"
+          alt=""
+          className="h-6 w-6 rounded-[7px]"
+          draggable={false}
+        />
         <span className="text-[15px] font-semibold text-ink">{t("app.title")}</span>
       </div>
       <p className="mt-1.5 px-1 text-[9px] uppercase tracking-[0.18em] text-ink-3">
