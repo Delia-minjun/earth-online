@@ -5,7 +5,6 @@ import {
   COURSE_COLOR,
   hhmm,
   type ApiDay,
-  type ApiDayReview,
   type ApiHabitGrid,
   type ApiMeta,
   type ApiTask,
@@ -159,51 +158,8 @@ export function TodayView() {
     });
   }, [grid?.end, day?.date]);
 
-  /* ---- 日复盘 ---- */
-  const [dayReview, setDayReview] = useState<ApiDayReview | null>(null);
-  const [reviewState, setReviewState] = useState<"idle" | "saving" | "saved" | "error">("idle");
-  const reviewSavedRef = useRef("");
-  const reviewDate = day?.date;
-
-  useEffect(() => {
-    if (!reviewDate) return;
-    let alive = true;
-    api
-      .dayReview(reviewDate)
-      .then((r) => {
-        if (!alive) return;
-        setDayReview(r);
-        reviewSavedRef.current = JSON.stringify(r);
-        setReviewState("idle");
-      })
-      .catch(() => alive && setDayReview(null));
-    return () => {
-      alive = false;
-    };
-  }, [reviewDate]);
-
-  useEffect(() => {
-    if (!dayReview || !reviewDate) return;
-    const snap = JSON.stringify(dayReview);
-    if (snap === reviewSavedRef.current) return;
-    setReviewState("saving");
-    const timer = window.setTimeout(() => {
-      api
-        .saveDayReview(reviewDate, {
-          good: dayReview.good,
-          bad: dayReview.bad,
-          next: dayReview.next,
-        })
-        .then(() => {
-          reviewSavedRef.current = snap;
-          setReviewState("saved");
-        })
-        .catch(() => setReviewState("error"));
-    }, 700);
-    return () => window.clearTimeout(timer);
-  }, [dayReview, reviewDate]);
-
-  /* ---- 任务编辑 ---- */  const [editTaskId, setEditTaskId] = useState<string | null>(null);
+  /* ---- 任务编辑 ---- */
+  const [editTaskId, setEditTaskId] = useState<string | null>(null);
   const [taskForm, setTaskForm] = useState({ title: "", priority: 0, date: "" });
 
   const startEditTask = (task: ApiTask) => {
@@ -294,9 +250,9 @@ export function TodayView() {
     <div className="space-y-3.5">
       {error ? <p className="text-[10px] text-warn">{error}</p> : null}
 
-      <div className="today-grid space-y-3.5 lg:grid lg:grid-cols-2 lg:items-start lg:gap-3.5 lg:space-y-0">
-        {/* 左：今天的计划 */}
-        <div className="space-y-3.5">
+      <div className="today-grid space-y-3.5 lg:grid lg:grid-cols-2 lg:gap-3.5 lg:space-y-0">
+        {/* 今日任务：横跨正文两列 */}
+        <div className="space-y-3.5 lg:col-span-2">
           <Card title={t("today.focus")} action={`${doneCount}/${focus.length}`}>
             <ul className="divide-y divide-line-2">
               {focus.map((f) =>
@@ -418,9 +374,10 @@ export function TodayView() {
               </button>
             </div>
           </Card>
+        </div>
 
-          <Mini
-            title={t("today.habits")}
+        <Mini
+          title={t("today.habits")}
             action={
               <span className="flex items-center gap-2">
                 <span>{day.habits.filter((h) => h.done).length}/{day.habits.length}</span>
@@ -453,17 +410,14 @@ export function TodayView() {
             </div>
           </Mini>
 
-          <MoneyCard date={day.date} />
-        </div>
+        <MoneyCard date={day.date} />
 
-        <div className="space-y-3.5">
-          <BodyCard date={day.date} />
+        <BodyCard date={day.date} />
 
-          <MealsCard date={day.date} />
-        </div>
+        <MealsCard date={day.date} />
 
         {/* 时间轴：宽屏时作为右侧固定栏，样式与左侧导航一致，不加卡片 */}
-        <aside className="min-[1150px]:sticky min-[1150px]:top-0 min-[1150px]:h-[calc(100vh-6rem)] min-[1150px]:self-start min-[1150px]:overflow-y-auto min-[1150px]:border-l min-[1150px]:border-line min-[1150px]:pl-5">
+        <aside className="min-[1150px]:col-start-3 min-[1150px]:row-span-3 min-[1150px]:row-start-1 min-[1150px]:sticky min-[1150px]:top-0 min-[1150px]:h-[calc(100vh-6rem)] min-[1150px]:self-start min-[1150px]:overflow-y-auto min-[1150px]:border-l min-[1150px]:border-line min-[1150px]:pl-5">
           <header className="flex items-center justify-between">
             <h2 className="text-[12px] font-semibold text-ink">{t("today.timeline")}</h2>
             <button
@@ -590,56 +544,26 @@ export function TodayView() {
         </aside>
       </div>
 
-      <div className="space-y-3.5 lg:grid lg:grid-cols-2 lg:items-start lg:gap-3.5 lg:space-y-0">
-        <Mini
-          title={t("today.notes")}
-          action={
-            noteState === "saving"
-              ? t("common.saving")
-              : noteState === "saved"
-                ? t("common.saved")
-                : noteState === "error"
-                  ? t("common.saveFailed")
-                  : null
-          }
-        >
-          <textarea
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            rows={4}
-            placeholder={t("today.notePlaceholder")}
-            className="w-full resize-none bg-transparent text-[11.5px] leading-relaxed text-ink-2 outline-none placeholder:text-[#c8c4bc]"
-          />
-        </Mini>
-
-        <Mini
-          title={t("today.dayReview")}
-          action={
-            reviewState === "saving"
-              ? t("common.saving")
-              : reviewState === "saved"
-                ? t("common.saved")
-                : reviewState === "error"
-                  ? t("common.saveFailed")
-                  : null
-          }
-        >
-          {(["good", "bad", "next"] as const).map((k) => (
-            <label key={k} className="mt-1.5 block first:mt-0">
-              <span className="text-[9.5px] text-ink-3">{t(`dayReview.${k}`)}</span>
-              <textarea
-                rows={1}
-                value={dayReview?.[k] ?? ""}
-                onChange={(e) =>
-                  setDayReview((prev) => (prev ? { ...prev, [k]: e.target.value } : prev))
-                }
-                placeholder={t(`dayReview.${k}Hint`)}
-                className="mt-0.5 w-full resize-none rounded-lg bg-surface-2 px-2 py-1.5 text-[11.5px] leading-relaxed text-ink-2 outline-none placeholder:text-[#c8c4bc]"
-              />
-            </label>
-          ))}
-        </Mini>
-      </div>
+      <Mini
+        title={t("today.notes")}
+        action={
+          noteState === "saving"
+            ? t("common.saving")
+            : noteState === "saved"
+              ? t("common.saved")
+              : noteState === "error"
+                ? t("common.saveFailed")
+                : null
+        }
+      >
+        <textarea
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          rows={4}
+          placeholder={t("today.notePlaceholder")}
+          className="w-full resize-none bg-transparent text-[11.5px] leading-relaxed text-ink-2 outline-none placeholder:text-[#c8c4bc]"
+        />
+      </Mini>
 
       {habitOpen ? (
         <div
