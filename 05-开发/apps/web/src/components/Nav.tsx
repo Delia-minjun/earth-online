@@ -6,7 +6,6 @@ export type ViewKey = "today" | "week" | "habits" | "review" | "study" | "reward
 export const NAV_ITEMS: { key: ViewKey; implemented: boolean }[] = [
   { key: "today", implemented: true },
   { key: "week", implemented: true },
-  { key: "habits", implemented: false },
   { key: "review", implemented: true },
   { key: "study", implemented: false },
   { key: "reward", implemented: true },
