@@ -18,9 +18,13 @@ export const MOBILE_ITEMS: ViewKey[] = ["today", "week", "study", "reward", "set
 export function Sidebar({
   active,
   onChange,
+  status,
+  version,
 }: {
   active: ViewKey;
   onChange: (v: ViewKey) => void;
+  status: "ok" | "down" | "loading";
+  version?: string;
 }) {
   const { t } = useTranslation();
   return (
@@ -60,6 +64,22 @@ export function Sidebar({
           );
         })}
       </nav>
+
+      <div className="mt-auto flex items-center gap-1.5 px-1 pt-4 text-[9.5px] text-ink-3">
+        <span
+          className={`h-1.5 w-1.5 rounded-full ${
+            status === "ok" ? "bg-accent" : status === "down" ? "bg-warn" : "bg-line"
+          }`}
+        />
+        <span>
+          {status === "ok"
+            ? t("status.online")
+            : status === "down"
+              ? t("status.offline")
+              : "…"}
+        </span>
+        {version ? <span className="ml-auto tabular-nums">v{version}</span> : null}
+      </div>
     </aside>
   );
 }

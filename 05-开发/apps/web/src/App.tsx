@@ -57,7 +57,12 @@ export default function App() {
 
   return (
     <div className="flex min-h-full">
-      <Sidebar active={view} onChange={setView} />
+      <Sidebar
+        active={view}
+        onChange={setView}
+        status={health ? "ok" : failed ? "down" : "loading"}
+        version={health?.version}
+      />
 
       <div className="flex min-h-full flex-1 flex-col pb-[72px] md:pb-0">
         <header className="mx-auto flex w-full max-w-3xl items-start justify-between gap-4 px-5 pt-7 md:px-8 md:pt-9">
@@ -100,18 +105,6 @@ export default function App() {
             <PlaceholderView nameKey={`nav.${view}`} />
           )}
         </main>
-
-        <footer className="mx-auto w-full max-w-3xl px-5 pb-6 pt-6 md:px-8">
-          <div className="flex items-center gap-2 text-[10.5px] text-ink-3">
-            <span
-              className={`h-1.5 w-1.5 rounded-full ${
-                health ? "bg-accent" : failed ? "bg-warn" : "bg-line"
-              }`}
-            />
-            <span>{health ? t("status.online") : failed ? t("status.offline") : "…"}</span>
-            {health ? <span className="ml-auto">v{health.version}</span> : null}
-          </div>
-        </footer>
       </div>
 
       <BottomNav active={view} onChange={setView} />
