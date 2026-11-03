@@ -12,15 +12,26 @@
     "reward": "Rewards",
     "settings": "Settings"
   },
+  "demo": {
+    "tag": "Sample data · replaced once real records are wired"
+  },
   "today": {
     "title": "Today",
     "focus": "Today's focus",
-    "focusEmpty": "Nothing yet",
-    "focusHint": "P1 will show today's three things here",
+    "timeline": "Today's timeline",
+    "min": "min",
     "habits": "Habits",
-    "habitsEmpty": "No habits yet",
+    "money": "Money",
+    "addRecord": "Add",
+    "left": "budget left",
+    "expense": "out",
+    "income": "in",
+    "body": "Body",
+    "weight": "Weight",
+    "meals": "Meals",
+    "notRecorded": "not logged",
     "notes": "Notes",
-    "notesEmpty": "No notes for today"
+    "noteAdd": "Write"
   },
   "area": {
     "health": "Health",
@@ -34,17 +45,15 @@
     "sub": "Earn coins from real work, spend them on rewards you define",
     "balance": "Balance",
     "unit": "coins",
-    "weekIn": "This week +0",
-    "weekOut": "This week −0",
-    "hint": "Finishing tasks, checking in and reviewing all earn coins. Coins are only granted by the system, never by hand.",
+    "weekIn": "This week +{{n}}",
+    "weekOut": "This week −{{n}}",
+    "hint": "Finishing tasks, checking in and reviewing all earn coins. Coins are granted by the system only — never by hand, never overdrawn.",
     "areas": "Six areas",
     "decay": "−1% per day, floor 40%",
     "shop": "Reward shop",
-    "shopEmpty": "No rewards yet",
-    "shopHint": "Write down what you actually want: a milk tea, an episode, a book",
+    "redeem": "Redeem",
     "ledger": "Recent ledger",
-    "ledgerAll": "See all",
-    "ledgerEmpty": "No entries yet"
+    "ledgerAll": "See all"
   },
   "placeholder": {
     "title": "Still building",

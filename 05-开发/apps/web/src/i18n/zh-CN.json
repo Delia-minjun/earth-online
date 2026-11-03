@@ -12,15 +12,26 @@
     "reward": "奖赏",
     "settings": "设置"
   },
+  "demo": {
+    "tag": "示例数据 · 接入真实记录后自动替换"
+  },
   "today": {
     "title": "今日",
     "focus": "今日重点",
-    "focusEmpty": "还没有重点",
-    "focusHint": "P1 会在这里显示今天的 3 件事",
+    "timeline": "今日时间轴",
+    "min": "分钟",
     "habits": "习惯打卡",
-    "habitsEmpty": "还没有设置习惯",
+    "money": "记账",
+    "addRecord": "记一笔",
+    "left": "预算剩余",
+    "expense": "支出",
+    "income": "收入",
+    "body": "身体",
+    "weight": "体重",
+    "meals": "饮食",
+    "notRecorded": "未记录",
     "notes": "随手记",
-    "notesEmpty": "今天还没有记录"
+    "noteAdd": "写一句"
   },
   "area": {
     "health": "健康",
@@ -34,17 +45,15 @@
     "sub": "做实事赚币，用币兑换自己定的奖励",
     "balance": "我的余额",
     "unit": "币",
-    "weekIn": "本周 +0",
-    "weekOut": "本周 −0",
-    "hint": "完成任务、打卡、复盘都会赚币。币只能由系统按规则发放，不能手动加。",
+    "weekIn": "本周 +{{n}}",
+    "weekOut": "本周 −{{n}}",
+    "hint": "完成任务、打卡、复盘都会赚币。币只能由系统按规则发放，不能手动加，也不能透支。",
     "areas": "六领域进度",
     "decay": "每日 −1%，下限 40%",
     "shop": "奖赏商店",
-    "shopEmpty": "还没有奖励",
-    "shopHint": "写下你真正想要的：一杯奶茶、一集剧、一本书",
+    "redeem": "兑换",
     "ledger": "最近的账本",
-    "ledgerAll": "查看全部",
-    "ledgerEmpty": "还没有记录"
+    "ledgerAll": "查看全部"
   },
   "placeholder": {
     "title": "还在开发中",

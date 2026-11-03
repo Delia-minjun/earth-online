@@ -1,40 +1,182 @@
 import { useTranslation } from "react-i18next";
 import type { WeekInfo } from "@life/shared";
-import { Card, Empty } from "../components/Card";
+import { Card } from "../components/Card";
+import {
+  CAT_COLOR,
+  DEMO_BLOCKS,
+  DEMO_BODY,
+  DEMO_FOCUS,
+  DEMO_HABITS,
+  DEMO_MEALS,
+  DEMO_MONEY,
+  DEMO_NOTE,
+} from "../demo";
 
-const WEEKDAYS_ZH = ["一", "二", "三", "四", "五", "六", "日"];
-const WEEKDAYS_EN = ["M", "T", "W", "T", "F", "S", "S"];
+function Mini({
+  title,
+  action,
+  children,
+}: {
+  title: string;
+  action?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-2xl border border-line bg-surface p-3.5 shadow-[0_6px_20px_-14px_rgba(88,82,72,0.5)]">
+      <header className="flex items-baseline justify-between">
+        <h2 className="text-[12px] font-semibold text-ink">{title}</h2>
+        {action ? <span className="text-[10px] text-ink-3">{action}</span> : null}
+      </header>
+      <div className="mt-2.5">{children}</div>
+    </section>
+  );
+}
+
+const minutes = (a: string, b: string) => {
+  const [h1, m1] = a.split(":").map(Number);
+  const [h2, m2] = b.split(":").map(Number);
+  return (h2 ?? 0) * 60 + (m2 ?? 0) - ((h1 ?? 0) * 60 + (m1 ?? 0));
+};
 
 export function TodayView({ week }: { week: WeekInfo | null }) {
-  const { t, i18n } = useTranslation();
-  const zh = i18n.language === "zh-CN";
-  const days = zh ? WEEKDAYS_ZH : WEEKDAYS_EN;
+  const { t } = useTranslation();
 
   return (
     <div className="space-y-3.5">
-      <Card title={t("today.focus")} action={t("action.add")}>
-        <Empty text={t("today.focusEmpty")} hint={t("today.focusHint")} />
-      </Card>
+      <p className="text-[10px] text-[#bcb8b0]">{t("demo.tag")}</p>
 
-      <Card title={t("today.habits")} action={week ? t("week.label", { week: week.isoWeek }) : "—"}>
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex gap-1.5">
-            {days.map((d, i) => (
-              <span
-                key={i}
-                className="grid h-8 w-8 place-items-center rounded-full border border-line text-[10px] text-ink-3"
-              >
-                {d}
-              </span>
-            ))}
-          </div>
-          <span className="text-[10.5px] leading-relaxed text-ink-3">{t("today.habitsEmpty")}</span>
+      <div className="space-y-3.5 lg:grid lg:grid-cols-5 lg:items-start lg:gap-3.5 lg:space-y-0">
+        {/* 左：重点 + 时间轴 */}
+        <div className="space-y-3.5 lg:col-span-3">
+          <Card title={t("today.focus")} action={t("action.add")}>
+            <ul className="divide-y divide-line-2">
+              {DEMO_FOCUS.map((f) => (
+                <li key={f.id} className="flex items-start gap-3 py-2.5 first:pt-0 last:pb-0">
+                  <span
+                    className={`mt-0.5 grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full border text-[9px] ${
+                      f.done
+                        ? "border-accent bg-accent text-white"
+                        : "border-line text-transparent"
+                    }`}
+                  >
+                    ✓
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p
+                      className={`truncate text-[12.5px] ${
+                        f.done ? "text-ink-3 line-through" : "text-ink"
+                      }`}
+                    >
+                      {f.title}
+                    </p>
+                    <p className="mt-0.5 text-[10px] text-ink-3">{f.time}</p>
+                  </div>
+                  <span
+                    className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full"
+                    style={{ background: CAT_COLOR[f.cat] }}
+                  />
+                </li>
+              ))}
+            </ul>
+          </Card>
+
+          <Card
+            title={t("today.timeline")}
+            action={week ? t("week.label", { week: week.isoWeek }) : "—"}
+          >
+            <ul>
+              {DEMO_BLOCKS.map((b) => (
+                <li key={b.id} className="flex gap-3 py-2 first:pt-0 last:pb-0">
+                  <span className="w-10 shrink-0 pt-0.5 text-[10px] tabular-nums text-ink-3">
+                    {b.start}
+                  </span>
+                  <span
+                    className="w-[3px] shrink-0 rounded-full"
+                    style={{ background: CAT_COLOR[b.cat] }}
+                  />
+                  <div className="min-w-0 flex-1 pt-0.5">
+                    <p className="truncate text-[12px] text-ink">{b.title}</p>
+                    <p className="mt-0.5 text-[10px] text-ink-3">
+                      {b.start}–{b.end} · {minutes(b.start, b.end)} {t("today.min")}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </Card>
         </div>
-      </Card>
 
-      <Card title={t("today.notes")} action={t("action.add")}>
-        <Empty text={t("today.notesEmpty")} />
-      </Card>
+        {/* 右：习惯 / 记账 / 身体 / 饮食 / 随手记 */}
+        <div className="space-y-3.5 lg:col-span-2">
+          <Mini title={t("today.habits")} action={`${DEMO_HABITS.filter((h) => h.done).length}/${DEMO_HABITS.length}`}>
+            <div className="flex flex-wrap gap-1.5">
+              {DEMO_HABITS.map((h) => (
+                <span
+                  key={h.id}
+                  className={`rounded-full px-2.5 py-1 text-[10.5px] ${
+                    h.done
+                      ? "bg-accent text-white"
+                      : "border border-line bg-surface text-ink-3"
+                  }`}
+                >
+                  {h.done ? "✓ " : ""}
+                  {h.name}
+                </span>
+              ))}
+            </div>
+          </Mini>
+
+          <Mini title={t("today.money")} action={t("today.addRecord")}>
+            <div className="flex items-end justify-between">
+              <div>
+                <p className="text-[19px] font-semibold leading-none text-ink">
+                  −{DEMO_MONEY.spentToday}
+                </p>
+                <p className="mt-1.5 text-[10px] text-ink-3">
+                  {t("today.left")} {DEMO_MONEY.budgetLeft}
+                </p>
+              </div>
+              <div className="flex gap-1">
+                <span className="rounded-full bg-warn-soft px-2 py-1 text-[9.5px] text-warn">
+                  {t("today.expense")}
+                </span>
+                <span className="rounded-full bg-accent-soft px-2 py-1 text-[9.5px] text-accent">
+                  {t("today.income")}
+                </span>
+              </div>
+            </div>
+          </Mini>
+
+          <Mini title={t("today.body")}>
+            <div className="flex items-center justify-between text-[11.5px]">
+              <span className="text-ink-2">
+                {t("today.weight")}{" "}
+                <span className="text-ink">{DEMO_BODY.weight}</span> kg
+              </span>
+              <span className="rounded-full bg-[#f0ece4] px-2 py-0.5 text-[10px] text-ink-2">
+                {DEMO_BODY.workout}
+              </span>
+            </div>
+          </Mini>
+
+          <Mini title={t("today.meals")}>
+            <ul className="space-y-1.5">
+              {DEMO_MEALS.map((m) => (
+                <li key={m.id} className="flex gap-2 text-[11px]">
+                  <span className="w-3 shrink-0 text-ink-3">{m.slot}</span>
+                  <span className={m.text ? "text-ink-2" : "text-[#c8c4bc]"}>
+                    {m.text || t("today.notRecorded")}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </Mini>
+
+          <Mini title={t("today.notes")} action={t("today.noteAdd")}>
+            <p className="text-[11.5px] leading-relaxed text-ink-2">{DEMO_NOTE}</p>
+          </Mini>
+        </div>
+      </div>
     </div>
   );
 }
