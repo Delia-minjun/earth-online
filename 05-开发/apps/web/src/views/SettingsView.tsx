@@ -139,20 +139,28 @@ export function SettingsView() {
             </label>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 pt-1">
+          <div className="flex flex-nowrap items-center gap-2 overflow-x-auto pt-1">
             <button
               type="button"
               onClick={() => void save()}
               disabled={busy}
-              className="rounded-lg bg-accent px-3 py-1.5 text-[10.5px] font-semibold text-white disabled:opacity-60"
+              className="shrink-0 whitespace-nowrap rounded-lg bg-accent px-3 py-1.5 text-[10.5px] font-semibold text-white disabled:opacity-60"
             >
               {t("common.save")}
             </button>
             <button
               type="button"
+              onClick={() => void test()}
+              disabled={busy || !info?.configured}
+              className="shrink-0 whitespace-nowrap rounded-lg border border-line px-3 py-1.5 text-[10.5px] text-ink-2 disabled:opacity-50"
+            >
+              {t("settings.test")}
+            </button>
+            <button
+              type="button"
               onClick={() => void fetchModels()}
               disabled={busy || !info?.configured}
-              className="rounded-lg border border-line px-3 py-1.5 text-[10.5px] text-ink-2 disabled:opacity-50"
+              className="shrink-0 whitespace-nowrap rounded-lg border border-line px-3 py-1.5 text-[10.5px] text-ink-2 disabled:opacity-50"
             >
               {t("settings.fetchModels")}
             </button>
@@ -161,18 +169,21 @@ export function SettingsView() {
                 type="button"
                 onClick={() => void clearKey()}
                 disabled={busy}
-                className="rounded-lg border border-line px-3 py-1.5 text-[10.5px] text-ink-3 disabled:opacity-60"
+                className="shrink-0 whitespace-nowrap rounded-lg border border-line px-3 py-1.5 text-[10.5px] text-ink-3 disabled:opacity-60"
               >
                 {t("settings.clear")}
               </button>
             ) : null}
+            {message ? (
+              <span
+                className={`ml-auto shrink-0 whitespace-nowrap text-[10.5px] ${
+                  message.kind === "ok" ? "text-accent" : "text-warn"
+                }`}
+              >
+                {message.text}
+              </span>
+            ) : null}
           </div>
-
-          {message ? (
-            <p className={`text-[10.5px] ${message.kind === "ok" ? "text-accent" : "text-warn"}`}>
-              {message.text}
-            </p>
-          ) : null}
 
           {models ? (
             <div className="flex flex-wrap gap-1.5 pt-0.5">
