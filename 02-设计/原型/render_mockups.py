@@ -296,9 +296,9 @@ def render_today():
     txt(d, 38, cy + 48, "连续 12 天 · 今日完成 1 / 3", 10.5, TEXT_3, False, "la")
     progress(d, [38, cy + 66, W - 38, cy + 72], 0.33)
 
-    # 今日重点
+    # 今日任务
     ty = cy + 108
-    txt(d, 24, ty, "今日重点", 12.5, TEXT, True, "la")
+    txt(d, 24, ty, "今日任务", 12.5, TEXT, True, "la")
     txt(d, W - 24, ty, "3 件", 10, TEXT_3, False, "ra")
     card(img, d, [20, ty + 14, W - 20, ty + 14 + 172], radius=16)
     items = [("09:00", "人形机器人强化学习 · 实验课", "学习", False),

@@ -199,6 +199,9 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ date }),
     }),
+  addHabit: (name: string) =>
+    request<{ id: string; name: string }>("/habits", { method: "POST", body: JSON.stringify({ name }) }),
+  deleteHabit: (id: string) => request<{ ok: true }>(`/habits/${id}`, { method: "DELETE" }),
 
   courses: () => request<ApiCourse[]>("/courses"),
   addCourse: (input: {

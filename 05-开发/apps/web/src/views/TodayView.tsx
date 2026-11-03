@@ -74,7 +74,7 @@ export function TodayView() {
     void api.meta().then(setMeta).catch(() => undefined);
   }, [reload]);
 
-  /* ---- 今日重点 ---- */
+  /* ---- 今日任务 ---- */
   const [draft, setDraft] = useState("");
   const addFocus = async () => {
     const title = draft.trim();
@@ -130,6 +130,22 @@ export function TodayView() {
   /* ---- 习惯 ---- */
   const toggleHabit = async (id: string) => {
     await api.toggleHabit(id);
+    await reload();
+  };
+
+  const [habitOpen, setHabitOpen] = useState(false);
+  const [newHabit, setNewHabit] = useState("");
+
+  const addHabit = async () => {
+    const name = newHabit.trim();
+    if (!name) return;
+    setNewHabit("");
+    await api.addHabit(name);
+    await reload();
+  };
+
+  const removeHabit = async (id: string) => {
+    await api.deleteHabit(id);
     await reload();
   };
 
@@ -407,7 +423,18 @@ export function TodayView() {
         <div className="space-y-3.5 lg:col-span-2">
           <Mini
             title={t("today.habits")}
-            action={`${day.habits.filter((h) => h.done).length}/${day.habits.length}`}
+            action={
+              <span className="flex items-center gap-2">
+                <span>{day.habits.filter((h) => h.done).length}/{day.habits.length}</span>
+                <button
+                  type="button"
+                  onClick={() => setHabitOpen(true)}
+                  className="rounded-full border border-line px-1.5 py-0.5 text-[9px] text-ink-3 transition-colors hover:border-accent hover:text-ink"
+                >
+                  {t("today.manage")}
+                </button>
+              </span>
+            }
           >
             <div className="flex flex-wrap gap-1.5">
               {day.habits.map((h) => (
@@ -462,6 +489,72 @@ export function TodayView() {
           </Mini>
         </div>
       </div>
+
+      {habitOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/25 p-4 pt-24"
+          onClick={() => setHabitOpen(false)}
+        >
+          <div
+            className="w-full max-w-xs rounded-2xl border border-line bg-surface p-4 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <header className="flex items-center justify-between">
+              <h2 className="text-[13px] font-semibold text-ink">{t("today.manageHabits")}</h2>
+              <button
+                type="button"
+                onClick={() => setHabitOpen(false)}
+                className="text-[14px] leading-none text-ink-3 transition-colors hover:text-ink"
+                aria-label="close"
+              >
+                ✕
+              </button>
+            </header>
+
+            <ul className="mt-2">
+              {day.habits.map((h) => (
+                <li
+                  key={h.id}
+                  className="group flex items-center gap-2 rounded-lg px-1 py-1.5 transition-colors hover:bg-surface-2"
+                >
+                  <span className="flex-1 text-[12px] text-ink">{h.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => void removeHabit(h.id)}
+                    className="text-[12px] text-[#a9a49b] opacity-100 transition-opacity hover:text-warn md:opacity-0 md:group-hover:opacity-100"
+                    aria-label="delete"
+                  >
+                    ×
+                  </button>
+                </li>
+              ))}
+              {day.habits.length === 0 ? (
+                <li className="px-1 py-2 text-[11px] text-ink-3">{t("today.noHabits")}</li>
+              ) : null}
+            </ul>
+
+            <div className="mt-2 flex items-center gap-2 border-t border-line-2 pt-3">
+              <input
+                value={newHabit}
+                onChange={(e) => setNewHabit(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") void addHabit();
+                }}
+                placeholder={t("today.addHabitPlaceholder")}
+                className="w-full rounded-lg border border-line bg-surface-2 px-2 py-1.5 text-[11.5px] text-ink outline-none placeholder:text-[#c8c4bc]"
+              />
+              <button
+                type="button"
+                onClick={() => void addHabit()}
+                disabled={!newHabit.trim()}
+                className="shrink-0 rounded-lg bg-accent px-2.5 py-1.5 text-[10.5px] font-semibold text-white disabled:opacity-50"
+              >
+                {t("action.add")}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
