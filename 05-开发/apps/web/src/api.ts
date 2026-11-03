@@ -53,6 +53,16 @@ export interface ApiJournal {
   body: string;
 }
 
+export interface ApiCourse {
+  id: string;
+  name: string;
+  weekday: number;
+  start_min: number;
+  end_min: number;
+  location: string | null;
+  color: string | null;
+}
+
 export interface ApiDay {
   date: string;
   week: WeekInfo;
@@ -60,6 +70,7 @@ export interface ApiDay {
   blocks: ApiBlock[];
   habits: ApiHabit[];
   journal: ApiJournal | null;
+  courses: ApiCourse[];
 }
 
 const BASE = "/api";
@@ -108,6 +119,7 @@ export interface ApiWeek {
   weekId: string;
   tasks: ApiWeekTask[];
   blocks: ApiWeekBlock[];
+  courses: ApiCourse[];
 }
 
 export interface ApiReview {
@@ -141,6 +153,11 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ date }),
     }),
+
+  courses: () => request<ApiCourse[]>("/courses"),
+  addCourse: (input: { name: string; weekday: number; startMin: number; endMin: number; location?: string }) =>
+    request<ApiCourse>("/courses", { method: "POST", body: JSON.stringify(input) }),
+  deleteCourse: (id: string) => request<{ ok: true }>(`/courses/${id}`, { method: "DELETE" }),
 
   saveJournal: (date: string, body: string) =>
     request<ApiJournal>(`/journal/${date}`, { method: "PUT", body: JSON.stringify({ body }) }),

@@ -182,9 +182,10 @@ export function TodayView() {
   const focus = day.tasks;
   const doneCount = focus.filter((x) => x.status === DONE).length;
 
-  /** 与已有时间块是否重叠 */
+  /** 与已有时间块或课程是否重叠 */
   const hits = (start: number, end: number) =>
-    day.blocks.some((b) => start < b.end_min && end > b.start_min);
+    day.blocks.some((b) => start < b.end_min && end > b.start_min) ||
+    day.courses.some((c) => start < c.end_min && end > c.start_min);
 
   /** 从某个开始时间往后找第一个不冲突的结束时间 */
   const firstFreeEnd = (start: number) => {
@@ -286,6 +287,21 @@ export function TodayView() {
             }
           >
             <ul>
+              {day.courses.map((c) => (
+                <li key={`course-${c.id}`} className="flex gap-3 py-2 first:pt-0">
+                  <span className="w-10 shrink-0 pt-0.5 text-[10px] tabular-nums text-ink-3">
+                    {hhmm(c.start_min)}
+                  </span>
+                  <span className="w-[3px] shrink-0 rounded-full bg-[#9BA7B0]" />
+                  <div className="min-w-0 flex-1 pt-0.5">
+                    <p className="truncate text-[12px] text-ink-2">{c.name}</p>
+                    <p className="mt-0.5 text-[10px] text-ink-3">
+                      {hhmm(c.start_min)}–{hhmm(c.end_min)}
+                      {c.location ? ` · ${c.location}` : ""} · {t("today.course")}
+                    </p>
+                  </div>
+                </li>
+              ))}
               {day.blocks.map((b) => (
                 <li key={b.id} className="group flex gap-3 py-2 first:pt-0">
                   <span className="w-10 shrink-0 pt-0.5 text-[10px] tabular-nums text-ink-3">
@@ -311,7 +327,7 @@ export function TodayView() {
                   </button>
                 </li>
               ))}
-              {day.blocks.length === 0 ? (
+              {day.blocks.length === 0 && day.courses.length === 0 ? (
                 <li className="py-2 text-[11.5px] text-ink-3">{t("today.timelineEmpty")}</li>
               ) : null}
             </ul>

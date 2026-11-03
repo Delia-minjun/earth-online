@@ -43,6 +43,7 @@
     "focusConfirm": "确认添加",
     "focusEmpty": "今天还没有重点",
     "timelineEmpty": "还没有安排时间块",
+    "course": "课程",
     "blockTitle": "这段时间做什么",
     "overlap": "这段时间已经有安排了",
     "moneyPending": "P2 接入收支与预算",
@@ -90,7 +91,19 @@
     "blocks": "个时间块",
     "focus": "重点",
     "backToday": "回到本周",
-    "empty": "没有安排"
+    "empty": "没有安排",
+    "courses": "节课",
+    "mode": {
+      "plan": "安排",
+      "course": "课表"
+    }
+  },
+  "course": {
+    "name": "课程名，如：传播学概论",
+    "location": "地点",
+    "count": "{{n}} 节课",
+    "empty": "还没有课程",
+    "emptyHint": "把每周固定的课加进来，排时间时会自动避开"
   },
   "review": {
     "summary": "本周数据",

@@ -70,10 +70,10 @@ export default function App() {
             <p className="mt-1 text-[11px] text-ink-3">
               {isToday
                 ? week
-                  ? `${t("week.label", { week: week.isoWeek })} · ${t(
-                      "week.range",
-                      { start: short(week.startDate), end: short(week.endDate) },
-                    )}`
+                  ? t("week.range", {
+                      start: short(week.startDate),
+                      end: short(week.endDate),
+                    })
                   : "—"
                 : isReward
                   ? t("reward.sub")

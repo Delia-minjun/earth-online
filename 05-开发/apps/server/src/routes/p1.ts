@@ -35,6 +35,11 @@ function today(): string {
 
 const uid = () => crypto.randomUUID();
 
+/** 1 = 周一 … 7 = 周日 */
+function weekdayOf(date: string): number {
+  return new Date(`${date}T00:00:00`).getDay() || 7;
+}
+
 async function readBody<T>(c: { req: { json: () => Promise<unknown> } }, schema: z.ZodType<T>) {
   let raw: unknown;
   try {
@@ -100,7 +105,15 @@ api.get("/day", (c) => {
     .prepare("SELECT date, mood, body FROM journal_entry WHERE date = ?")
     .get(date) ?? null) as Row | null;
 
-  return c.json({ date, week, tasks, blocks, habits, journal });
+  const courses = db
+    .prepare(
+      `SELECT id, name, weekday, start_min, end_min, location, color
+         FROM course WHERE archived = 0 AND weekday = ?
+        ORDER BY start_min`,
+    )
+    .all(weekdayOf(date)) as Row[];
+
+  return c.json({ date, week, tasks, blocks, habits, journal, courses });
 });
 
 /* ---------------- tasks ---------------- */
@@ -212,6 +225,26 @@ api.post("/blocks", async (c) => {
     );
   }
 
+  // 课表时间也属于已占用
+  const courseClash = db
+    .prepare(
+      `SELECT name, start_min, end_min FROM course
+        WHERE archived = 0 AND weekday = ? AND ? < end_min AND ? > start_min
+        LIMIT 1`,
+    )
+    .get(weekdayOf(date), r.data.startMin, r.data.endMin) as
+    | { name: string; start_min: number; end_min: number }
+    | undefined;
+  if (courseClash) {
+    return c.json(
+      {
+        error: "overlap",
+        clash: { title: courseClash.name, startMin: courseClash.start_min, endMin: courseClash.end_min },
+      },
+      409,
+    );
+  }
+
   const id = uid();
   getDb()
     .prepare(
@@ -279,6 +312,69 @@ api.put("/journal/:date", async (c) => {
   return c.json(db.prepare("SELECT date, mood, body FROM journal_entry WHERE date = ?").get(date));
 });
 
+/* ---------------- courses ---------------- */
+
+const COURSE_COLS = "id, name, weekday, start_min, end_min, location, color";
+
+api.get("/courses", (c) => {
+  const rows = getDb()
+    .prepare(
+      `SELECT ${COURSE_COLS} FROM course WHERE archived = 0 ORDER BY weekday, start_min`,
+    )
+    .all();
+  return c.json(rows);
+});
+
+const courseCreate = z
+  .object({
+    name: z.string().trim().min(1).max(60),
+    weekday: z.number().int().min(1).max(7),
+    startMin: z.number().int().min(0).max(1440),
+    endMin: z.number().int().min(0).max(1440),
+    location: z.string().trim().max(60).optional(),
+  })
+  .refine((v) => v.endMin > v.startMin, { message: "endMin must be > startMin" });
+
+api.post("/courses", async (c) => {
+  const r = await readBody(c, courseCreate);
+  if (!r.ok) return c.json({ error: r.error }, 400);
+  const db = getDb();
+
+  const clash = db
+    .prepare(
+      `SELECT name, start_min, end_min FROM course
+        WHERE archived = 0 AND weekday = ? AND ? < end_min AND ? > start_min
+        LIMIT 1`,
+    )
+    .get(r.data.weekday, r.data.startMin, r.data.endMin) as
+    | { name: string; start_min: number; end_min: number }
+    | undefined;
+  if (clash) {
+    return c.json(
+      {
+        error: "overlap",
+        clash: { title: clash.name, startMin: clash.start_min, endMin: clash.end_min },
+      },
+      409,
+    );
+  }
+
+  const id = uid();
+  db.prepare(
+    `INSERT INTO course (id, name, weekday, start_min, end_min, location)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+  ).run(id, r.data.name, r.data.weekday, r.data.startMin, r.data.endMin, r.data.location ?? null);
+
+  return c.json(db.prepare(`SELECT ${COURSE_COLS} FROM course WHERE id = ?`).get(id), 201);
+});
+
+api.delete("/courses/:id", (c) => {
+  getDb()
+    .prepare("UPDATE course SET archived = 1, updated_at = datetime('now') WHERE id = ?")
+    .run(c.req.param("id"));
+  return c.json({ ok: true });
+});
+
 /* ---------------- week ---------------- */
 
 api.get("/week/current", (c) => {
@@ -312,7 +408,13 @@ api.get("/week/:year/:week", (c) => {
     )
     .all(info.startDate, info.endDate) as Row[];
 
-  return c.json({ week: info, weekId: weekId(year, week), tasks, blocks });
+  const courses = db
+    .prepare(
+      `SELECT ${COURSE_COLS} FROM course WHERE archived = 0 ORDER BY weekday, start_min`,
+    )
+    .all() as Row[];
+
+  return c.json({ week: info, weekId: weekId(year, week), tasks, blocks, courses });
 });
 
 /* ---------------- weekly review ---------------- */

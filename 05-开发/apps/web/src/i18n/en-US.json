@@ -43,6 +43,7 @@
     "focusConfirm": "Confirm",
     "focusEmpty": "No focus yet today",
     "timelineEmpty": "No time blocks yet",
+    "course": "Class",
     "blockTitle": "What happens in this slot",
     "overlap": "That slot is already taken",
     "moneyPending": "P2 wires up money and budget",
@@ -90,7 +91,19 @@
     "blocks": "blocks",
     "focus": "focus",
     "backToday": "This week",
-    "empty": "Nothing planned"
+    "empty": "Nothing planned",
+    "courses": "classes",
+    "mode": {
+      "plan": "Plan",
+      "course": "Timetable"
+    }
+  },
+  "course": {
+    "name": "Course name, e.g. Communication Studies",
+    "location": "Room",
+    "count": "{{n}} classes",
+    "empty": "No classes yet",
+    "emptyHint": "Add your weekly classes and planning will avoid them"
   },
   "review": {
     "summary": "This week",

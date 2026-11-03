@@ -23,6 +23,8 @@ export function ReviewView() {
   const target = useMemo(() => shiftWeeks(mondayOfThisWeek(), offset), [offset]);
   const { isoYear, isoWeek } = useMemo(() => isoWeekOf(target), [target]);
   const weekId = `${isoYear}-W${String(isoWeek).padStart(2, "0")}`;
+  const sunday = new Date(target.getFullYear(), target.getMonth(), target.getDate() + 6);
+  const rangeLabel = `${target.getMonth() + 1}/${target.getDate()} — ${sunday.getMonth() + 1}/${sunday.getDate()}`;
 
   const savedRef = useRef(JSON.stringify(EMPTY));
   const loadedRef = useRef<string | null>(null);
@@ -109,7 +111,7 @@ export function ReviewView() {
         >
           ‹
         </button>
-        <p className="text-[13px] font-semibold text-ink">{t("week.label", { week: isoWeek })}</p>
+        <p className="text-[13px] font-semibold tabular-nums text-ink">{rangeLabel}</p>
         <button
           type="button"
           onClick={() => setOffset((v) => v + 1)}
