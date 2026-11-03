@@ -82,6 +82,22 @@
     "ledger": "Recent ledger",
     "ledgerAll": "See all"
   },
+  "task": {
+    "priority0": "Normal",
+    "priority1": "Important",
+    "priority2": "Urgent"
+  },
+  "habit": {
+    "streak": "{{n}}-day streak"
+  },
+  "dayReview": {
+    "good": "Went well",
+    "bad": "Missed",
+    "next": "Change tomorrow",
+    "goodHint": "What got done today",
+    "badHint": "What didn't, and why",
+    "nextHint": "One thing to change tomorrow"
+  },
   "sub": {
     "week": "This week's classes and plans",
     "review": "Look back: keep, improve, stop, start",

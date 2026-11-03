@@ -47,6 +47,20 @@ export interface ApiHabit {
   done: number;
 }
 
+export interface ApiHabitGrid {
+  days: number;
+  end: string;
+  byHabit: Record<string, string[]>;
+  streak: Record<string, number>;
+}
+
+export interface ApiDayReview {
+  date: string;
+  good: string;
+  bad: string;
+  next: string;
+}
+
 export interface ApiJournal {
   date: string;
   mood: number | null;
@@ -188,6 +202,10 @@ export const api = {
     request<ApiTask>("/tasks", { method: "POST", body: JSON.stringify({ title, date }) }),
   setTaskStatus: (id: string, status: ApiTask["status"]) =>
     request<ApiTask>(`/tasks/${id}`, { method: "PATCH", body: JSON.stringify({ status }) }),
+  patchTask: (
+    id: string,
+    patch: { title?: string; date?: string | null; priority?: number; areaId?: string | null },
+  ) => request<ApiTask>(`/tasks/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
   deleteTask: (id: string) => request<{ ok: true }>(`/tasks/${id}`, { method: "DELETE" }),
 
   addBlock: (input: { startMin: number; endMin: number; title: string; categoryId?: string; date?: string }) =>
@@ -202,6 +220,12 @@ export const api = {
   addHabit: (name: string) =>
     request<{ id: string; name: string }>("/habits", { method: "POST", body: JSON.stringify({ name }) }),
   deleteHabit: (id: string) => request<{ ok: true }>(`/habits/${id}`, { method: "DELETE" }),
+  habitGrid: (days = 14) =>
+    request<ApiHabitGrid>(`/habits/grid?days=${days}`),
+
+  dayReview: (date: string) => request<ApiDayReview>(`/day-review/${date}`),
+  saveDayReview: (date: string, patch: Partial<Omit<ApiDayReview, "date">>) =>
+    request<ApiDayReview>(`/day-review/${date}`, { method: "PUT", body: JSON.stringify(patch) }),
 
   courses: () => request<ApiCourse[]>("/courses"),
   addCourse: (input: {

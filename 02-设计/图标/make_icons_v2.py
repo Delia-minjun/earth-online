@@ -128,7 +128,7 @@ def icon_deep_orb():
 
 # ---------------- 02 轨道光点 ----------------
 def icon_orbit():
-    base = to_img(vignette(add_grain(radial_base((58, 70, 62), (17, 20, 19), center=(0.5, 0.5))), 2.5))
+    base = to_img(vignette(add_grain(radial_base((112, 96, 128), (30, 25, 36), center=(0.5, 0.5)), 2.2), 0.22))
     cx = cy = S * SS / 2
     a, b = 186 * SS, 56 * SS
     ang = math.radians(-15)
@@ -144,35 +144,52 @@ def icon_orbit():
     rd = ImageDraw.Draw(ring)
     rd.ellipse([cx - a, cy - b, cx + a, cy + b], outline=255, width=6 * SS)
     ring = ring.rotate(-15, resample=Image.BICUBIC, center=(cx, cy))
-    img = compose(base, ring, (96, 92, 80), alpha=0.9)
+    img = compose(base, ring, (98, 84, 112), alpha=0.9)
 
     # 轨道受光的一段（左前侧更亮）
     lit = Image.new("L", (S * SS, S * SS), 0)
     ld = ImageDraw.Draw(lit)
     ld.arc([cx - a, cy - b, cx + a, cy + b], start=150, end=330, fill=255, width=6 * SS)
     lit = lit.rotate(-15, resample=Image.BICUBIC, center=(cx, cy))
-    img = compose(img, lit, (206, 196, 168), alpha=0.85, blur=2)
+    img = compose(img, lit, (214, 198, 232), alpha=0.85, blur=2)
 
     # 中心星球
     pr = 88 * SS
-    m, d = layer()
+    # 球体外的一圈柔光，把中间提亮
+    halo, d = layer()
+    d.ellipse([cx - pr * 1.5, cy - pr * 1.5, cx + pr * 1.5, cy + pr * 1.5], fill=255)
+    img = compose(img, halo, (150, 126, 176), alpha=0.24, blur=46)
+
+    # 球体本身用径向渐变，保住体积感
+    yy, xx = np.mgrid[0:S, 0:S].astype(np.float32)
+    nx = xx / (S - 1) - 0.46
+    ny = yy / (S - 1) - 0.40
+    t = np.clip(np.sqrt(nx ** 2 + ny ** 2) / 0.42, 0, 1)[..., None]
+    sphere = (np.array([158, 138, 180], np.float32) * (1 - t)
+              + np.array([58, 46, 74], np.float32) * t)
+    sphere = np.clip(sphere, 0, 255)
+    sph_img = Image.fromarray(sphere.astype(np.uint8), "RGB").convert("RGBA")
+
+    pmask, d = layer()
     d.ellipse([cx - pr, cy - pr, cx + pr, cy + pr], fill=255)
-    img = compose(img, m, (40, 52, 44), alpha=1.0)
+    small = pmask.resize((S, S), Image.LANCZOS)
+    img.paste(sph_img, (0, 0), small)
+
+    # 上缘高光（细窄，保持锐度）
+    m, d = layer()
+    d.arc([cx - pr, cy - pr, cx + pr, cy + pr], start=200, end=330, fill=255, width=5 * SS)
+    img = compose(img, m, (222, 208, 240), alpha=0.55, blur=4)
 
     m, d = layer()
-    d.ellipse([cx - pr, cy - pr, cx + pr, cy + pr], outline=255, width=5 * SS)
-    img = compose(img, m, (150, 176, 148), alpha=0.45, blur=3)
-
-    m, d = layer()
-    d.ellipse([cx - pr * 0.9, cy - pr * 0.95, cx + pr * 0.6, cy + pr * 0.1], fill=255)
-    img = compose(img, m, (150, 176, 148), alpha=0.22, blur=22)
+    d.ellipse([cx - pr * 0.72, cy - pr * 0.80, cx - pr * 0.20, cy - pr * 0.34], fill=255)
+    img = compose(img, m, (236, 226, 248), alpha=0.30, blur=22)
 
     # 轨道前半段（压在星球下缘，制造环绕感）
     front = Image.new("L", (S * SS, S * SS), 0)
     fd = ImageDraw.Draw(front)
     fd.arc([cx - a, cy - b, cx + a, cy + b], start=10, end=170, fill=255, width=6 * SS)
     front = front.rotate(-15, resample=Image.BICUBIC, center=(cx, cy))
-    img = compose(img, front, (214, 204, 176), alpha=0.75, blur=1)
+    img = compose(img, front, (218, 202, 236), alpha=0.75, blur=1)
 
     # 轨道上的光点：取环最左侧的实际像素，保证落在轨道上
     ring_np = np.asarray(ring, dtype=np.uint8)
@@ -186,15 +203,15 @@ def icon_orbit():
         px, py = on_ellipse(math.radians(196))
     glow, d = layer()
     d.ellipse([px - 34 * SS, py - 34 * SS, px + 34 * SS, py + 34 * SS], fill=255)
-    img = compose(img, glow, (196, 222, 180), alpha=0.30, blur=22)
+    img = compose(img, glow, (206, 184, 232), alpha=0.32, blur=22)
 
     dot, d = layer()
     d.ellipse([px - 9 * SS, py - 9 * SS, px + 9 * SS, py + 9 * SS], fill=255)
-    img = compose(img, dot, (242, 248, 232), alpha=1.0)
+    img = compose(img, dot, (248, 242, 252), alpha=1.0)
 
     m, d = layer()
     scatter_stars(d, 55, seed=11)
-    img = compose(img, m, (214, 224, 212), alpha=0.5)
+    img = compose(img, m, (226, 214, 238), alpha=0.5)
 
     save(img, "12-轨道光点.png")
 

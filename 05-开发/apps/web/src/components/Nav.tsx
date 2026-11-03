@@ -82,7 +82,7 @@ export function Sidebar({
     <aside className="hidden w-52 shrink-0 flex-col border-r border-line bg-surface-2 px-4 py-6 md:flex">
       <div className="flex items-center gap-2.5 px-1">
         <img
-          src="/icons/icon-48.png"
+          src="/icons/icon-48.png?v=2"
           alt=""
           className="h-6 w-6 rounded-[7px]"
           draggable={false}

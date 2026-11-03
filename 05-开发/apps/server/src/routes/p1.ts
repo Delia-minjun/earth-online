@@ -157,6 +157,8 @@ const taskPatch = z.object({
   title: z.string().trim().min(1).max(200).optional(),
   status: z.enum(["todo", "doing", "done", "dropped"]).optional(),
   date: zDate.nullable().optional(),
+  priority: z.number().int().min(0).max(9).optional(),
+  areaId: z.string().nullable().optional(),
 });
 
 api.patch("/tasks/:id", async (c) => {
@@ -183,6 +185,19 @@ api.patch("/tasks/:id", async (c) => {
   if (r.data.date !== undefined) {
     sets.push("scheduled_date = ?");
     vals.push(r.data.date);
+    // 换了日期就要跟着换周
+    if (r.data.date) {
+      sets.push("week_id = ?");
+      vals.push(weekOfDate(r.data.date).id);
+    }
+  }
+  if (r.data.priority !== undefined) {
+    sets.push("priority = ?");
+    vals.push(r.data.priority);
+  }
+  if (r.data.areaId !== undefined) {
+    sets.push("area_id = ?");
+    vals.push(r.data.areaId);
   }
   if (sets.length === 0) return c.json({ error: "nothing to update" }, 400);
 
@@ -307,6 +322,50 @@ api.post("/habits/:id/toggle", async (c) => {
   }
   db.prepare("INSERT INTO habit_log (habit_id, date, done) VALUES (?, ?, 1)").run(id, date);
   return c.json({ habitId: id, date, done: 1 });
+});
+
+/* ---------------- habit grid ---------------- */
+
+api.get("/habits/grid", (c) => {
+  const raw = Number(c.req.query("days") ?? 14);
+  const days = Math.min(Math.max(Number.isFinite(raw) ? raw : 14, 1), 60);
+  const end = today();
+  const db = getDb();
+
+  const rows = db
+    .prepare(
+      `SELECT l.habit_id AS habitId, l.date AS date
+         FROM habit_log l
+         JOIN habit h ON h.id = l.habit_id AND h.archived = 0
+        WHERE l.done = 1 AND l.date <= ? AND l.date >= date(?, ?)
+        ORDER BY l.date`,
+    )
+    .all(end, end, `-${days - 1} days`) as { habitId: string; date: string }[];
+
+  const byHabit: Record<string, string[]> = {};
+  for (const r of rows) {
+    (byHabit[r.habitId] ??= []).push(r.date);
+  }
+
+  // 连续天数：从今天往前数，允许今天还没打
+  const streak: Record<string, number> = {};
+  for (const [habitId, dates] of Object.entries(byHabit)) {
+    const set = new Set(dates);
+    let n = 0;
+    const cursor = new Date(`${end}T00:00:00`);
+    if (!set.has(end)) cursor.setDate(cursor.getDate() - 1);
+    for (;;) {
+      const key = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}-${String(
+        cursor.getDate(),
+      ).padStart(2, "0")}`;
+      if (!set.has(key)) break;
+      n += 1;
+      cursor.setDate(cursor.getDate() - 1);
+    }
+    streak[habitId] = n;
+  }
+
+  return c.json({ days, end, byHabit, streak });
 });
 
 /* ---------------- journal ---------------- */
@@ -826,4 +885,46 @@ api.put("/review/:weekId", async (c) => {
     r.data.start ?? cur.start ?? "",
   );
   return c.json(db.prepare("SELECT * FROM weekly_review WHERE week_id = ?").get(weekIdParam));
+});
+
+/* ---------------- day review ---------------- */
+
+api.get("/day-review/:date", (c) => {
+  const date = c.req.param("date");
+  const row = getDb().prepare("SELECT * FROM day_review WHERE date = ?").get(date);
+  return c.json(row ?? { date, good: "", bad: "", next: "" });
+});
+
+api.put("/day-review/:date", async (c) => {
+  const date = c.req.param("date");
+  const r = await readBody(
+    c,
+    z.object({
+      good: z.string().max(2000).optional(),
+      bad: z.string().max(2000).optional(),
+      next: z.string().max(2000).optional(),
+    }),
+  );
+  if (!r.ok) return c.json({ error: r.error }, 400);
+
+  const db = getDb();
+  const cur = (db.prepare("SELECT * FROM day_review WHERE date = ?").get(date) ?? {
+    good: "",
+    bad: "",
+    next: "",
+  }) as Record<string, string>;
+
+  db.prepare(
+    `INSERT INTO day_review (date, good, bad, next, updated_at)
+     VALUES (?, ?, ?, ?, datetime('now'))
+     ON CONFLICT(date) DO UPDATE SET
+       good = excluded.good, bad = excluded.bad, next = excluded.next, updated_at = datetime('now')`,
+  ).run(
+    date,
+    r.data.good ?? cur.good ?? "",
+    r.data.bad ?? cur.bad ?? "",
+    r.data.next ?? cur.next ?? "",
+  );
+
+  return c.json(db.prepare("SELECT * FROM day_review WHERE date = ?").get(date));
 });

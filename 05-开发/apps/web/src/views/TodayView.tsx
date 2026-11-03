@@ -1,6 +1,15 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, COURSE_COLOR, hhmm, type ApiDay, type ApiMeta } from "../api";
+import {
+  api,
+  COURSE_COLOR,
+  hhmm,
+  type ApiDay,
+  type ApiDayReview,
+  type ApiHabitGrid,
+  type ApiMeta,
+  type ApiTask,
+} from "../api";
 import { Card } from "../components/Card";
 
 function Mini({
@@ -149,6 +158,102 @@ export function TodayView() {
     await reload();
   };
 
+  /* ---- 习惯网格 ---- */
+  const [grid, setGrid] = useState<ApiHabitGrid | null>(null);
+  useEffect(() => {
+    if (!habitOpen) return;
+    let alive = true;
+    api
+      .habitGrid(14)
+      .then((g) => alive && setGrid(g))
+      .catch(() => alive && setGrid(null));
+    return () => {
+      alive = false;
+    };
+  }, [habitOpen, day?.habits.length]);
+
+  /* ---- 最近 14 天日期 ---- */
+  const last14 = useMemo(() => {
+    const end = grid?.end ?? day?.date;
+    if (!end) return [] as string[];
+    const base = new Date(`${end}T00:00:00`);
+    return Array.from({ length: 14 }, (_, i) => {
+      const d = new Date(base.getFullYear(), base.getMonth(), base.getDate() - (13 - i));
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+        d.getDate(),
+      ).padStart(2, "0")}`;
+    });
+  }, [grid?.end, day?.date]);
+
+  /* ---- 日复盘 ---- */
+  const [dayReview, setDayReview] = useState<ApiDayReview | null>(null);
+  const [reviewState, setReviewState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const reviewSavedRef = useRef("");
+  const reviewDate = day?.date;
+
+  useEffect(() => {
+    if (!reviewDate) return;
+    let alive = true;
+    api
+      .dayReview(reviewDate)
+      .then((r) => {
+        if (!alive) return;
+        setDayReview(r);
+        reviewSavedRef.current = JSON.stringify(r);
+        setReviewState("idle");
+      })
+      .catch(() => alive && setDayReview(null));
+    return () => {
+      alive = false;
+    };
+  }, [reviewDate]);
+
+  useEffect(() => {
+    if (!dayReview || !reviewDate) return;
+    const snap = JSON.stringify(dayReview);
+    if (snap === reviewSavedRef.current) return;
+    setReviewState("saving");
+    const timer = window.setTimeout(() => {
+      api
+        .saveDayReview(reviewDate, {
+          good: dayReview.good,
+          bad: dayReview.bad,
+          next: dayReview.next,
+        })
+        .then(() => {
+          reviewSavedRef.current = snap;
+          setReviewState("saved");
+        })
+        .catch(() => setReviewState("error"));
+    }, 700);
+    return () => window.clearTimeout(timer);
+  }, [dayReview, reviewDate]);
+
+  /* ---- 任务编辑 ---- */  const [editTaskId, setEditTaskId] = useState<string | null>(null);
+  const [taskForm, setTaskForm] = useState({ title: "", priority: 0, date: "" });
+
+  const startEditTask = (task: ApiTask) => {
+    setEditTaskId(task.id);
+    setTaskForm({
+      title: task.title,
+      priority: task.priority ?? 0,
+      date: task.scheduled_date ?? day?.date ?? "",
+    });
+  };
+
+  const saveTask = async () => {
+    if (!editTaskId) return;
+    const title = taskForm.title.trim();
+    if (!title) return;
+    await api.patchTask(editTaskId, {
+      title,
+      priority: taskForm.priority,
+      date: taskForm.date || undefined,
+    });
+    setEditTaskId(null);
+    await reload();
+  };
+
   /* ---- 随手记（自动保存） ---- */
   const [note, setNote] = useState("");
   const [noteState, setNoteState] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -222,39 +327,95 @@ export function TodayView() {
         <div className="space-y-3.5 lg:col-span-3">
           <Card title={t("today.focus")} action={`${doneCount}/${focus.length}`}>
             <ul className="divide-y divide-line-2">
-              {focus.map((f) => (
-                <li key={f.id} className="group flex items-start gap-3 py-2.5 first:pt-0">
-                  <button
-                    type="button"
-                    onClick={() => void toggleTask(f.id, f.status)}
-                    className={`mt-0.5 grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full border text-[9px] transition-colors ${
-                      f.status === DONE
-                        ? "border-accent bg-accent text-white"
-                        : "border-line text-transparent hover:border-accent"
-                    }`}
-                    aria-label={f.title}
-                  >
-                    ✓
-                  </button>
-                  <div className="min-w-0 flex-1">
-                    <p
-                      className={`truncate text-[12.5px] ${
-                        f.status === DONE ? "text-ink-3 line-through" : "text-ink"
+              {focus.map((f) =>
+                editTaskId === f.id ? (
+                  <li key={f.id} className="space-y-1.5 rounded-lg bg-surface-2 p-2">
+                    <input
+                      value={taskForm.title}
+                      onChange={(e) => setTaskForm((v) => ({ ...v, title: e.target.value }))}
+                      className="w-full rounded-md border border-line bg-surface px-2 py-1 text-[12px] text-ink outline-none"
+                    />
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <select
+                        value={taskForm.priority}
+                        onChange={(e) =>
+                          setTaskForm((v) => ({ ...v, priority: Number(e.target.value) }))
+                        }
+                        className="rounded-md border border-line bg-surface px-1.5 py-1 text-[10.5px] text-ink-2 outline-none"
+                      >
+                        <option value={0}>{t("task.priority0")}</option>
+                        <option value={1}>{t("task.priority1")}</option>
+                        <option value={2}>{t("task.priority2")}</option>
+                      </select>
+                      <input
+                        type="date"
+                        value={taskForm.date}
+                        onChange={(e) => setTaskForm((v) => ({ ...v, date: e.target.value }))}
+                        className="rounded-md border border-line bg-surface px-1.5 py-1 text-[10.5px] tabular-nums text-ink-2 outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => void saveTask()}
+                        className="ml-auto rounded-md bg-accent px-2.5 py-1 text-[10px] font-semibold text-white"
+                      >
+                        {t("common.save")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditTaskId(null)}
+                        className="rounded-md border border-line px-2.5 py-1 text-[10px] text-ink-3"
+                      >
+                        {t("common.cancel")}
+                      </button>
+                    </div>
+                  </li>
+                ) : (
+                  <li key={f.id} className="group flex items-start gap-3 py-2.5 first:pt-0">
+                    <button
+                      type="button"
+                      onClick={() => void toggleTask(f.id, f.status)}
+                      className={`mt-0.5 grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full border text-[9px] transition-colors ${
+                        f.status === DONE
+                          ? "border-accent bg-accent text-white"
+                          : "border-line text-transparent hover:border-accent"
                       }`}
+                      aria-label={f.title}
                     >
-                      {f.title}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => void removeTask(f.id)}
-                    className="shrink-0 text-[12px] text-[#a9a49b] opacity-100 transition-opacity hover:text-warn md:opacity-0 md:group-hover:opacity-100"
-                    aria-label="delete"
-                  >
-                    ×
-                  </button>
-                </li>
-              ))}
+                      ✓
+                    </button>
+                    <div className="min-w-0 flex-1">
+                      <p
+                        className={`truncate text-[12.5px] ${
+                          f.status === DONE ? "text-ink-3 line-through" : "text-ink"
+                        }`}
+                      >
+                        {f.title}
+                      </p>
+                      {f.priority > 0 ? (
+                        <span className="mt-0.5 inline-block text-[9px] text-[#b08b6a]">
+                          {f.priority >= 2 ? t("task.priority2") : t("task.priority1")}
+                        </span>
+                      ) : null}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => startEditTask(f)}
+                      className="shrink-0 text-[11px] text-[#a9a49b] opacity-100 transition-opacity hover:text-accent md:opacity-0 md:group-hover:opacity-100"
+                      aria-label="edit"
+                    >
+                      改
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void removeTask(f.id)}
+                      className="shrink-0 text-[12px] text-[#a9a49b] opacity-100 transition-opacity hover:text-warn md:opacity-0 md:group-hover:opacity-100"
+                      aria-label="delete"
+                    >
+                      ×
+                    </button>
+                  </li>
+                ),
+              )}
               {focus.length === 0 ? (
                 <li className="py-2 text-[11.5px] text-ink-3">{t("today.focusEmpty")}</li>
               ) : null}
@@ -487,6 +648,34 @@ export function TodayView() {
               className="w-full resize-none bg-transparent text-[11.5px] leading-relaxed text-ink-2 outline-none placeholder:text-[#c8c4bc]"
             />
           </Mini>
+
+          <Mini
+            title={t("today.dayReview")}
+            action={
+              reviewState === "saving"
+                ? t("common.saving")
+                : reviewState === "saved"
+                  ? t("common.saved")
+                  : reviewState === "error"
+                    ? t("common.saveFailed")
+                    : null
+            }
+          >
+            {(["good", "bad", "next"] as const).map((k) => (
+              <label key={k} className="mt-1.5 block first:mt-0">
+                <span className="text-[9.5px] text-ink-3">{t(`dayReview.${k}`)}</span>
+                <textarea
+                  rows={2}
+                  value={dayReview?.[k] ?? ""}
+                  onChange={(e) =>
+                    setDayReview((prev) => (prev ? { ...prev, [k]: e.target.value } : prev))
+                  }
+                  placeholder={t(`dayReview.${k}Hint`)}
+                  className="mt-0.5 w-full resize-none rounded-lg bg-surface-2 px-2 py-1.5 text-[11.5px] leading-relaxed text-ink-2 outline-none placeholder:text-[#c8c4bc]"
+                />
+              </label>
+            ))}
+          </Mini>
         </div>
       </div>
 
@@ -496,7 +685,7 @@ export function TodayView() {
           onClick={() => setHabitOpen(false)}
         >
           <div
-            className="w-full max-w-xs rounded-2xl border border-line bg-surface p-4 shadow-xl"
+            className="w-full max-w-sm rounded-2xl border border-line bg-surface p-4 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <header className="flex items-center justify-between">
@@ -512,22 +701,43 @@ export function TodayView() {
             </header>
 
             <ul className="mt-2">
-              {day.habits.map((h) => (
-                <li
-                  key={h.id}
-                  className="group flex items-center gap-2 rounded-lg px-1 py-1.5 transition-colors hover:bg-surface-2"
-                >
-                  <span className="flex-1 text-[12px] text-ink">{h.name}</span>
-                  <button
-                    type="button"
-                    onClick={() => void removeHabit(h.id)}
-                    className="text-[12px] text-[#a9a49b] opacity-100 transition-opacity hover:text-warn md:opacity-0 md:group-hover:opacity-100"
-                    aria-label="delete"
+              {day.habits.map((h) => {
+                const marks = new Set(grid?.byHabit[h.id] ?? []);
+                return (
+                  <li
+                    key={h.id}
+                    className="group rounded-lg px-1 py-1.5 transition-colors hover:bg-surface-2"
                   >
-                    ×
-                  </button>
-                </li>
-              ))}
+                    <div className="flex items-center gap-2">
+                      <span className="flex-1 text-[12px] text-ink">{h.name}</span>
+                      {(grid?.streak[h.id] ?? 0) > 1 ? (
+                        <span className="text-[9.5px] tabular-nums text-ink-3">
+                          {t("habit.streak", { n: grid?.streak[h.id] })}
+                        </span>
+                      ) : null}
+                      <button
+                        type="button"
+                        onClick={() => void removeHabit(h.id)}
+                        className="text-[12px] text-[#a9a49b] opacity-100 transition-opacity hover:text-warn md:opacity-0 md:group-hover:opacity-100"
+                        aria-label="delete"
+                      >
+                        ×
+                      </button>
+                    </div>
+                    <div className="mt-1 flex gap-[3px]">
+                      {last14.map((d) => (
+                        <span
+                          key={d}
+                          title={d}
+                          className={`h-2 w-[13px] rounded-[2px] ${
+                            marks.has(d) ? "bg-accent" : "bg-[#e8e4dc]"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </li>
+                );
+              })}
               {day.habits.length === 0 ? (
                 <li className="px-1 py-2 text-[11px] text-ink-3">{t("today.noHabits")}</li>
               ) : null}
