@@ -130,6 +130,32 @@
     "saved": "Term saved",
     "clear": "Clear"
   },
+  "settings": {
+    "ai": "Model API",
+    "aiHint": "Reading a timetable screenshot needs a vision model (Kimi's kimi-latest supports images). The key stays on this machine.",
+    "configured": "Configured",
+    "notConfigured": "Not configured",
+    "current": "In use",
+    "apiKey": "API key",
+    "model": "Model",
+    "base": "Base URL",
+    "test": "Test",
+    "testOk": "Connection OK",
+    "testFail": "Connection failed",
+    "clear": "Clear key",
+    "saved": "Saved",
+    "cleared": "Cleared",
+    "about": "About",
+    "version": "Version",
+    "storage": "Storage",
+    "localOnly": "Everything is stored on this machine. Only timetable screenshots are sent to the provider configured above.",
+    "source": {
+      "env": "env var",
+      "db": "local settings",
+      "file": "key file",
+      "none": "—"
+    }
+  },
   "review": {
     "summary": "This week",
     "blocks": "Time blocks",

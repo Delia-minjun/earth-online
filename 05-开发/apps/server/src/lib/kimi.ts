@@ -1,22 +1,49 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { DATA_DIR } from "../db.ts";
+import { getSetting } from "./settings.ts";
 
 const KEY_FILE = join(DATA_DIR, "kimi-key.txt");
 
-/** 优先读环境变量，其次读 data/kimi-key.txt（该文件不入库） */
-export function kimiKey(): string | null {
-  const env = process.env.LIFE_KIMI_API_KEY?.trim();
-  if (env) return env;
+export interface AiConfig {
+  apiKey: string;
+  model: string;
+  base: string;
+  /** key 是从哪来的：env / db / file */
+  source: "env" | "db" | "file" | "none";
+}
+
+interface StoredAi {
+  apiKey?: string;
+  model?: string;
+  base?: string;
+}
+
+function fileKey(): string {
   try {
-    if (existsSync(KEY_FILE)) {
-      const v = readFileSync(KEY_FILE, "utf8").trim();
-      if (v) return v;
-    }
+    if (existsSync(KEY_FILE)) return readFileSync(KEY_FILE, "utf8").trim();
   } catch {
     /* ignore */
   }
-  return null;
+  return "";
+}
+
+/** 优先级：环境变量 → 数据库设置 → data/kimi-key.txt */
+export function resolveAiConfig(): AiConfig {
+  const stored = getSetting<StoredAi>("ai", {});
+  const envKey = process.env.LIFE_KIMI_API_KEY?.trim() ?? "";
+  const dbKey = (stored.apiKey ?? "").trim();
+  const fKey = fileKey();
+
+  const apiKey = envKey || dbKey || fKey;
+  const source: AiConfig["source"] = envKey ? "env" : dbKey ? "db" : fKey ? "file" : "none";
+
+  return {
+    apiKey,
+    source,
+    model: stored.model?.trim() || process.env.LIFE_KIMI_MODEL?.trim() || "kimi-latest",
+    base: stored.base?.trim() || process.env.LIFE_KIMI_BASE?.trim() || "https://api.moonshot.cn/v1",
+  };
 }
 
 export interface ParsedCourse {
@@ -54,20 +81,24 @@ function extractCourses(text: string): ParsedCourse[] {
     throw new Error("模型返回的不是合法 JSON");
   }
   const obj = parsed as { courses?: unknown } | unknown[];
-  const list = Array.isArray(obj) ? obj : Array.isArray((obj as { courses?: unknown }).courses) ? (obj as { courses: unknown[] }).courses : [];
+  const list = Array.isArray(obj)
+    ? obj
+    : Array.isArray((obj as { courses?: unknown }).courses)
+      ? (obj as { courses: unknown[] }).courses
+      : [];
   return (list as ParsedCourse[]).filter((c) => c && typeof c === "object");
 }
 
 export async function parseTimetableImage(base64: string, mime: string): Promise<ParsedCourse[]> {
-  const key = kimiKey();
-  if (!key) throw new Error("NOKEY");
+  const cfg = resolveAiConfig();
+  if (!cfg.apiKey) throw new Error("NOKEY");
 
-  const res = await fetch(`${process.env.LIFE_KIMI_BASE ?? "https://api.moonshot.cn/v1"}/chat/completions`, {
+  const res = await fetch(`${cfg.base.replace(/\/$/, "")}/chat/completions`, {
     method: "POST",
-    headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
+    headers: { "content-type": "application/json", authorization: `Bearer ${cfg.apiKey}` },
     signal: AbortSignal.timeout(90_000),
     body: JSON.stringify({
-      model: process.env.LIFE_KIMI_MODEL ?? "kimi-latest",
+      model: cfg.model,
       temperature: 0,
       messages: [
         {
@@ -89,4 +120,19 @@ export async function parseTimetableImage(base64: string, mime: string): Promise
   const data = (await res.json()) as { choices?: { message?: { content?: string } }[] };
   const content = data.choices?.[0]?.message?.content ?? "";
   return extractCourses(content);
+}
+
+/** 用 /models 探活，不消耗生成额度 */
+export async function testAiConfig(cfg: AiConfig): Promise<{ ok: boolean; detail: string }> {
+  if (!cfg.apiKey) return { ok: false, detail: "NOKEY" };
+  try {
+    const res = await fetch(`${cfg.base.replace(/\/$/, "")}/models`, {
+      headers: { authorization: `Bearer ${cfg.apiKey}` },
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (res.ok) return { ok: true, detail: "ok" };
+    return { ok: false, detail: `${res.status} ${(await res.text()).slice(0, 120)}` };
+  } catch (e) {
+    return { ok: false, detail: (e as Error).message };
+  }
 }

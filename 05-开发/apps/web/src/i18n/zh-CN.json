@@ -130,6 +130,32 @@
     "saved": "学期已保存",
     "clear": "清除"
   },
+  "settings": {
+    "ai": "模型 API",
+    "aiHint": "课表截图识别需要能读图的模型（Kimi 的 kimi-latest 支持图片）。Key 只存在这台电脑上。",
+    "configured": "已配置",
+    "notConfigured": "未配置",
+    "current": "当前使用",
+    "apiKey": "API Key",
+    "model": "模型",
+    "base": "接口地址",
+    "test": "测试连接",
+    "testOk": "连接正常",
+    "testFail": "连接失败",
+    "clear": "清除 Key",
+    "saved": "已保存",
+    "cleared": "已清除",
+    "about": "关于",
+    "version": "版本",
+    "storage": "数据存放",
+    "localOnly": "所有数据都存在这台电脑上，不会上传到任何服务器。只有识别课表截图时，图片会发给上面配置的服务商。",
+    "source": {
+      "env": "环境变量",
+      "db": "本机设置",
+      "file": "密钥文件",
+      "none": "—"
+    }
+  },
   "review": {
     "summary": "本周数据",
     "blocks": "时间块",

@@ -7,6 +7,7 @@ import { TodayView } from "./views/TodayView";
 import { RewardView } from "./views/RewardView";
 import { WeekView } from "./views/WeekView";
 import { ReviewView } from "./views/ReviewView";
+import { SettingsView } from "./views/SettingsView";
 import { PlaceholderView } from "./views/PlaceholderView";
 
 export default function App() {
@@ -94,7 +95,8 @@ export default function App() {
           {view === "week" && <WeekView />}
           {view === "review" && <ReviewView />}
           {isReward && <RewardView />}
-          {!isToday && !isReward && view !== "week" && view !== "review" && (
+          {view === "settings" && <SettingsView />}
+          {!isToday && !isReward && view !== "week" && view !== "review" && view !== "settings" && (
             <PlaceholderView nameKey={`nav.${view}`} />
           )}
         </main>

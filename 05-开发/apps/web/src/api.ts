@@ -153,6 +153,14 @@ export interface CourseCandidate {
   ok: boolean;
 }
 
+export interface AiConfigInfo {
+  configured: boolean;
+  source: "env" | "db" | "file" | "none";
+  model: string;
+  base: string;
+  masked: string;
+}
+
 export const api = {
   meta: () => request<ApiMeta>("/meta"),
   day: (date?: string) => request<ApiDay>(`/day${date ? `?date=${date}` : ""}`),
@@ -188,6 +196,24 @@ export const api = {
   semester: () => request<SemesterConfig>("/settings/semester"),
   saveSemester: (s: SemesterConfig) =>
     request<SemesterConfig>("/settings/semester", { method: "PUT", body: JSON.stringify(s) }),
+
+  aiSettings: () => request<AiConfigInfo>("/settings/ai"),
+  saveAi: (patch: { apiKey?: string; model?: string; base?: string }) =>
+    request<{ ok: boolean; configured: boolean; source: string }>("/settings/ai", {
+      method: "PUT",
+      body: JSON.stringify(patch),
+    }),
+  testAi: async (): Promise<{ ok: boolean; detail: string; status: number }> => {
+    const res = await fetch(BASE + "/settings/ai/test", {
+      method: "POST",
+      signal: AbortSignal.timeout(25_000),
+    });
+    const body = (await res.json().catch(() => ({ ok: false, detail: "bad response" }))) as {
+      ok: boolean;
+      detail: string;
+    };
+    return { ...body, status: res.status };
+  },
   parseTimetable: (imageBase64: string, mimeType: string) =>
     request<{ candidates: CourseCandidate[]; periods: PeriodsConfig }>("/courses/parse-image", {
       method: "POST",

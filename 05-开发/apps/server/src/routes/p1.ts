@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { getDb } from "../db.ts";
 import { buildWeek, isoWeekOf, weekId } from "../week.ts";
-import { parseTimetableImage } from "../lib/kimi.ts";
+import { parseTimetableImage, resolveAiConfig, testAiConfig } from "../lib/kimi.ts";
 import {
   DEFAULT_PERIODS,
   getSetting,
@@ -416,6 +416,55 @@ function teachingWeekOf(date: string): number | null {
   const week = Math.floor(Math.floor((b - a) / 86400000) / 7) + 1;
   return week >= 1 && week <= 60 ? week : null;
 }
+
+/* ---------------- AI settings ---------------- */
+
+interface StoredAi {
+  apiKey?: string;
+  model?: string;
+  base?: string;
+}
+
+api.get("/settings/ai", (c) => {
+  const cfg = resolveAiConfig();
+  return c.json({
+    configured: Boolean(cfg.apiKey),
+    source: cfg.source,
+    model: cfg.model,
+    base: cfg.base,
+    masked: cfg.apiKey ? `${cfg.apiKey.slice(0, 3)}…${cfg.apiKey.slice(-4)}` : "",
+  });
+});
+
+api.put("/settings/ai", async (c) => {
+  const r = await readBody(
+    c,
+    z.object({
+      apiKey: z.string().max(300).optional(),
+      model: z.string().max(80).optional(),
+      base: z.string().max(300).optional(),
+    }),
+  );
+  if (!r.ok) return c.json({ error: r.error }, 400);
+
+  const next: StoredAi = { ...getSetting<StoredAi>("ai", {}) };
+  if (r.data.apiKey !== undefined) {
+    const v = r.data.apiKey.trim();
+    if (v === "") delete next.apiKey;
+    else next.apiKey = v;
+  }
+  if (r.data.model !== undefined) next.model = r.data.model.trim();
+  if (r.data.base !== undefined) next.base = r.data.base.trim();
+  setSetting("ai", next);
+
+  const cfg = resolveAiConfig();
+  return c.json({ ok: true, configured: Boolean(cfg.apiKey), source: cfg.source });
+});
+
+api.post("/settings/ai/test", async (c) => {
+  const result = await testAiConfig(resolveAiConfig());
+  return c.json(result, result.ok ? 200 : 400);
+});
 
 /* ---------------- periods & timetable import ---------------- */
 
