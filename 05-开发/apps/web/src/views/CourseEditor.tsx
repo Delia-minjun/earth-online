@@ -67,8 +67,6 @@ export function CourseEditor({
     count: 12,
   });
   const [semester, setSemester] = useState<SemesterConfig>({ startDate: null });
-  const [editMode, setEditMode] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const [importing, setImporting] = useState(false);
   const [candidates, setCandidates] = useState<CourseCandidate[] | null>(null);
@@ -306,18 +304,6 @@ export function CourseEditor({
         {baseWeek == null ? (
           <span className="text-[10px] text-[#c8c4bc]">{t("course.setSemesterHint")}</span>
         ) : null}
-
-        <button
-          type="button"
-          onClick={() => setSettingsOpen(true)}
-          className={`rounded-full border px-2.5 py-1 text-[10.5px] transition-colors ${
-            settingsOpen
-              ? "border-accent bg-accent text-white"
-              : "border-line bg-surface text-ink-3 hover:border-accent hover:text-ink"
-          }`}
-        >
-          {t("course.editMode")}
-        </button>
 
         <button
           type="button"
@@ -707,13 +693,9 @@ export function CourseEditor({
                     ) : (
                       <li
                         key={c.id}
-                        onClick={() => {
-                          if (editMode) startEdit(c);
-                        }}
-                        className={`flex items-center gap-2 rounded-md px-1 py-0.5 transition-colors ${
-                          editMode ? "cursor-pointer hover:bg-surface-2" : ""
-                        }`}
-                        title={editMode ? t("course.clickToEdit") : undefined}
+                        onClick={() => startEdit(c)}
+                        className="flex cursor-pointer items-center gap-2 rounded-md px-1 py-0.5 transition-colors hover:bg-surface-2"
+                        title={t("course.clickToEdit")}
                       >
                         <span className="w-[80px] shrink-0 text-[10px] tabular-nums text-ink-3">
                           {hhmm(c.start_min)}–{hhmm(c.end_min)}
@@ -735,18 +717,16 @@ export function CourseEditor({
                                 : `${c.week_start ?? 1}-${c.week_end ?? "?"}${t("course.weekSuffix")}`}
                           </span>
                         ) : null}
-                        {editMode ? (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              startEdit(c);
-                            }}
-                            className="shrink-0 rounded-full border border-line px-1.5 py-0.5 text-[9px] text-ink-3 transition-colors hover:border-accent hover:text-ink"
-                          >
-                            {t("course.editRow")}
-                          </button>
-                        ) : null}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            startEdit(c);
+                          }}
+                          className="shrink-0 rounded-full border border-line px-1.5 py-0.5 text-[9px] text-ink-3 transition-colors hover:border-accent hover:text-ink"
+                        >
+                          {t("course.editRow")}
+                        </button>
                         <button
                           type="button"
                           onClick={(e) => {
@@ -768,28 +748,8 @@ export function CourseEditor({
         </div>
       )}
 
-      {settingsOpen ? (
-        <div
-          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/20 p-4 pt-16"
-          onClick={() => setSettingsOpen(false)}
-        >
-          <div
-            className="w-full max-w-md space-y-3 rounded-2xl border border-line bg-surface p-4 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between">
-              <h2 className="text-[13px] font-semibold text-ink">{t("course.editMode")}</h2>
-              <button
-                type="button"
-                onClick={() => setSettingsOpen(false)}
-                className="text-[14px] leading-none text-ink-3 transition-colors hover:text-ink"
-                aria-label="close"
-              >
-                ✕
-              </button>
-            </div>
-
-            <section className="space-y-1.5 border-t border-line-2 pt-3">
+      <section className="space-y-3 rounded-2xl border border-line bg-surface p-3">
+            <section className="space-y-1.5">
               <h3 className="text-[11.5px] font-semibold text-ink">{t("semester.title")}</h3>
               <p className="text-[10px] leading-relaxed text-ink-3">{t("semester.hint")}</p>
               <div className="flex flex-wrap items-center gap-2 text-[11px] text-ink-2">
@@ -870,23 +830,7 @@ export function CourseEditor({
               </div>
             </section>
 
-            <section className="border-t border-line-2 pt-3">
-              <label className="flex items-start gap-2 text-[11px] leading-relaxed text-ink-2">
-                <input
-                  type="checkbox"
-                  checked={editMode}
-                  onChange={() => {
-                    setEditMode((v) => !v);
-                    setEditing(null);
-                  }}
-                  className="mt-0.5 accent-[#8FA38E]"
-                />
-                <span>{t("course.editModeHint")}</span>
-              </label>
-            </section>
-          </div>
-        </div>
-      ) : null}
+      </section>
     </div>
   );
 }

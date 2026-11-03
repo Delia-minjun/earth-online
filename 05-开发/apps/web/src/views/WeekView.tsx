@@ -15,16 +15,16 @@ type Item = {
   title: string;
   start: number;
   end: number;
-  color?: string | null;
+  color: string;
   location?: string | null;
 };
 
 export function WeekView() {
   const { t, i18n } = useTranslation();
   const [offset, setOffset] = useState(0);
-  const [mode, setMode] = useState<"plan" | "course">("plan");
   const [data, setData] = useState<ApiWeek | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [editorOpen, setEditorOpen] = useState(false);
 
   const target = useMemo(() => shiftWeeks(mondayOfThisWeek(), offset), [offset]);
   const { isoYear, isoWeek } = useMemo(() => isoWeekOf(target), [target]);
@@ -80,8 +80,8 @@ export function WeekView() {
   };
 
   return (
-    <div className="space-y-3.5">
-      <div className="flex items-center gap-2">
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
           onClick={() => setOffset((v) => v - 1)}
@@ -110,137 +110,151 @@ export function WeekView() {
           </button>
         ) : null}
 
-        <div className="ml-auto flex rounded-full border border-line bg-surface p-0.5">
-          {(["plan", "course"] as const).map((m) => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => setMode(m)}
-              className={`rounded-full px-2.5 py-1 text-[10.5px] transition-colors ${
-                mode === m ? "bg-accent-soft font-semibold text-ink" : "text-ink-3"
-              }`}
-            >
-              {t(`week.mode.${m}`)}
-            </button>
-          ))}
-        </div>
+        <button
+          type="button"
+          onClick={() => setEditorOpen(true)}
+          className="ml-auto rounded-full border border-line bg-surface px-3 py-1.5 text-[10.5px] text-ink-2 transition-colors hover:border-accent hover:text-ink"
+        >
+          {t("course.editMode")}
+        </button>
       </div>
 
       {error ? <p className="text-[10.5px] text-warn">{error}</p> : null}
 
-      {mode === "course" ? (
-        <CourseEditor onChanged={() => void load()} baseWeek={data?.teachingWeek ?? null} />
-      ) : (
-        <>
-          <div className="flex flex-wrap gap-2 text-[10.5px] text-ink-3">
-            <span className="rounded-full bg-surface px-2.5 py-1">
-              {totals.courses} {t("week.courses")}
-            </span>
-            <span className="rounded-full bg-surface px-2.5 py-1">
-              {totals.blocks} {t("week.blocks")}
-            </span>
-            <span className="rounded-full bg-surface px-2.5 py-1">{dur(totals.minutes)}</span>
-            <span className="rounded-full bg-surface px-2.5 py-1">
-              {t("week.focus")} {totals.done}/{totals.tasks}
-            </span>
-          </div>
+      <div className="flex flex-wrap gap-2 text-[10.5px] text-ink-3">
+        <span className="rounded-full bg-surface px-2.5 py-1">
+          {totals.courses} {t("week.courses")}
+        </span>
+        <span className="rounded-full bg-surface px-2.5 py-1">
+          {totals.blocks} {t("week.blocks")}
+        </span>
+        <span className="rounded-full bg-surface px-2.5 py-1">{dur(totals.minutes)}</span>
+        <span className="rounded-full bg-surface px-2.5 py-1">
+          {t("week.focus")} {totals.done}/{totals.tasks}
+        </span>
+      </div>
 
-          <div className="-mx-1 overflow-x-auto pb-1">
-            <div className="grid min-w-[680px] grid-cols-7 gap-2 px-1">
-              {days.map((d) => {
-                const courses: Item[] = (data?.courses ?? [])
-                  .filter((c) => c.weekday === d.weekdayIndex)
-                  .map((c) => ({
-                    kind: "course",
-                    id: c.id,
-                    title: c.name,
-                    start: c.start_min,
-                    end: c.end_min,
-                    color: courseColor(c),
-                    location: c.location,
-                  }));
-                const blocks: Item[] = (data?.blocks ?? [])
-                  .filter((b) => b.date === d.date)
-                  .map((b) => ({
-                    kind: "block",
-                    id: b.id,
-                    title: b.title,
-                    start: b.start_min,
-                    end: b.end_min,
-                    color: b.category_color,
-                  }));
-                const items = [...courses, ...blocks].sort((a, b) => a.start - b.start);
-                const tasks = (data?.tasks ?? []).filter((x) => x.scheduled_date === d.date);
+      <div className="overflow-hidden rounded-2xl border border-line bg-surface">
+        {days.map((d, idx) => {
+          const courses: Item[] = (data?.courses ?? [])
+            .filter((c) => c.weekday === d.weekdayIndex)
+            .map((c) => ({
+              kind: "course",
+              id: c.id,
+              title: c.name,
+              start: c.start_min,
+              end: c.end_min,
+              color: courseColor(c),
+              location: c.location,
+            }));
+          const blocks: Item[] = (data?.blocks ?? [])
+            .filter((b) => b.date === d.date)
+            .map((b) => ({
+              kind: "block",
+              id: b.id,
+              title: b.title,
+              start: b.start_min,
+              end: b.end_min,
+              color: b.category_color ?? "#d8d4cc",
+            }));
+          const items = [...courses, ...blocks].sort((a, b) => a.start - b.start);
+          const tasks = (data?.tasks ?? []).filter((x) => x.scheduled_date === d.date);
+          const empty = items.length === 0 && tasks.length === 0;
 
-                return (
-                  <section
-                    key={d.date}
-                    className={`min-h-[220px] rounded-2xl border bg-surface p-2.5 ${
-                      d.isToday ? "border-accent" : "border-line"
-                    }`}
+          return (
+            <div
+              key={d.date}
+              className={`flex gap-3 px-3 py-2.5 ${
+                idx > 0 ? "border-t border-line-2" : ""
+              } ${d.isToday ? "bg-accent-soft/30" : ""}`}
+            >
+              <div className="w-14 shrink-0 pt-0.5">
+                <p
+                  className={`text-[11px] ${
+                    d.isToday ? "font-semibold text-ink" : "text-ink-2"
+                  }`}
+                >
+                  {d.weekday}
+                </p>
+                <p className="text-[9.5px] tabular-nums text-ink-3">{d.label}</p>
+              </div>
+
+              <div className="flex min-w-0 flex-1 flex-wrap items-start gap-1.5">
+                {items.map((it) => (
+                  <div
+                    key={`${it.kind}-${it.id}`}
+                    className="flex items-center gap-1.5 rounded-lg border border-line-2 bg-surface px-2 py-1"
                   >
-                    <header className="flex items-baseline justify-between">
-                      <span className={`text-[11px] ${d.isToday ? "font-semibold text-ink" : "text-ink-2"}`}>
-                        {d.weekday}
-                      </span>
-                      <span className="text-[9.5px] text-ink-3">{d.label}</span>
-                    </header>
-
-                    <div className="mt-2 space-y-1">
-                      {items.map((it) => (
-                        <div key={`${it.kind}-${it.id}`} className="flex gap-1.5">
-                          <span
-                            className="mt-1 h-3 w-[2px] shrink-0 rounded-full"
-                            style={{ background: it.color ?? "#d8d4cc" }}
-                          />
-                          <div className="min-w-0">
-                            <p
-                              className={`truncate text-[10px] ${
-                                it.kind === "course" ? "text-ink-2" : "text-ink"
-                              }`}
-                            >
-                              {it.title}
-                            </p>
-                            <p className="text-[9px] tabular-nums text-ink-3">
-                              {hhmm(it.start)}–{hhmm(it.end)}
-                              {it.location ? ` · ${it.location}` : ""}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
+                    <span
+                      className="h-4 w-[2px] shrink-0 rounded-full"
+                      style={{ background: it.color }}
+                    />
+                    <div className="min-w-0">
+                      <p className="truncate text-[10.5px] text-ink">{it.title}</p>
+                      <p className="text-[9px] tabular-nums text-ink-3">
+                        {hhmm(it.start)}–{hhmm(it.end)}
+                        {it.location ? ` · ${it.location}` : ""}
+                      </p>
                     </div>
+                  </div>
+                ))}
 
-                    {tasks.length ? (
-                      <ul className="mt-2 space-y-1 border-t border-line-2 pt-1.5">
-                        {tasks.map((x) => (
-                          <li key={x.id} className="flex items-start gap-1">
-                            <span
-                              className={`mt-[3px] h-1.5 w-1.5 shrink-0 rounded-full ${
-                                x.status === "done" ? "bg-accent" : "bg-[#d8d4cc]"
-                              }`}
-                            />
-                            <span
-                              className={`truncate text-[9.5px] ${
-                                x.status === "done" ? "text-ink-3 line-through" : "text-ink-2"
-                              }`}
-                            >
-                              {x.title}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : null}
+                {tasks.map((x) => (
+                  <span
+                    key={x.id}
+                    className="inline-flex items-center gap-1 rounded-full bg-[#f1eee8] px-2 py-[3px] text-[9.5px] text-ink-2"
+                  >
+                    <span
+                      className={`h-1.5 w-1.5 rounded-full ${
+                        x.status === "done" ? "bg-accent" : "bg-[#d8d4cc]"
+                      }`}
+                    />
+                    <span className={x.status === "done" ? "line-through text-ink-3" : ""}>
+                      {x.title}
+                    </span>
+                  </span>
+                ))}
 
-                    {items.length === 0 && tasks.length === 0 ? (
-                      <p className="mt-3 text-[9.5px] text-[#c8c4bc]">{t("week.empty")}</p>
-                    ) : null}
-                  </section>
-                );
-              })}
+                {empty ? (
+                  <span className="py-1 text-[10px] text-[#c8c4bc]">{t("week.empty")}</span>
+                ) : null}
+              </div>
             </div>
+          );
+        })}
+      </div>
+
+      {editorOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/25 p-4 pt-10"
+          onClick={() => setEditorOpen(false)}
+        >
+          <div
+            className="w-full max-w-3xl rounded-2xl border border-line bg-bg p-4 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <header className="mb-3 flex items-center justify-between">
+              <div>
+                <h2 className="text-[14px] font-semibold text-ink">{t("course.editMode")}</h2>
+                <p className="mt-0.5 text-[10px] text-ink-3">
+                  {data?.teachingWeek
+                    ? t("week.teaching", { n: data.teachingWeek })
+                    : t("course.setSemesterHint")}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditorOpen(false)}
+                className="text-[14px] leading-none text-ink-3 transition-colors hover:text-ink"
+                aria-label="close"
+              >
+                ✕
+              </button>
+            </header>
+            <CourseEditor onChanged={() => void load()} baseWeek={data?.teachingWeek ?? null} />
           </div>
-        </>
-      )}
+        </div>
+      ) : null}
     </div>
   );
 }
