@@ -108,6 +108,10 @@ export function CourseEditor({ onChanged }: { onChanged?: () => void }) {
   const onFile = (file: File) => {
     setError(null);
     setNotice(null);
+    if (file.size > 4 * 1024 * 1024) {
+      setError(t("course.tooLarge"));
+      return;
+    }
     setImporting(true);
     const reader = new FileReader();
     reader.onload = async () => {
@@ -128,7 +132,9 @@ export function CourseEditor({ onChanged }: { onChanged?: () => void }) {
             ? t("course.nokey")
             : msg.includes("no_vision")
               ? t("course.noVision")
-              : msg,
+              : msg.includes("TIMEOUT")
+                ? t("course.timeout")
+                : msg,
         );
       } finally {
         setImporting(false);

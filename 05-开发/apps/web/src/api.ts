@@ -80,13 +80,22 @@ export interface SemesterConfig {
 
 const BASE = "/api";
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(BASE + path, {
-    headers: init?.body ? { "content-type": "application/json" } : undefined,
-    // 超时兜底：请求挂住时会走 catch，界面能显示「保存失败」而不是一直转
-    signal: AbortSignal.timeout(10_000),
-    ...init,
-  });
+async function request<T>(path: string, init?: RequestInit, timeoutMs = 10_000): Promise<T> {
+  let res: Response;
+  try {
+    res = await fetch(BASE + path, {
+      headers: init?.body ? { "content-type": "application/json" } : undefined,
+      // 超时兜底：请求挂住时会走 catch，界面能显示「保存失败」而不是一直转
+      signal: AbortSignal.timeout(timeoutMs),
+      ...init,
+    });
+  } catch (e) {
+    const err = e as Error;
+    if (err.name === "TimeoutError" || err.name === "AbortError") {
+      throw new Error(`TIMEOUT:${Math.round(timeoutMs / 1000)}`);
+    }
+    throw err;
+  }
   if (!res.ok) {
     let detail = res.statusText;
     try {
@@ -224,10 +233,11 @@ export const api = {
     };
   },
   parseTimetable: (imageBase64: string, mimeType: string) =>
-    request<{ candidates: CourseCandidate[]; periods: PeriodsConfig }>("/courses/parse-image", {
-      method: "POST",
-      body: JSON.stringify({ imageBase64, mimeType }),
-    }),
+    request<{ candidates: CourseCandidate[]; periods: PeriodsConfig }>(
+      "/courses/parse-image",
+      { method: "POST", body: JSON.stringify({ imageBase64, mimeType }) },
+      180_000,
+    ),
   bulkCourses: (
     courses: { name: string; weekday: number; startMin: number; endMin: number; location?: string }[],
   ) =>
