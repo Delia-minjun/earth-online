@@ -31,7 +31,7 @@ app.use("/*", serveStatic({ root: WEB_DIST }));
 app.get("*", serveStatic({ root: WEB_DIST, rewriteRequestPath: () => "/index.html" }));
 
 serve({ fetch: app.fetch, port: PORT, hostname: "127.0.0.1" }, (info) => {
-  console.log(`[life-os] listening on http://127.0.0.1:${info.port}`);
-  console.log(`[life-os] db:     ${dbFile()}`);
-  console.log(`[life-os] web:    ${WEB_DIST}`);
+  console.log(`[earth-online] listening on http://127.0.0.1:${info.port}`);
+  console.log(`[earth-online] db:     ${dbFile()}`);
+  console.log(`[earth-online] web:    ${WEB_DIST}`);
 });

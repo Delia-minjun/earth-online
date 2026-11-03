@@ -1,6 +1,6 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """
-生成「人生管理系统」高保真原型图（莫兰迪色系 / 卡片化，不照搬表格）。
+生成「地球 Online」高保真原型图（莫兰迪色系 / 卡片化，不照搬表格）。
 运行后在同目录导出三张 PNG：周视图、手机今日、奖赏页。
 """
 import os
@@ -105,8 +105,8 @@ def sidebar(img, d, h, active="本周", w=208):
     d.rectangle([0, 0, w, h], fill=SURFACE_2)
     d.line([w, 0, w, h], fill=LINE, width=1)
     dot(d, 32, 40, 9, ACCENT)
-    txt(d, 50, 40, "人生管理", 15, TEXT, True, "lm")
-    txt(d, 22, 78, "LIFE OS", 9.5, TEXT_3, True, "la")
+    txt(d, 50, 40, "地球 Online", 15, TEXT, True, "lm")
+    txt(d, 22, 78, "EARTH ONLINE", 9.5, TEXT_3, True, "la")
     y = 112
     for item in NAV:
         box = [16, y, w - 16, y + 40]
