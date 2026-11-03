@@ -11,12 +11,12 @@ export type ViewKey =
   | "reward"
   | "settings";
 
-export const NAV_ITEMS: { key: ViewKey; implemented: boolean }[] = [
+export const NAV_ITEMS: { key: ViewKey; implemented: boolean; phase?: string }[] = [
   { key: "today", implemented: true },
   { key: "week", implemented: true },
   { key: "projects", implemented: true },
   { key: "review", implemented: true },
-  { key: "study", implemented: false },
+  { key: "study", implemented: false, phase: "P5" },
   { key: "reward", implemented: true },
   { key: "settings", implemented: true },
 ];
@@ -133,8 +133,8 @@ export function Sidebar({
                 ⠿
               </span>
               <span>{t(`nav.${key}`)}</span>
-              {item && !item.implemented ? (
-                <span className="ml-auto text-[9px] text-[#c8c4bc]">P1</span>
+              {item?.phase ? (
+                <span className="ml-auto text-[9px] text-[#c8c4bc]">{item.phase}</span>
               ) : null}
             </button>
           );
