@@ -94,6 +94,7 @@
     "backToday": "回到本周",
     "empty": "没有安排",
     "courses": "节课",
+    "teaching": "第 {{n}} 周",
     "mode": {
       "plan": "安排",
       "course": "课表"
@@ -121,6 +122,13 @@
     "lesson": "每节",
     "break": "课间",
     "saved": "作息已保存"
+  },
+  "semester": {
+    "title": "学期",
+    "hint": "设置学期第 1 周的周一，「第几周」会按它计算；不设就不显示",
+    "first": "第 1 周周一",
+    "saved": "学期已保存",
+    "clear": "清除"
   },
   "review": {
     "summary": "本周数据",

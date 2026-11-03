@@ -71,6 +71,11 @@ export interface ApiDay {
   habits: ApiHabit[];
   journal: ApiJournal | null;
   courses: ApiCourse[];
+  teachingWeek: number | null;
+}
+
+export interface SemesterConfig {
+  startDate: string | null;
 }
 
 const BASE = "/api";
@@ -120,6 +125,7 @@ export interface ApiWeek {
   tasks: ApiWeekTask[];
   blocks: ApiWeekBlock[];
   courses: ApiCourse[];
+  teachingWeek: number | null;
 }
 
 export interface ApiReview {
@@ -179,6 +185,9 @@ export const api = {
   periods: () => request<PeriodsConfig>("/settings/periods"),
   savePeriods: (p: PeriodsConfig) =>
     request<PeriodsConfig>("/settings/periods", { method: "PUT", body: JSON.stringify(p) }),
+  semester: () => request<SemesterConfig>("/settings/semester"),
+  saveSemester: (s: SemesterConfig) =>
+    request<SemesterConfig>("/settings/semester", { method: "PUT", body: JSON.stringify(s) }),
   parseTimetable: (imageBase64: string, mimeType: string) =>
     request<{ candidates: CourseCandidate[]; periods: PeriodsConfig }>("/courses/parse-image", {
       method: "POST",

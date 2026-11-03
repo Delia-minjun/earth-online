@@ -111,7 +111,10 @@ export function ReviewView() {
         >
           ‹
         </button>
-        <p className="text-[13px] font-semibold tabular-nums text-ink">{rangeLabel}</p>
+        <p className="text-[13px] font-semibold tabular-nums text-ink">
+          {weekData?.teachingWeek ? `${t("week.teaching", { n: weekData.teachingWeek })} · ` : ""}
+          {rangeLabel}
+        </p>
         <button
           type="button"
           onClick={() => setOffset((v) => v + 1)}

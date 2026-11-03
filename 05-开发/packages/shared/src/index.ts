@@ -20,6 +20,8 @@ export interface WeekInfo {
   startDate: string;
   endDate: string;
   days: WeekDay[];
+  /** 教学周（按学期第 1 周周一算起）；没设学期时为 null */
+  teachingWeek?: number | null;
 }
 
 export interface HealthInfo {

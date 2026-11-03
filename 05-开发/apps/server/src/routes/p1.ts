@@ -121,7 +121,7 @@ api.get("/day", (c) => {
     )
     .all(weekdayOf(date)) as Row[];
 
-  return c.json({ date, week, tasks, blocks, habits, journal, courses });
+  return c.json({ date, week, tasks, blocks, habits, journal, courses, teachingWeek: teachingWeekOf(date) });
 });
 
 /* ---------------- tasks ---------------- */
@@ -383,6 +383,40 @@ api.delete("/courses/:id", (c) => {
   return c.json({ ok: true });
 });
 
+/* ---------------- semester & teaching week ---------------- */
+
+api.get("/settings/semester", (c) => c.json(getSetting("semester", { startDate: null })));
+
+api.put("/settings/semester", async (c) => {
+  const r = await readBody(c, z.object({ startDate: z.string().regex(DATE_RE).nullable() }));
+  if (!r.ok) return c.json({ error: r.error }, 400);
+
+  if (!r.data.startDate) {
+    setSetting("semester", { startDate: null });
+    return c.json({ startDate: null });
+  }
+
+  // 统一对齐到那一周的周一，避免用户选到周三导致整学期错位
+  const d = new Date(`${r.data.startDate}T00:00:00Z`);
+  const wd = d.getUTCDay() || 7;
+  if (wd !== 1) d.setUTCDate(d.getUTCDate() - (wd - 1));
+  const startDate = d.toISOString().slice(0, 10);
+
+  setSetting("semester", { startDate });
+  return c.json({ startDate });
+});
+
+/** 教学周：以学期第 1 周的周一为起点；没设学期返回 null */
+function teachingWeekOf(date: string): number | null {
+  const start = getSetting<{ startDate: string | null }>("semester", { startDate: null }).startDate;
+  if (!start) return null;
+  const a = Date.parse(`${start}T00:00:00Z`);
+  const b = Date.parse(`${date}T00:00:00Z`);
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return null;
+  const week = Math.floor(Math.floor((b - a) / 86400000) / 7) + 1;
+  return week >= 1 && week <= 60 ? week : null;
+}
+
 /* ---------------- periods & timetable import ---------------- */
 
 api.get("/settings/periods", (c) => c.json(getSetting<PeriodsConfig>("periods", DEFAULT_PERIODS)));
@@ -510,7 +544,8 @@ api.post("/courses/bulk", async (c) => {
 
 api.get("/week/current", (c) => {
   const { isoYear, isoWeek } = isoWeekOf(new Date());
-  return c.json(ensureWeek(isoYear, isoWeek));
+  const info = ensureWeek(isoYear, isoWeek);
+  return c.json({ ...info, teachingWeek: teachingWeekOf(info.startDate) });
 });
 
 api.get("/week/:year/:week", (c) => {
@@ -545,7 +580,14 @@ api.get("/week/:year/:week", (c) => {
     )
     .all() as Row[];
 
-  return c.json({ week: info, weekId: weekId(year, week), tasks, blocks, courses });
+  return c.json({
+    week: info,
+    weekId: weekId(year, week),
+    tasks,
+    blocks,
+    courses,
+    teachingWeek: teachingWeekOf(info.startDate),
+  });
 });
 
 /* ---------------- weekly review ---------------- */

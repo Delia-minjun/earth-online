@@ -90,6 +90,7 @@ export function WeekView() {
           ‹
         </button>
         <p className="text-[13px] font-semibold tabular-nums text-ink">
+          {data?.teachingWeek ? `${t("week.teaching", { n: data.teachingWeek })} · ` : ""}
           {days[0]?.label} — {days[6]?.label}
         </p>
         <button

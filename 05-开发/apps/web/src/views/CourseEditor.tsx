@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, hhmm, type ApiCourse, type CourseCandidate, type PeriodsConfig } from "../api";
+import { api, hhmm, type ApiCourse, type CourseCandidate, type PeriodsConfig, type SemesterConfig } from "../api";
 
 const SLOTS = Array.from({ length: 144 }, (_, i) => i * 10);
 const END_SLOTS = Array.from({ length: 144 }, (_, i) => (i + 1) * 10);
@@ -26,6 +26,8 @@ export function CourseEditor({ onChanged }: { onChanged?: () => void }) {
     count: 12,
   });
   const [periodsOpen, setPeriodsOpen] = useState(false);
+  const [semester, setSemester] = useState<SemesterConfig>({ startDate: null });
+  const [semesterOpen, setSemesterOpen] = useState(false);
 
   const [importing, setImporting] = useState(false);
   const [candidates, setCandidates] = useState<CourseCandidate[] | null>(null);
@@ -34,9 +36,10 @@ export function CourseEditor({ onChanged }: { onChanged?: () => void }) {
 
   const load = useCallback(async () => {
     try {
-      const [cs, ps] = await Promise.all([api.courses(), api.periods()]);
+      const [cs, ps, sem] = await Promise.all([api.courses(), api.periods(), api.semester()]);
       setCourses(cs);
       setPeriods(ps);
+      setSemester(sem);
       setError(null);
     } catch (e) {
       setError((e as Error).message);
@@ -85,6 +88,17 @@ export function CourseEditor({ onChanged }: { onChanged?: () => void }) {
     try {
       setPeriods(await api.savePeriods(periods));
       setNotice(t("periods.saved"));
+      window.setTimeout(() => setNotice(null), 2000);
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  };
+
+  const saveSemester = async () => {
+    try {
+      setSemester(await api.saveSemester(semester));
+      setNotice(t("semester.saved"));
+      onChanged?.();
       window.setTimeout(() => setNotice(null), 2000);
     } catch (e) {
       setError((e as Error).message);
@@ -166,6 +180,16 @@ export function CourseEditor({ onChanged }: { onChanged?: () => void }) {
 
         <button
           type="button"
+          onClick={() => setSemesterOpen((v) => !v)}
+          className={`rounded-full border px-2.5 py-1 text-[10.5px] transition-colors ${
+            semesterOpen ? "border-accent bg-accent text-white" : "border-line bg-surface text-ink-3 hover:border-accent"
+          }`}
+        >
+          {t("semester.title")}
+        </button>
+
+        <button
+          type="button"
           onClick={() => fileRef.current?.click()}
           disabled={importing}
           className="rounded-full border border-line bg-surface px-2.5 py-1 text-[10.5px] text-ink-3 transition-colors hover:border-accent hover:text-ink disabled:opacity-60"
@@ -241,6 +265,42 @@ export function CourseEditor({ onChanged }: { onChanged?: () => void }) {
             >
               {t("common.save")}
             </button>
+          </div>
+        </div>
+      ) : null}
+
+      {semesterOpen ? (
+        <div className="space-y-2 rounded-2xl border border-line bg-surface p-3">
+          <p className="text-[10.5px] text-ink-3">{t("semester.hint")}</p>
+          <div className="flex flex-wrap items-center gap-2 text-[11px] text-ink-2">
+            <label className="flex items-center gap-1">
+              {t("semester.first")}
+              <input
+                type="date"
+                value={semester.startDate ?? ""}
+                onChange={(e) => setSemester({ startDate: e.target.value || null })}
+                className="rounded-lg border border-line bg-surface-2 px-1.5 py-1 tabular-nums outline-none"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={() => void saveSemester()}
+              className="ml-auto rounded-lg bg-accent px-3 py-1.5 text-[10.5px] font-semibold text-white"
+            >
+              {t("common.save")}
+            </button>
+            {semester.startDate ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setSemester({ startDate: null });
+                  void api.saveSemester({ startDate: null }).then(() => onChanged?.());
+                }}
+                className="rounded-lg border border-line px-3 py-1.5 text-[10.5px] text-ink-3"
+              >
+                {t("semester.clear")}
+              </button>
+            ) : null}
           </div>
         </div>
       ) : null}

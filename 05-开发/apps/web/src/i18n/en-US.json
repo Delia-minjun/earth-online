@@ -94,6 +94,7 @@
     "backToday": "This week",
     "empty": "Nothing planned",
     "courses": "classes",
+    "teaching": "Week {{n}}",
     "mode": {
       "plan": "Plan",
       "course": "Timetable"
@@ -121,6 +122,13 @@
     "lesson": "Lesson",
     "break": "Break",
     "saved": "Periods saved"
+  },
+  "semester": {
+    "title": "Term",
+    "hint": "Set the Monday of week 1; the week counter follows it. Leave empty to hide.",
+    "first": "Week 1 Monday",
+    "saved": "Term saved",
+    "clear": "Clear"
   },
   "review": {
     "summary": "This week",
