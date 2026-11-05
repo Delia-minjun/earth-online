@@ -117,6 +117,28 @@ test("任务：未来日期的任务不会出现在今天", async () => {
   assert.equal(day.tasks.some((t) => t.id === created.id), false);
 });
 
+test("任务：DDL 可以创建、修改、清除", async () => {
+  const created = (await (
+    await post("/tasks", { title: "带截止日期的任务", dueDate: "2027-01-15" })
+  ).json()) as { id: string; due_date: string | null };
+  assert.equal(created.due_date, "2027-01-15", "创建时应写入 DDL");
+
+  const day = (await (await get("/day")).json()) as {
+    tasks: { id: string; due_date: string | null }[];
+  };
+  assert.equal(day.tasks.find((t) => t.id === created.id)?.due_date, "2027-01-15");
+
+  const changed = (await (
+    await patch(`/tasks/${created.id}`, { dueDate: "2027-02-01" })
+  ).json()) as { due_date: string | null };
+  assert.equal(changed.due_date, "2027-02-01");
+
+  const cleared = (await (await patch(`/tasks/${created.id}`, { dueDate: null })).json()) as {
+    due_date: string | null;
+  };
+  assert.equal(cleared.due_date, null, "传 null 应清空 DDL");
+});
+
 test("时间块：同一时段不能重叠，冲突返回 409", async () => {
   const first = await post("/blocks", { startMin: 480, endMin: 600, title: "上午学习" });
   assert.equal(first.status, 201);

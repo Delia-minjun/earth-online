@@ -107,7 +107,9 @@
     "priority0": "普通",
     "priority1": "重要",
     "priority2": "紧急",
-    "overdue": "延迟"
+    "overdue": "延迟",
+    "ddl": "DDL",
+    "ddlHint": "截止日期，可留空"
   },
   "habit": {
     "streak": "连续 {{n}} 天"

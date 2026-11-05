@@ -26,6 +26,7 @@ export interface ApiTask {
   status: "todo" | "doing" | "done" | "dropped";
   priority: number;
   scheduled_date: string | null;
+  due_date: string | null;
   done_at: string | null;
   is_focus: number;
   /** 1 = 过期未完成，被自动顺延到今天 */
@@ -293,13 +294,22 @@ export const api = {
   saveReview: (weekId: string, patch: Partial<Omit<ApiReview, "week_id">>) =>
     request<ApiReview>(`/review/${weekId}`, { method: "PUT", body: JSON.stringify(patch) }),
 
-  addTask: (title: string, date?: string, projectId?: string) =>
-    request<ApiTask>("/tasks", { method: "POST", body: JSON.stringify({ title, date, projectId }) }),
+  addTask: (title: string, date?: string, projectId?: string, dueDate?: string) =>
+    request<ApiTask>("/tasks", {
+      method: "POST",
+      body: JSON.stringify({ title, date, projectId, dueDate }),
+    }),
   setTaskStatus: (id: string, status: ApiTask["status"]) =>
     request<ApiTask>(`/tasks/${id}`, { method: "PATCH", body: JSON.stringify({ status }) }),
   patchTask: (
     id: string,
-    patch: { title?: string; date?: string | null; priority?: number; areaId?: string | null },
+    patch: {
+      title?: string;
+      date?: string | null;
+      dueDate?: string | null;
+      priority?: number;
+      areaId?: string | null;
+    },
   ) => request<ApiTask>(`/tasks/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
   deleteTask: (id: string) => request<{ ok: true }>(`/tasks/${id}`, { method: "DELETE" }),
 

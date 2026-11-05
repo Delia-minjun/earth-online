@@ -84,7 +84,7 @@ api.get("/day", (c) => {
   // 当天任务 + 过期未完成（自动顺延）+ 无日期的今日重点
   const tasks = db
     .prepare(
-      `SELECT id, title, status, priority, scheduled_date, done_at, area_id, is_focus,
+      `SELECT id, title, status, priority, scheduled_date, due_date, done_at, area_id, is_focus,
               (scheduled_date IS NOT NULL AND scheduled_date < ? AND status != 'done') AS overdue
          FROM task
         WHERE deleted_at IS NULL
@@ -137,6 +137,7 @@ api.get("/day", (c) => {
 const taskCreate = z.object({
   title: z.string().trim().min(1).max(200),
   date: zDate.optional(),
+  dueDate: zDate.optional(),
   areaId: z.string().optional(),
   projectId: z.string().optional(),
   priority: z.number().int().min(0).max(9).optional(),
@@ -151,8 +152,8 @@ api.post("/tasks", async (c) => {
   const id = uid();
   getDb()
     .prepare(
-      `INSERT INTO task (id, week_id, title, status, priority, scheduled_date, is_focus, area_id, project_id)
-       VALUES (?, ?, ?, 'todo', ?, ?, 1, ?, ?)`,
+      `INSERT INTO task (id, week_id, title, status, priority, scheduled_date, due_date, is_focus, area_id, project_id)
+       VALUES (?, ?, ?, 'todo', ?, ?, ?, 1, ?, ?)`,
     )
     .run(
       id,
@@ -160,6 +161,7 @@ api.post("/tasks", async (c) => {
       r.data.title,
       r.data.priority ?? 0,
       date,
+      r.data.dueDate ?? null,
       r.data.areaId ?? null,
       r.data.projectId ?? null,
     );
@@ -172,6 +174,7 @@ const taskPatch = z.object({
   title: z.string().trim().min(1).max(200).optional(),
   status: z.enum(["todo", "doing", "done", "dropped"]).optional(),
   date: zDate.nullable().optional(),
+  dueDate: zDate.nullable().optional(),
   priority: z.number().int().min(0).max(9).optional(),
   areaId: z.string().nullable().optional(),
   projectId: z.string().nullable().optional(),
@@ -210,6 +213,10 @@ api.patch("/tasks/:id", async (c) => {
   if (r.data.priority !== undefined) {
     sets.push("priority = ?");
     vals.push(r.data.priority);
+  }
+  if (r.data.dueDate !== undefined) {
+    sets.push("due_date = ?");
+    vals.push(r.data.dueDate);
   }
   if (r.data.areaId !== undefined) {
     sets.push("area_id = ?");

@@ -106,7 +106,9 @@
     "priority0": "Normal",
     "priority1": "Important",
     "priority2": "Urgent",
-    "overdue": "Late"
+    "overdue": "Late",
+    "ddl": "DDL",
+    "ddlHint": "Deadline, optional"
   },
   "habit": {
     "streak": "{{n}}-day streak"
