@@ -205,7 +205,7 @@ export function WeekView({
       {/* 三段内容常驻，只切显隐：避免切换时重复挂载与取数造成页面跳动 */}
       <div className="today-grid space-y-3.5 lg:grid lg:grid-cols-2 lg:gap-3.5 lg:space-y-0">
         <div className="space-y-1.5 lg:col-span-2">
-          {/* 切换条：贴正文左栏右边界，紧挨下面的内容，不留空白 */}
+          {/* 切换条在页头，与日期同一行；这里只留「编辑课表」 */}
           <div className="flex items-center justify-end gap-2">
             {mode !== "today" ? (
               <button
@@ -216,27 +216,6 @@ export function WeekView({
                 {t("course.editMode")}
               </button>
             ) : null}
-            <div className="flex items-center rounded-full border border-line bg-surface p-0.5">
-              {(
-                [
-                  { key: "today", label: t("calendar.today") },
-                  { key: "week", label: t("calendar.week") },
-                  { key: "month", label: t("calendar.month") },
-                ] as const
-              ).map((opt) => (
-                <button
-                  key={opt.key}
-                  type="button"
-                  onClick={() => onModeChange(opt.key)}
-                  aria-pressed={mode === opt.key}
-                  className={`rounded-full px-3 py-1 text-[10.5px] transition-colors ${
-                    mode === opt.key ? "bg-accent text-white" : "text-ink-3 hover:text-ink"
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
           </div>
 
           <div className={`space-y-3 ${mode === "today" ? "" : "hidden"}`}>
