@@ -334,16 +334,17 @@ export function WeekView({
                       </span>
                     </span>
                   ))}
-                  <button
-                    type="button"
-                    onClick={() => setBlockDate(d.date)}
-                    title={t("block.add")}
-                    className="rounded-full border border-line px-1.5 text-[11px] leading-tight text-[#c2beb6] opacity-0 transition-colors hover:border-accent hover:text-accent group-hover:opacity-100"
-                  >
-                    ＋
-                  </button>
                 </div>
               </div>
+
+              <button
+                type="button"
+                onClick={() => setBlockDate(d.date)}
+                title={t("block.add")}
+                className="shrink-0 self-center rounded-full border border-line px-1.5 text-[11px] leading-tight text-[#c2beb6] opacity-0 transition-colors hover:border-accent hover:text-accent group-hover:opacity-100"
+              >
+                ＋
+              </button>
             </div>
           );
         })}

@@ -498,7 +498,7 @@ export function TodayView() {
                   <button
                     type="button"
                     onClick={() => void removeBlock(b.id)}
-                    className="shrink-0 text-[12px] text-[#a9a49b] opacity-100 transition-opacity hover:text-warn md:opacity-0 md:group-hover:opacity-100"
+                    className="shrink-0 self-center text-[12px] leading-none text-[#a9a49b] opacity-100 transition-opacity hover:text-warn md:opacity-0 md:group-hover:opacity-100"
                     aria-label="delete"
                   >
                     ×
