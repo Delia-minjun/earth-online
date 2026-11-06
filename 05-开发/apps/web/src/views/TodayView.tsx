@@ -8,7 +8,6 @@ import {
   type ApiTask,
 } from "../api";
 import { Card } from "../components/Card";
-import { TimelineRail } from "../components/TimelineRail";
 import { DdlButton } from "../components/DdlButton";
 import { DDL_TONE_CLASS, ddlTone } from "../ddl";
 import { BodyCard, MealsCard, MoneyCard } from "../components/Records";
@@ -203,7 +202,7 @@ export function TodayView({ topRight }: { topRight?: React.ReactNode }) {
     <div className="space-y-3.5">
       {error ? <p className="text-[10px] text-warn">{error}</p> : null}
 
-      <div className="today-grid space-y-3.5 lg:grid lg:grid-cols-2 lg:gap-3.5 lg:space-y-0">
+      <div className="space-y-3.5 lg:grid lg:grid-cols-2 lg:gap-3.5 lg:space-y-0">
         {/* 今日任务：横跨正文两列 */}
         <div className="space-y-3.5 lg:col-span-2">
           {topRight ? <div className="flex justify-end">{topRight}</div> : null}
@@ -390,9 +389,6 @@ export function TodayView({ topRight }: { topRight?: React.ReactNode }) {
         <BodyCard date={day.date} />
 
         <MealsCard date={day.date} />
-
-        {/* 时间轴：宽屏时作为右侧固定栏，样式与左侧导航一致，不加卡片 */}
-        <TimelineRail />
       </div>
 
       <Mini

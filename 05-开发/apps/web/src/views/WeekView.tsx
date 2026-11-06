@@ -227,12 +227,13 @@ export function WeekView({
 
   return (
     <div className="space-y-3">
-      {/* 今日段：开关交给 TodayView，渲染在任务卡上方、只占左侧正文宽度 */}
-      {mode === "today" ? <TodayView topRight={modeSwitch} /> : null}
+      {/* 三段内容常驻，只切显隐：避免切换时重复挂载与取数造成页面跳动 */}
+      <div className="today-grid space-y-3.5 lg:grid lg:grid-cols-2 lg:gap-3.5 lg:space-y-0">
+        <div className={`space-y-3 lg:col-span-2 ${mode === "today" ? "" : "hidden"}`}>
+          <TodayView topRight={modeSwitch} />
+        </div>
 
-      {mode !== "today" ? (
-        <div className="today-grid space-y-3.5 lg:grid lg:grid-cols-2 lg:gap-3.5 lg:space-y-0">
-          <div className="space-y-3 lg:col-span-2">
+        <div className={`space-y-3 lg:col-span-2 ${mode === "today" ? "hidden" : ""}`}>
         <div className="flex items-center justify-end gap-2">
           <button
             type="button"
@@ -384,11 +385,10 @@ export function WeekView({
       </div>
 
       {mode === "week" ? <DayTasksPanel date={selDate} /> : null}
-          </div>
-
-          <TimelineRail />
         </div>
-      ) : null}
+
+        <TimelineRail />
+      </div>
 
       {editorOpen ? (
         <div
