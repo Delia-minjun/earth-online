@@ -2,14 +2,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   api,
-  COURSE_COLOR,
   hhmm,
   type ApiDay,
   type ApiHabitGrid,
-  type ApiMeta,
   type ApiTask,
 } from "../api";
 import { Card } from "../components/Card";
+import { TimelineRail } from "../components/TimelineRail";
 import { DdlButton } from "../components/DdlButton";
 import { DDL_TONE_CLASS, ddlTone } from "../ddl";
 import { BodyCard, MealsCard, MoneyCard } from "../components/Records";
@@ -30,17 +29,11 @@ function Mini({
   );
 }
 
-/** 10 分钟刻度：00:00 – 23:50 */
-const SLOTS = Array.from({ length: 144 }, (_, i) => i * 10);
-/** 结束时间可选 00:10 – 24:00 */
-const END_SLOTS = Array.from({ length: 144 }, (_, i) => (i + 1) * 10);
-
 const DONE = "done";
 
 export function TodayView({ topRight }: { topRight?: React.ReactNode }) {
   const { t } = useTranslation();
   const [day, setDay] = useState<ApiDay | null>(null);
-  const [meta, setMeta] = useState<ApiMeta | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
@@ -55,7 +48,6 @@ export function TodayView({ topRight }: { topRight?: React.ReactNode }) {
 
   useEffect(() => {
     void reload();
-    void api.meta().then(setMeta).catch(() => undefined);
   }, [reload]);
 
   /* ---- 今日任务 ---- */
@@ -78,39 +70,6 @@ export function TodayView({ topRight }: { topRight?: React.ReactNode }) {
 
   const removeTask = async (id: string) => {
     await api.deleteTask(id);
-    await reload();
-  };
-
-  /* ---- 时间块 ---- */
-  const [blockOpen, setBlockOpen] = useState(false);
-  const [blockForm, setBlockForm] = useState({
-    startMin: 480,
-    endMin: 540,
-    title: "",
-    categoryId: "cat-study",
-  });
-
-  const submitBlock = async () => {
-    const title = blockForm.title.trim();
-    if (!title) return;
-    try {
-      await api.addBlock({
-        startMin: blockForm.startMin,
-        endMin: blockForm.endMin,
-        title,
-        categoryId: blockForm.categoryId,
-      });
-      setBlockForm((f) => ({ ...f, title: "" }));
-      setBlockOpen(false);
-      await reload();
-    } catch (e) {
-      const msg = (e as Error).message;
-      setError(msg.includes("overlap") ? t("today.overlap") : msg);
-    }
-  };
-
-  const removeBlock = async (id: string) => {
-    await api.deleteBlock(id);
     await reload();
   };
 
@@ -239,19 +198,6 @@ export function TodayView({ topRight }: { topRight?: React.ReactNode }) {
 
   const focus = day.tasks;
   const doneCount = focus.filter((x) => x.status === DONE).length;
-
-  /** 与已有时间块或课程是否重叠 */
-  const hits = (start: number, end: number) =>
-    day.blocks.some((b) => start < b.end_min && end > b.start_min) ||
-    day.courses.some((c) => start < c.end_min && end > c.start_min);
-
-  /** 从某个开始时间往后找第一个不冲突的结束时间 */
-  const firstFreeEnd = (start: number) => {
-    for (let end = start + 10; end <= 1440; end += 10) {
-      if (!hits(start, end)) return end;
-    }
-    return Math.min(start + 10, 1440);
-  };
 
   return (
     <div className="space-y-3.5">
@@ -446,131 +392,7 @@ export function TodayView({ topRight }: { topRight?: React.ReactNode }) {
         <MealsCard date={day.date} />
 
         {/* 时间轴：宽屏时作为右侧固定栏，样式与左侧导航一致，不加卡片 */}
-        <aside className="min-[1150px]:col-start-3 min-[1150px]:row-span-3 min-[1150px]:row-start-1 min-[1150px]:sticky min-[1150px]:top-0 min-[1150px]:h-[calc(100vh-6rem)] min-[1150px]:self-start min-[1150px]:overflow-y-auto min-[1150px]:border-l min-[1150px]:border-line min-[1150px]:pl-5">
-          <header className="flex items-center justify-between">
-            <h2 className="text-[12px] font-semibold text-ink">{t("today.timeline")}</h2>
-            <button
-              type="button"
-              onClick={() => setBlockOpen((v) => !v)}
-              className="text-[14px] leading-none text-[#c2beb6] transition-colors hover:text-accent"
-              aria-label={t("action.add")}
-            >
-              {blockOpen ? "−" : "＋"}
-            </button>
-          </header>
-
-          <ul className="mt-3">
-              {day.courses.map((c) => (
-                <li key={`course-${c.id}`} className="flex gap-3 py-2 first:pt-0">
-                  <span className="w-10 shrink-0 pt-0.5 text-[10px] tabular-nums text-ink-3">
-                    {hhmm(c.start_min)}
-                  </span>
-                  <span
-                    className="w-[3px] shrink-0 rounded-full"
-                    style={{ background: COURSE_COLOR }}
-                  />
-                  <div className="min-w-0 flex-1 pt-0.5">
-                    <p className="truncate text-[12px] text-ink-2">{c.name}</p>
-                    <p className="mt-0.5 text-[10px] text-ink-3">
-                      {hhmm(c.start_min)}–{hhmm(c.end_min)}
-                      {c.location ? ` · ${c.location}` : ""} · {t("today.course")}
-                    </p>
-                  </div>
-                </li>
-              ))}
-              {day.blocks.map((b) => (
-                <li key={b.id} className="group flex gap-3 py-2 first:pt-0">
-                  <span className="w-10 shrink-0 pt-0.5 text-[10px] tabular-nums text-ink-3">
-                    {hhmm(b.start_min)}
-                  </span>
-                  <span
-                    className="w-[3px] shrink-0 rounded-full"
-                    style={{ background: b.category_color ?? "#d8d4cc" }}
-                  />
-                  <div className="min-w-0 flex-1 pt-0.5">
-                    <p className="truncate text-[12px] text-ink">{b.title}</p>
-                    <p className="mt-0.5 text-[10px] text-ink-3">
-                      {hhmm(b.start_min)}–{hhmm(b.end_min)} · {b.end_min - b.start_min} {t("today.min")}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => void removeBlock(b.id)}
-                    className="shrink-0 self-center text-[12px] leading-none text-[#a9a49b] opacity-100 transition-opacity hover:text-warn md:opacity-0 md:group-hover:opacity-100"
-                    aria-label="delete"
-                  >
-                    ×
-                  </button>
-                </li>
-              ))}
-            </ul>
-
-            {blockOpen ? (
-              <div className="mt-2 space-y-2 rounded-xl border border-line-2 bg-surface-2 p-2.5">
-                <div className="flex items-center gap-1.5">
-                  <select
-                    value={blockForm.startMin}
-                    onChange={(e) => {
-                      const v = Number(e.target.value);
-                      setBlockForm((f) => ({ ...f, startMin: v, endMin: firstFreeEnd(v) }));
-                    }}
-                    className="rounded-lg border border-line bg-surface px-1.5 py-1 text-[11px] tabular-nums text-ink outline-none"
-                  >
-                    {SLOTS.map((m) => (
-                      <option key={m} value={m} disabled={hits(m, m + 10)}>
-                        {hhmm(m)}
-                      </option>
-                    ))}
-                  </select>
-                  <span className="text-[10px] text-ink-3">–</span>
-                  <select
-                    value={blockForm.endMin}
-                    onChange={(e) => setBlockForm((f) => ({ ...f, endMin: Number(e.target.value) }))}
-                    className="rounded-lg border border-line bg-surface px-1.5 py-1 text-[11px] tabular-nums text-ink outline-none"
-                  >
-                    {END_SLOTS.map((m) => (
-                      <option
-                        key={m}
-                        value={m}
-                        disabled={m <= blockForm.startMin || hits(blockForm.startMin, m)}
-                      >
-                        {hhmm(m)}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    value={blockForm.categoryId}
-                    onChange={(e) => setBlockForm((f) => ({ ...f, categoryId: e.target.value }))}
-                    className="ml-auto rounded-lg border border-line bg-surface px-1.5 py-1 text-[11px] text-ink-2 outline-none"
-                  >
-                    {(meta?.categories ?? []).map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    value={blockForm.title}
-                    onChange={(e) => setBlockForm((f) => ({ ...f, title: e.target.value }))}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") void submitBlock();
-                    }}
-                    placeholder={t("today.blockTitle")}
-                    className="w-full rounded-lg border border-line bg-surface px-2 py-1.5 text-[11.5px] text-ink outline-none placeholder:text-[#c8c4bc]"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => void submitBlock()}
-                    className="shrink-0 rounded-lg bg-accent px-2.5 py-1.5 text-[10.5px] font-semibold text-white"
-                  >
-                    {t("common.save")}
-                  </button>
-                </div>
-              </div>
-            ) : null}
-        </aside>
+        <TimelineRail />
       </div>
 
       <Mini

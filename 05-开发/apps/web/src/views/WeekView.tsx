@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, COURSE_COLOR, hhmm, isoWeekOf, mondayOfThisWeek, shiftWeeks, type ApiWeek } from "../api";
 import { BlockEditor } from "../components/BlockEditor";
-import { DayPanel } from "../components/DayPanel";
+import { TimelineRail } from "../components/TimelineRail";
 import { DayTasksPanel } from "../components/DayTasksPanel";
 import { TodayView } from "./TodayView";
 import { CourseEditor } from "./CourseEditor";
@@ -231,6 +231,8 @@ export function WeekView({
       {mode === "today" ? <TodayView topRight={modeSwitch} /> : null}
 
       {mode !== "today" ? (
+        <div className="today-grid space-y-3.5 lg:grid lg:grid-cols-2 lg:gap-3.5 lg:space-y-0">
+          <div className="space-y-3 lg:col-span-2">
         <div className="flex items-center justify-end gap-2">
           <button
             type="button"
@@ -241,7 +243,6 @@ export function WeekView({
           </button>
           {modeSwitch}
         </div>
-      ) : null}
 
       <div className={`flex-wrap items-center gap-2 ${mode === "week" ? "flex" : "hidden"}`}>
         <button
@@ -267,7 +268,7 @@ export function WeekView({
       {mode === "month" ? (
         <>
           <MonthGrid selected={selDate} onPick={(date) => setSelDate(date)} />
-          <DayPanel date={selDate} />
+          <DayTasksPanel date={selDate} />
         </>
       ) : null}
 
@@ -383,6 +384,11 @@ export function WeekView({
       </div>
 
       {mode === "week" ? <DayTasksPanel date={selDate} /> : null}
+          </div>
+
+          <TimelineRail />
+        </div>
+      ) : null}
 
       {editorOpen ? (
         <div
