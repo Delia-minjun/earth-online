@@ -57,15 +57,13 @@ export default function App() {
   }, [failed]);
 
   const lang = i18n.language as Lang;
-  const dateText = useMemo(
-    () =>
-      new Intl.DateTimeFormat(lang, {
-        month: "long",
-        day: "numeric",
-        weekday: "long",
-      }).format(new Date()),
-    [lang],
-  );
+  const dateText = useMemo(() => {
+    // 日期和星期分开格式化：zh-CN 直接给的是「11月6日星期五」，中间没有空格
+    const d = new Date();
+    const date = new Intl.DateTimeFormat(lang, { month: "long", day: "numeric" }).format(d);
+    const wd = new Intl.DateTimeFormat(lang, { weekday: "long" }).format(d);
+    return lang === "zh-CN" ? `${date} ${wd}` : `${wd}, ${date}`;
+  }, [lang]);
 
   const short = (d: string) => d.slice(5).replace("-", "/");
   const isToday = view === "today";
