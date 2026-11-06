@@ -277,10 +277,35 @@ export function ReviewView() {
     if (courseMinutes > 0) {
       byCat.set("__course", {
         name: t("review.courses"),
-        color: "#9BA7B0",
+        // 课程色不能和「学习提升」的 #9BA7B0 撞，这里用深一档的石板灰
+        color: "#6F7C86",
         minutes: courseMinutes,
       });
     }
+
+    // 扇区颜色互不相同：类别色可能重复，重复时逐级调深
+    const darken = (hex: string, step: number) => {
+      const n = parseInt(hex.slice(1), 16);
+      const f = Math.max(0.35, 1 - step * 0.16);
+      const r = Math.round(((n >> 16) & 255) * f);
+      const g = Math.round(((n >> 8) & 255) * f);
+      const b = Math.round((n & 255) * f);
+      return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, "0")}`;
+    };
+
+    const used = new Set<string>();
+    const slices = [...byCat.values()]
+      .sort((a, b) => b.minutes - a.minutes)
+      .map((s) => {
+        let color = s.color.toLowerCase();
+        let step = 0;
+        while (used.has(color) && step < 6) {
+          step += 1;
+          color = darken(s.color, step).toLowerCase();
+        }
+        used.add(color);
+        return { ...s, color };
+      });
 
     return {
       blocks: blocks.length,
@@ -291,7 +316,7 @@ export function ReviewView() {
       done,
       total: tasks.length,
       overdue,
-      slices: [...byCat.values()].sort((a, b) => b.minutes - a.minutes),
+      slices,
     };
   }, [weekData, meta, t]);
 
