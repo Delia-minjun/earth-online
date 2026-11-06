@@ -160,6 +160,10 @@
     "monthLabel": "{{year}} 年 {{month}} 月",
     "thisMonth": "回到本月"
   },
+  "block": {
+    "title": "新建日程",
+    "add": "给这天加一段"
+  },
   "budget": {
     "title": "月度预算",
     "hint": "填一个月度总额；想细管就展开分类上限。超支会在今日页的记账卡里变红。",

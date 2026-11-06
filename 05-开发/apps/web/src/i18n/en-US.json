@@ -159,6 +159,10 @@
     "monthLabel": "{{year}}-{{month}}",
     "thisMonth": "This month"
   },
+  "block": {
+    "title": "New schedule block",
+    "add": "Add a block to this day"
+  },
   "budget": {
     "title": "Monthly budget",
     "hint": "Set a monthly total; expand for per-category caps. Overspending turns red on the Today page.",

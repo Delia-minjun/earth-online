@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, COURSE_COLOR, hhmm, isoWeekOf, mondayOfThisWeek, shiftWeeks, type ApiWeek } from "../api";
+import { BlockEditor } from "../components/BlockEditor";
 import { CourseEditor } from "./CourseEditor";
 
 const WD_ZH = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
@@ -172,6 +173,8 @@ export function WeekView({
     await load();
   };
 
+  const [blockDate, setBlockDate] = useState<string | null>(null);
+
   const wd = i18n.language === "zh-CN" ? WD_ZH : WD_EN;
   const today = ymd(new Date());
 
@@ -223,6 +226,15 @@ export function WeekView({
 
       {calOpen ? <MonthGrid onPick={(date) => jumpToDate(date)} /> : null}
 
+      <BlockEditor
+        open={blockDate !== null}
+        date={blockDate ?? ""}
+        blocks={data?.blocks ?? []}
+        courses={data?.courses ?? []}
+        onClose={() => setBlockDate(null)}
+        onSaved={() => void load()}
+      />
+
       {error ? <p className="text-[10.5px] text-warn">{error}</p> : null}
 
       <div className="overflow-hidden rounded-2xl border border-line bg-surface">
@@ -255,7 +267,7 @@ export function WeekView({
           return (
             <div
               key={d.date}
-              className={`flex gap-3 px-3 py-2.5 ${
+              className={`group flex gap-3 px-3 py-2.5 ${
                 idx > 0 ? "border-t border-line-2" : ""
               } ${d.isToday ? "bg-accent-soft/30" : ""}`}
             >
@@ -306,25 +318,31 @@ export function WeekView({
                   ) : null}
                 </div>
 
-                {tasks.length ? (
-                  <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-1.5">
-                    {tasks.map((x) => (
+                <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+                  {tasks.map((x) => (
+                    <span
+                      key={x.id}
+                      className="inline-flex items-center gap-1 rounded-full bg-[#f1eee8] px-2 py-[3px] text-[9.5px] text-ink-2"
+                    >
                       <span
-                        key={x.id}
-                        className="inline-flex items-center gap-1 rounded-full bg-[#f1eee8] px-2 py-[3px] text-[9.5px] text-ink-2"
-                      >
-                        <span
-                          className={`h-1.5 w-1.5 rounded-full ${
-                            x.status === "done" ? "bg-accent" : "bg-[#d8d4cc]"
-                          }`}
-                        />
-                        <span className={x.status === "done" ? "line-through text-ink-3" : ""}>
-                          {x.title}
-                        </span>
+                        className={`h-1.5 w-1.5 rounded-full ${
+                          x.status === "done" ? "bg-accent" : "bg-[#d8d4cc]"
+                        }`}
+                      />
+                      <span className={x.status === "done" ? "line-through text-ink-3" : ""}>
+                        {x.title}
                       </span>
-                    ))}
-                  </div>
-                ) : null}
+                    </span>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setBlockDate(d.date)}
+                    title={t("block.add")}
+                    className="rounded-full border border-line px-1.5 text-[11px] leading-tight text-[#c2beb6] opacity-0 transition-colors hover:border-accent hover:text-accent group-hover:opacity-100"
+                  >
+                    ＋
+                  </button>
+                </div>
               </div>
             </div>
           );
