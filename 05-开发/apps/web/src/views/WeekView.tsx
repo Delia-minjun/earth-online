@@ -143,8 +143,7 @@ export function WeekView({
   const { isoYear, isoWeek } = useMemo(() => isoWeekOf(target), [target]);
 
   /** 跳到某一天所在的那一周 */
-  const jumpToDate = (date: string) => {
-    const d = new Date(`${date}T00:00:00`);
+  const jumpToDate = (date: string) => {    const d = new Date(`${date}T00:00:00`);
     const day = d.getDay() || 7; // 1..7
     const monday = new Date(d.getFullYear(), d.getMonth(), d.getDate() - (day - 1));
     const base = mondayOfThisWeek();
@@ -167,6 +166,11 @@ export function WeekView({
   useEffect(() => {
     void load();
   }, [load]);
+
+  const removeBlock = async (id: string) => {
+    await api.deleteBlock(id);
+    await load();
+  };
 
   const wd = i18n.language === "zh-CN" ? WD_ZH : WD_EN;
   const today = ymd(new Date());
@@ -271,7 +275,7 @@ export function WeekView({
                   {items.map((it) => (
                     <div
                       key={`${it.kind}-${it.id}`}
-                      className="flex items-center gap-1.5 rounded-lg border border-line-2 bg-surface px-2 py-1"
+                      className="group flex items-center gap-1.5 rounded-lg border border-line-2 bg-surface px-2 py-1"
                     >
                       <span
                         className="h-4 w-[2px] shrink-0 rounded-full"
@@ -284,6 +288,16 @@ export function WeekView({
                           {it.location ? ` · ${it.location}` : ""}
                         </p>
                       </div>
+                      {it.kind === "block" ? (
+                        <button
+                          type="button"
+                          onClick={() => void removeBlock(it.id)}
+                          className="shrink-0 text-[11px] leading-none text-[#a9a49b] opacity-100 transition-colors hover:text-warn md:opacity-0 md:group-hover:opacity-100"
+                          aria-label="delete"
+                        >
+                          ×
+                        </button>
+                      ) : null}
                     </div>
                   ))}
 
