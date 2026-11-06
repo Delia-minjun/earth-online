@@ -108,29 +108,6 @@ export default function App() {
           </div>
 
           <div className="flex shrink-0 items-center gap-2">
-            {isSchedule ? (
-              <div className="flex items-center rounded-full border border-line bg-surface p-0.5">
-                {(
-                  [
-                    { key: "today", label: t("calendar.today") },
-                    { key: "week", label: t("calendar.week") },
-                    { key: "month", label: t("calendar.month") },
-                  ] as const
-                ).map((opt) => (
-                  <button
-                    key={opt.key}
-                    type="button"
-                    onClick={() => setDayMode(opt.key)}
-                    aria-pressed={dayMode === opt.key}
-                    className={`rounded-full px-3 py-1 text-[10.5px] transition-colors ${
-                      dayMode === opt.key ? "bg-accent text-white" : "text-ink-3 hover:text-ink"
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            ) : null}
             <button
               type="button"
               onClick={() => setLang(lang === "zh-CN" ? "en-US" : "zh-CN")}

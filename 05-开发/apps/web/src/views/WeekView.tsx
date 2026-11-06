@@ -202,6 +202,40 @@ export function WeekView({
 
   return (
     <div className="space-y-3">
+      {/* 段落切换：内容区右上角，紧贴任务卡上方 */}
+      <div className="flex items-center justify-end gap-2">
+        {mode !== "today" ? (
+          <button
+            type="button"
+            onClick={() => setEditorOpen(true)}
+            className="rounded-full border border-line bg-surface px-3 py-1.5 text-[10.5px] text-ink-2 transition-colors hover:border-accent hover:text-ink"
+          >
+            {t("course.editMode")}
+          </button>
+        ) : null}
+        <div className="flex items-center rounded-full border border-line bg-surface p-0.5">
+          {(
+            [
+              { key: "today", label: t("calendar.today") },
+              { key: "week", label: t("calendar.week") },
+              { key: "month", label: t("calendar.month") },
+            ] as const
+          ).map((opt) => (
+            <button
+              key={opt.key}
+              type="button"
+              onClick={() => onModeChange(opt.key)}
+              aria-pressed={mode === opt.key}
+              className={`rounded-full px-3 py-1 text-[10.5px] transition-colors ${
+                mode === opt.key ? "bg-accent text-white" : "text-ink-3 hover:text-ink"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {mode === "today" ? <TodayView /> : null}
 
       <div className={`flex-wrap items-center gap-2 ${mode === "week" ? "flex" : "hidden"}`}>
@@ -223,27 +257,10 @@ export function WeekView({
         >
           ›
         </button>
-
-        <button
-          type="button"
-          onClick={() => setEditorOpen(true)}
-          className="ml-auto rounded-full border border-line bg-surface px-3 py-1.5 text-[10.5px] text-ink-2 transition-colors hover:border-accent hover:text-ink"
-        >
-          {t("course.editMode")}
-        </button>
       </div>
 
       {mode === "month" ? (
         <>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setEditorOpen(true)}
-              className="ml-auto rounded-full border border-line bg-surface px-3 py-1.5 text-[10.5px] text-ink-2 transition-colors hover:border-accent hover:text-ink"
-            >
-              {t("course.editMode")}
-            </button>
-          </div>
           <MonthGrid selected={selDate} onPick={(date) => setSelDate(date)} />
           <DayPanel date={selDate} />
         </>
