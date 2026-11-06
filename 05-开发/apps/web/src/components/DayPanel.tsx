@@ -47,7 +47,7 @@ export function DayPanel({ date }: { date: string }) {
       start: b.start_min,
       end: b.end_min,
       color: b.category_color ?? "#d8d4cc",
-      note: `${b.end_min - b.start_min} ${t("today.min")}`,
+      note: [b.note, `${b.end_min - b.start_min} ${t("today.min")}`].filter(Boolean).join(" · "),
       isCourse: false,
     }));
     return [...courses, ...blocks].sort((a, b) => a.start - b.start);
@@ -64,6 +64,7 @@ export function DayPanel({ date }: { date: string }) {
         title: b.title,
         category_id: b.category_id,
         category_color: b.category_color,
+        note: b.note,
       })),
     [day, date],
   );

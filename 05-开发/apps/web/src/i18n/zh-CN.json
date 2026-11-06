@@ -162,7 +162,8 @@
   },
   "block": {
     "title": "新建日程",
-    "add": "给这天加一段"
+    "add": "给这天加一段",
+    "notePlaceholder": "备注（可选）"
   },
   "budget": {
     "title": "月度预算",

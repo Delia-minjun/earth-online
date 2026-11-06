@@ -41,6 +41,7 @@ export interface ApiBlock {
   category_id: string | null;
   category_name: string | null;
   category_color: string | null;
+  note: string | null;
   source: string;
 }
 
@@ -230,6 +231,7 @@ export interface ApiWeekBlock {
   title: string;
   category_id: string | null;
   category_color: string | null;
+  note: string | null;
 }
 
 export interface ApiWeekTask {
@@ -313,8 +315,14 @@ export const api = {
   ) => request<ApiTask>(`/tasks/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
   deleteTask: (id: string) => request<{ ok: true }>(`/tasks/${id}`, { method: "DELETE" }),
 
-  addBlock: (input: { startMin: number; endMin: number; title: string; categoryId?: string; date?: string }) =>
-    request<ApiBlock>("/blocks", { method: "POST", body: JSON.stringify(input) }),
+  addBlock: (input: {
+    startMin: number;
+    endMin: number;
+    title: string;
+    categoryId?: string;
+    date?: string;
+    note?: string;
+  }) => request<ApiBlock>("/blocks", { method: "POST", body: JSON.stringify(input) }),
   deleteBlock: (id: string) => request<{ ok: true }>(`/blocks/${id}`, { method: "DELETE" }),
 
   toggleHabit: (id: string, date?: string) =>

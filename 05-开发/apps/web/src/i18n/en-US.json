@@ -161,7 +161,8 @@
   },
   "block": {
     "title": "New schedule block",
-    "add": "Add a block to this day"
+    "add": "Add a block to this day",
+    "notePlaceholder": "Note (optional)"
   },
   "budget": {
     "title": "Monthly budget",

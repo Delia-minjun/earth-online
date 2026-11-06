@@ -30,6 +30,7 @@ export function BlockEditor({
   const { t } = useTranslation();
   const [meta, setMeta] = useState<ApiMeta | null>(null);
   const [title, setTitle] = useState("");
+  const [note, setNote] = useState("");
   const [startMin, setStartMin] = useState(480);
   const [endMin, setEndMin] = useState(540);
   const [categoryId, setCategoryId] = useState("");
@@ -39,6 +40,7 @@ export function BlockEditor({
   useEffect(() => {
     if (!open) return;
     setTitle("");
+    setNote("");
     setError(null);
     setBusy(false);
     api
@@ -85,6 +87,7 @@ export function BlockEditor({
         endMin,
         title: name,
         categoryId: categoryId || undefined,
+        note: note.trim() || undefined,
       });
       onSaved();
       onClose();
@@ -169,6 +172,16 @@ export function BlockEditor({
           }}
           placeholder={t("today.blockTitle")}
           className="mt-2 w-full rounded-lg border border-line bg-surface-2 px-2 py-1.5 text-[12px] text-ink outline-none placeholder:text-[#c8c4bc]"
+        />
+
+        <input
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") void submit();
+          }}
+          placeholder={t("block.notePlaceholder")}
+          className="mt-1.5 w-full rounded-lg border border-line bg-surface-2 px-2 py-1.5 text-[11.5px] text-ink-2 outline-none placeholder:text-[#c8c4bc]"
         />
 
         {error ? <p className="mt-1.5 text-[10px] text-warn">{error}</p> : null}

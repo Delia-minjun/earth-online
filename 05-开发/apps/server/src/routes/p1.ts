@@ -99,7 +99,7 @@ api.get("/day", (c) => {
 
   const blocks = db
     .prepare(
-      `SELECT b.id, b.start_min, b.end_min, b.title, b.category_id, b.source, c.name AS category_name, c.color AS category_color
+      `SELECT b.id, b.start_min, b.end_min, b.title, b.category_id, b.source, b.note, c.name AS category_name, c.color AS category_color
          FROM time_block b LEFT JOIN category c ON c.id = b.category_id
         WHERE b.date = ? AND b.deleted_at IS NULL
         ORDER BY b.start_min`,
@@ -250,6 +250,7 @@ const blockCreate = z
     endMin: z.number().int().min(0).max(24 * 60),
     title: z.string().trim().min(1).max(120),
     categoryId: z.string().optional(),
+    note: z.string().trim().max(300).optional(),
   })
   .refine((v) => v.endMin > v.startMin, { message: "endMin must be > startMin" });
 
@@ -304,10 +305,18 @@ api.post("/blocks", async (c) => {
   const id = uid();
   getDb()
     .prepare(
-      `INSERT INTO time_block (id, date, start_min, end_min, title, category_id, source)
-       VALUES (?, ?, ?, ?, ?, ?, 'plan')`,
+      `INSERT INTO time_block (id, date, start_min, end_min, title, category_id, note, source)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'plan')`,
     )
-    .run(id, date, r.data.startMin, r.data.endMin, r.data.title, r.data.categoryId ?? null);
+    .run(
+      id,
+      date,
+      r.data.startMin,
+      r.data.endMin,
+      r.data.title,
+      r.data.categoryId ?? null,
+      r.data.note ?? null,
+    );
   return c.json(getDb().prepare("SELECT * FROM time_block WHERE id = ?").get(id), 201);
 });
 
@@ -847,7 +856,7 @@ api.get("/week/:year/:week", (c) => {
 
   const blocks = db
     .prepare(
-      `SELECT b.id, b.date, b.start_min, b.end_min, b.title, b.category_id, c.color AS category_color
+      `SELECT b.id, b.date, b.start_min, b.end_min, b.title, b.category_id, b.note, c.color AS category_color
          FROM time_block b LEFT JOIN category c ON c.id = b.category_id
         WHERE b.deleted_at IS NULL AND b.date BETWEEN ? AND ?
         ORDER BY b.date, b.start_min`,
