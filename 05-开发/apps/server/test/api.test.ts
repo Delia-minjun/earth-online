@@ -139,6 +139,17 @@ test("任务：DDL 可以创建、修改、清除", async () => {
   assert.equal(cleared.due_date, null, "传 null 应清空 DDL");
 });
 
+test("周视图：返回习惯达成与本周支出汇总", async () => {
+  await post("/money", { date: "2026-11-03", amount: 12.5, categoryId: "mc-food" });
+
+  const w = (await (await get("/week/2026/45")).json()) as {
+    summary: { habitDone: number; habitTotal: number; expense: number };
+  };
+  assert.equal(typeof w.summary.habitDone, "number");
+  assert.ok(w.summary.habitTotal > 0, "习惯总次数应为习惯数 × 7");
+  assert.ok(w.summary.expense >= 12.5, "本周支出应包含刚记的这一笔");
+});
+
 test("时间块：同一时段不能重叠，冲突返回 409", async () => {
   const first = await post("/blocks", { startMin: 480, endMin: 600, title: "上午学习" });
   assert.equal(first.status, 201);

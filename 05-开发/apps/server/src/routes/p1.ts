@@ -870,6 +870,27 @@ api.get("/week/:year/:week", (c) => {
       .all() as Row[]
   ).filter((c) => activeIn(c as unknown as WeekRule, weekNo));
 
+  // 复盘用的汇总：习惯达成、本周支出。放在服务端算，避免前端跨月/跨周自己拼
+  const habitTotal =
+    ((db.prepare("SELECT COUNT(*) AS n FROM habit WHERE archived = 0").get() as { n: number } | undefined)
+      ?.n ?? 0) * 7;
+  const habitDone =
+    (db
+      .prepare(
+        `SELECT COUNT(*) AS n FROM habit_log l
+           JOIN habit h ON h.id = l.habit_id AND h.archived = 0
+          WHERE l.done = 1 AND l.date BETWEEN ? AND ?`,
+      )
+      .get(info.startDate, info.endDate) as { n: number } | undefined)?.n ?? 0;
+
+  const expense =
+    (db
+      .prepare(
+        `SELECT COALESCE(SUM(amount), 0) AS n FROM money_entry
+          WHERE deleted_at IS NULL AND kind = 'expense' AND date BETWEEN ? AND ?`,
+      )
+      .get(info.startDate, info.endDate) as { n: number } | undefined)?.n ?? 0;
+
   return c.json({
     week: info,
     weekId: weekId(year, week),
@@ -877,6 +898,7 @@ api.get("/week/:year/:week", (c) => {
     blocks,
     courses,
     teachingWeek: weekNo,
+    summary: { habitDone, habitTotal, expense },
   });
 });
 

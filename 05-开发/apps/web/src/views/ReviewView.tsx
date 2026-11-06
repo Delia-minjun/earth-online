@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, isoWeekOf, mondayOfThisWeek, shiftWeeks, type ApiWeek } from "../api";
+import { api, isoWeekOf, mondayOfThisWeek, shiftWeeks, type ApiBudget, type ApiMeta, type ApiWeek } from "../api";
+import { todayStr } from "../ddl";
+import { Card } from "../components/Card";
 
 type Review = { keep: string; improve: string; stop: string; start: string };
 const EMPTY: Review = { keep: "", improve: "", stop: "", start: "" };
@@ -12,11 +14,84 @@ const QUADRANTS: { key: keyof Review; label: string; hint: string; color: string
   { key: "start", label: "review.start", hint: "review.startHint", color: "#9BA7B0" },
 ];
 
-function Stat({ label, value }: { label: string; value: string | number }) {
+function Stat({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: string | number;
+  hint?: string | null;
+}) {
   return (
     <div className="rounded-2xl border border-line bg-surface px-3.5 py-3">
       <p className="text-[10px] text-ink-3">{label}</p>
       <p className="mt-1 text-[17px] font-semibold leading-none tabular-nums text-ink">{value}</p>
+      {hint ? <p className="mt-1 text-[9.5px] text-ink-3">{hint}</p> : null}
+    </div>
+  );
+}
+
+/** 时间分配饼图：按类别时长占比 */
+function TimePie({
+  slices,
+  total,
+}: {
+  slices: { name: string; color: string; minutes: number }[];
+  total: number;
+}) {
+  const { t } = useTranslation();
+  const R = 42;
+  const C = 2 * Math.PI * R;
+
+  if (!slices.length || total === 0) {
+    return (
+      <p className="py-6 text-center text-[10.5px] text-[#c8c4bc]">{t("review.noTime")}</p>
+    );
+  }
+
+  let acc = 0;
+  const rings = slices.map((s) => {
+    const len = (s.minutes / total) * C;
+    const ring = { ...s, len, offset: -acc };
+    acc += len;
+    return ring;
+  });
+
+  const hoursOf = (m: number) => (m >= 60 ? `${(m / 60).toFixed(m % 60 === 0 ? 0 : 1)}` : `${m}m`);
+
+  return (
+    <div className="flex items-center gap-4">
+      <svg viewBox="0 0 100 100" className="h-24 w-24 shrink-0 -rotate-90">
+        {rings.map((r) => (
+          <circle
+            key={r.name}
+            cx="50"
+            cy="50"
+            r={R}
+            fill="none"
+            stroke={r.color}
+            strokeWidth="16"
+            strokeDasharray={`${r.len} ${C - r.len}`}
+            strokeDashoffset={r.offset}
+          />
+        ))}
+      </svg>
+      <ul className="min-w-0 flex-1 space-y-1">
+        {rings.map((r) => (
+          <li key={r.name} className="flex items-center gap-1.5 text-[10.5px] text-ink-2">
+            <span
+              className="h-1.5 w-1.5 shrink-0 rounded-full"
+              style={{ background: r.color }}
+            />
+            <span className="min-w-0 flex-1 truncate">{r.name}</span>
+            <span className="shrink-0 tabular-nums text-ink-3">
+              {hoursOf(r.minutes)}
+              {t("week.hour")} · {Math.round((r.minutes / total) * 100)}%
+            </span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
@@ -25,6 +100,8 @@ export function ReviewView() {
   const { t } = useTranslation();
   const [offset, setOffset] = useState(0);
   const [weekData, setWeekData] = useState<ApiWeek | null>(null);
+  const [meta, setMeta] = useState<ApiMeta | null>(null);
+  const [budget, setBudget] = useState<ApiBudget | null>(null);
   const [form, setForm] = useState<Review>(EMPTY);
   const [state, setState] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
@@ -47,6 +124,20 @@ export function ReviewView() {
       alive = false;
     };
   }, [isoYear, isoWeek]);
+
+  useEffect(() => {
+    let alive = true;
+    void Promise.all([api.meta(), api.budget()])
+      .then(([m, b]) => {
+        if (!alive) return;
+        setMeta(m);
+        setBudget(b);
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (loadedRef.current === weekId) return;
@@ -88,17 +179,48 @@ export function ReviewView() {
   const stats = useMemo(() => {
     const blocks = weekData?.blocks ?? [];
     const tasks = weekData?.tasks ?? [];
+    const today = todayStr();
+
     const minutes = blocks.reduce((s, b) => s + (b.end_min - b.start_min), 0);
     const h = Math.floor(minutes / 60);
     const m = minutes % 60;
+
+    const done = tasks.filter((x) => x.status === "done").length;
+    const overdue = tasks.filter(
+      (x) => x.status !== "done" && x.scheduled_date !== null && x.scheduled_date < today,
+    ).length;
+
+    // 按类别汇总时长（用于饼图）
+    const byCat = new Map<string, { name: string; color: string; minutes: number }>();
+    for (const b of blocks) {
+      const key = b.category_id ?? "none";
+      const cat = meta?.categories.find((c) => c.id === key);
+      const bucket = byCat.get(key) ?? {
+        name: cat?.name ?? t("review.uncategorized"),
+        color: b.category_color ?? "#d8d4cc",
+        minutes: 0,
+      };
+      bucket.minutes += b.end_min - b.start_min;
+      byCat.set(key, bucket);
+    }
+
     return {
       blocks: blocks.length,
+      minutes,
       duration:
         h > 0 ? `${h}${t("week.hour")}${m > 0 ? ` ${m}${t("week.min")}` : ""}` : `${m}${t("week.min")}`,
-      done: tasks.filter((x) => x.status === "done").length,
-      tasks: tasks.length,
+      done,
+      total: tasks.length,
+      overdue,
+      slices: [...byCat.values()].sort((a, b) => b.minutes - a.minutes),
     };
-  }, [weekData, t]);
+  }, [weekData, meta, t]);
+
+  const budgetPct = useMemo(() => {
+    const expense = weekData?.summary?.expense ?? 0;
+    const total = budget?.total ?? 0;
+    return total > 0 ? Math.round((expense / total) * 100) : null;
+  }, [weekData, budget]);
 
   const stateText =
     state === "saving"
@@ -133,11 +255,38 @@ export function ReviewView() {
         {stateText ? <span className="ml-auto text-[10px] text-ink-3">{stateText}</span> : null}
       </div>
 
-      <div className="grid grid-cols-3 gap-2.5">
-        <Stat label={t("review.blocks")} value={stats.blocks} />
-        <Stat label={t("review.duration")} value={stats.duration} />
-        <Stat label={t("review.focus")} value={`${stats.done}/${stats.tasks}`} />
+      <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+        <Stat
+          label={t("review.tasks")}
+          value={`${stats.done}/${stats.total}`}
+          hint={stats.overdue > 0 ? t("review.overdueN", { n: stats.overdue }) : null}
+        />
+        <Stat
+          label={t("review.habits")}
+          value={`${weekData?.summary?.habitDone ?? 0}/${weekData?.summary?.habitTotal ?? 0}`}
+          hint={
+            (weekData?.summary?.habitTotal ?? 0) > 0
+              ? `${Math.round(
+                  ((weekData?.summary?.habitDone ?? 0) / (weekData?.summary?.habitTotal ?? 1)) * 100,
+                )}%`
+              : null
+          }
+        />
+        <Stat
+          label={t("review.invest")}
+          value={stats.duration}
+          hint={t("review.segments", { n: stats.blocks })}
+        />
+        <Stat
+          label={t("review.spending")}
+          value={`¥${Math.round(weekData?.summary?.expense ?? 0)}`}
+          hint={budgetPct !== null ? t("review.budgetPct", { n: budgetPct }) : null}
+        />
       </div>
+
+      <Card title={t("review.timeSplit")}>
+        <TimePie slices={stats.slices} total={stats.minutes} />
+      </Card>
 
       <div className="grid gap-3 sm:grid-cols-2">
         {QUADRANTS.map((q) => (

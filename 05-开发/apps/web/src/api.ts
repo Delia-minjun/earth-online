@@ -250,6 +250,7 @@ export interface ApiWeek {
   blocks: ApiWeekBlock[];
   courses: ApiCourse[];
   teachingWeek: number | null;
+  summary?: { habitDone: number; habitTotal: number; expense: number };
 }
 
 export interface ApiReview {
