@@ -2,7 +2,6 @@ import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 export type ViewKey =
-  | "today"
   | "week"
   | "habits"
   | "review"
@@ -11,7 +10,6 @@ export type ViewKey =
   | "settings";
 
 export const NAV_ITEMS: { key: ViewKey; implemented: boolean; phase?: string }[] = [
-  { key: "today", implemented: true },
   { key: "week", implemented: true },
   { key: "review", implemented: true },
   { key: "study", implemented: false, phase: "P5" },
@@ -19,7 +17,7 @@ export const NAV_ITEMS: { key: ViewKey; implemented: boolean; phase?: string }[]
 ];
 
 /** 手机底部只放五项 */
-export const MOBILE_ITEMS: ViewKey[] = ["today", "week", "study", "reward", "settings"];
+export const MOBILE_ITEMS: ViewKey[] = ["week", "review", "study", "reward", "settings"];
 
 const ORDER_KEY = "life.navOrder";
 

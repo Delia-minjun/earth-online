@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import type { HealthInfo, WeekInfo } from "@life/shared";
 import { setLang, type Lang } from "./i18n";
 import { BottomNav, Sidebar, type ViewKey } from "./components/Nav";
-import { TodayView } from "./views/TodayView";
 import { RewardView } from "./views/RewardView";
 import { WeekView } from "./views/WeekView";
 import { ReviewView } from "./views/ReviewView";
@@ -12,7 +11,8 @@ import { PlaceholderView } from "./views/PlaceholderView";
 
 export default function App() {
   const { t, i18n } = useTranslation();
-  const [view, setView] = useState<ViewKey>("reward");
+  const [view, setView] = useState<ViewKey>("week");
+  const [dayMode, setDayMode] = useState<"today" | "week" | "month">("today");
   const [week, setWeek] = useState<WeekInfo | null>(null);
   const [health, setHealth] = useState<HealthInfo | null>(null);
   const [failed, setFailed] = useState(false);
@@ -65,12 +65,11 @@ export default function App() {
   }, [lang]);
 
   const short = (d: string) => d.slice(5).replace("-", "/");
-  const isToday = view === "today";
-  /** 所有栏目共用同一个正文宽度：1180px，和「今日」保持一致 */
+  const isSchedule = view === "week";
+  /** 所有栏目共用同一个正文宽度：1180px */
   const shellWidth = "max-w-[1180px]";
-  /** 月历开关放在标题旁，由周视图消费 */
-  const [calOpen, setCalOpen] = useState(false);
   const isReward = view === "reward";
+  const isTodayMode = isSchedule && dayMode === "today";
 
   return (
     <div className="flex min-h-full">
@@ -93,39 +92,40 @@ export default function App() {
         >
           <div className="min-w-0">
             <p className="text-[10px] uppercase tracking-[0.2em] text-ink-3">
-              {isToday ? t("today.title") : t("app.title")}
+              {t("app.title")}
             </p>
             <div className="mt-1.5 flex items-center gap-3">
               <h1 className="truncate text-[22px] font-semibold leading-tight text-ink">
-                {isToday ? dateText : isReward ? t("reward.homeTitle") : t(`nav.${view}`)}
+                {isReward ? t("reward.homeTitle") : isTodayMode ? dateText : t(`nav.${view}`)}
               </h1>
-              {view === "week" ? (
+              {isSchedule ? (
                 <div className="flex shrink-0 items-center rounded-full border border-line bg-surface p-0.5">
-                  <button
-                    type="button"
-                    onClick={() => setCalOpen(false)}
-                    aria-pressed={!calOpen}
-                    className={`rounded-full px-3 py-1 text-[10.5px] transition-colors ${
-                      calOpen ? "text-ink-3 hover:text-ink" : "bg-accent text-white"
-                    }`}
-                  >
-                    {t("calendar.week")}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCalOpen(true)}
-                    aria-pressed={calOpen}
-                    className={`rounded-full px-3 py-1 text-[10.5px] transition-colors ${
-                      calOpen ? "bg-accent text-white" : "text-ink-3 hover:text-ink"
-                    }`}
-                  >
-                    {t("calendar.month")}
-                  </button>
+                  {(
+                    [
+                      { key: "today", label: t("calendar.today") },
+                      { key: "week", label: t("calendar.week") },
+                      { key: "month", label: t("calendar.month") },
+                    ] as const
+                  ).map((opt) => (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      onClick={() => setDayMode(opt.key)}
+                      aria-pressed={dayMode === opt.key}
+                      className={`rounded-full px-3 py-1 text-[10.5px] transition-colors ${
+                        dayMode === opt.key
+                          ? "bg-accent text-white"
+                          : "text-ink-3 hover:text-ink"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
                 </div>
               ) : null}
             </div>
             <p className="mt-1 text-[11px] text-ink-3">
-              {isToday
+              {isTodayMode
                 ? week
                   ? `${week.teachingWeek ? `${t("week.teaching", { n: week.teachingWeek })} · ` : ""}${t(
                       "week.range",
@@ -147,14 +147,12 @@ export default function App() {
         <main
           className={`mx-auto w-full flex-1 px-5 pt-5 md:px-8 md:pt-6 ${shellWidth}`}
         >
-          {isToday && <TodayView />}
-          {view === "week" && <WeekView calOpen={calOpen} onCalOpenChange={setCalOpen} />}
+          {isSchedule && <WeekView mode={dayMode} onModeChange={setDayMode} />}
           {view === "review" && <ReviewView />}
           {isReward && <RewardView />}
           {view === "settings" && <SettingsView />}
-          {!isToday &&
+          {!isSchedule &&
             !isReward &&
-            view !== "week" &&
             view !== "review" &&
             view !== "settings" && <PlaceholderView nameKey={`nav.${view}`} />}
         </main>

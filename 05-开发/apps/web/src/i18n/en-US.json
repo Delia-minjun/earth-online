@@ -4,8 +4,7 @@
     "badge": "Local build · P2 done"
   },
   "nav": {
-    "today": "Today",
-    "week": "Calendar",
+    "week": "Schedule",
     "habits": "Habits",
     "review": "Review",
     "study": "Study",
@@ -153,6 +152,7 @@
   "calendar": {
     "title": "Calendar",
     "btn": "Month",
+    "today": "Today",
     "week": "Week",
     "month": "Month",
     "monthLabel": "{{year}}-{{month}}",

@@ -4,8 +4,7 @@
     "badge": "本地版 · P2 完成"
   },
   "nav": {
-    "today": "今日",
-    "week": "日历",
+    "week": "日程",
     "habits": "习惯",
     "review": "复盘",
     "study": "学习",
@@ -154,6 +153,7 @@
   "calendar": {
     "title": "月历",
     "btn": "本月",
+    "today": "今日",
     "week": "本周",
     "month": "本月",
     "monthLabel": "{{year}} 年 {{month}} 月",

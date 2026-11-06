@@ -4,6 +4,7 @@ import { api, COURSE_COLOR, hhmm, isoWeekOf, mondayOfThisWeek, shiftWeeks, type 
 import { BlockEditor } from "../components/BlockEditor";
 import { DayPanel } from "../components/DayPanel";
 import { DayTasksPanel } from "../components/DayTasksPanel";
+import { TodayView } from "./TodayView";
 import { CourseEditor } from "./CourseEditor";
 
 const WD_ZH = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
@@ -133,11 +134,11 @@ function MonthGrid({ onPick, selected }: { onPick: (date: string) => void; selec
 }
 
 export function WeekView({
-  calOpen,
-  onCalOpenChange,
+  mode,
+  onModeChange,
 }: {
-  calOpen: boolean;
-  onCalOpenChange: (open: boolean) => void;
+  mode: "today" | "week" | "month";
+  onModeChange: (mode: "today" | "week" | "month") => void;
 }) {
   const { t, i18n } = useTranslation();
   const [offset, setOffset] = useState(0);
@@ -201,7 +202,9 @@ export function WeekView({
 
   return (
     <div className="space-y-3">
-      <div className={`flex-wrap items-center gap-2 ${calOpen ? "hidden" : "flex"}`}>
+      {mode === "today" ? <TodayView /> : null}
+
+      <div className={`flex-wrap items-center gap-2 ${mode === "week" ? "flex" : "hidden"}`}>
         <button
           type="button"
           onClick={() => setOffset((v) => v - 1)}
@@ -230,7 +233,7 @@ export function WeekView({
         </button>
       </div>
 
-      {calOpen ? (
+      {mode === "month" ? (
         <>
           <div className="flex items-center gap-2">
             <button
@@ -257,7 +260,7 @@ export function WeekView({
 
       {error ? <p className="text-[10.5px] text-warn">{error}</p> : null}
 
-      <div className={`overflow-hidden rounded-2xl border border-line bg-surface ${calOpen ? "hidden" : ""}`}>
+      <div className={`overflow-hidden rounded-2xl border border-line bg-surface ${mode === "week" ? "" : "hidden"}`}>
         {days.map((d, idx) => {
           const courses: Item[] = (data?.courses ?? [])
             .filter((c) => c.weekday === d.weekdayIndex)
@@ -357,7 +360,7 @@ export function WeekView({
         })}
       </div>
 
-      {!calOpen ? <DayTasksPanel date={selDate} /> : null}
+      {mode === "week" ? <DayTasksPanel date={selDate} /> : null}
 
       {editorOpen ? (
         <div
