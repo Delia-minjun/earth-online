@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { api, COURSE_COLOR, hhmm, isoWeekOf, mondayOfThisWeek, shiftWeeks, type ApiWeek } from "../api";
 import { BlockEditor } from "../components/BlockEditor";
 import { DayPanel } from "../components/DayPanel";
+import { DayTasksPanel } from "../components/DayTasksPanel";
 import { CourseEditor } from "./CourseEditor";
 
 const WD_ZH = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
@@ -280,20 +281,21 @@ export function WeekView({
               color: b.category_color ?? "#d8d4cc",
             }));
           const items = [...courses, ...blocks].sort((a, b) => a.start - b.start);
-          const tasks = (data?.tasks ?? []).filter((x) => x.scheduled_date === d.date);
-          const empty = items.length === 0 && tasks.length === 0;
+          const empty = items.length === 0;
+          const isSelected = d.date === selDate;
 
           return (
             <div
               key={d.date}
-              className={`group flex gap-3 px-3 py-2.5 ${
+              onClick={() => setSelDate(d.date)}
+              className={`group flex cursor-pointer gap-3 px-3 py-2.5 transition-colors ${
                 idx > 0 ? "border-t border-line-2" : ""
-              } ${d.isToday ? "bg-accent-soft/30" : ""}`}
+              } ${isSelected ? "bg-accent-soft/40" : d.isToday ? "bg-accent-soft/20" : "hover:bg-surface-2"}`}
             >
               <div className="w-14 shrink-0 pt-0.5">
                 <p
                   className={`text-[11px] ${
-                    d.isToday ? "font-semibold text-ink" : "text-ink-2"
+                    isSelected ? "font-semibold text-ink" : d.isToday ? "font-semibold text-ink" : "text-ink-2"
                   }`}
                 >
                   {d.weekday}
@@ -301,64 +303,50 @@ export function WeekView({
                 <p className="text-[9.5px] tabular-nums text-ink-3">{d.label}</p>
               </div>
 
-              <div className="flex min-w-0 flex-1 items-start gap-2">
-                <div className="flex min-w-0 flex-1 flex-wrap items-start gap-1.5">
-                  {items.map((it) => (
-                    <div
-                      key={`${it.kind}-${it.id}`}
-                      className="group flex items-center gap-1.5 rounded-lg border border-line-2 bg-surface px-2 py-1"
-                    >
-                      <span
-                        className="h-4 w-[2px] shrink-0 rounded-full"
-                        style={{ background: it.color }}
-                      />
-                      <div className="min-w-0">
-                        <p className="truncate text-[10.5px] text-ink">{it.title}</p>
-                        <p className="text-[9px] tabular-nums text-ink-3">
-                          {hhmm(it.start)}–{hhmm(it.end)}
-                          {it.location ? ` · ${it.location}` : ""}
-                        </p>
-                      </div>
-                      {it.kind === "block" ? (
-                        <button
-                          type="button"
-                          onClick={() => void removeBlock(it.id)}
-                          className="shrink-0 text-[11px] leading-none text-[#a9a49b] opacity-100 transition-colors hover:text-warn md:opacity-0 md:group-hover:opacity-100"
-                          aria-label="delete"
-                        >
-                          ×
-                        </button>
-                      ) : null}
-                    </div>
-                  ))}
-
-                  {empty ? (
-                    <span className="py-1 text-[10px] text-[#c8c4bc]">{t("week.empty")}</span>
-                  ) : null}
-                </div>
-
-                <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-1.5">
-                  {tasks.map((x) => (
+              <div className="flex min-w-0 flex-1 flex-wrap items-start gap-1.5">
+                {items.map((it) => (
+                  <div
+                    key={`${it.kind}-${it.id}`}
+                    className="group/item flex items-center gap-1.5 rounded-lg border border-line-2 bg-surface px-2 py-1"
+                  >
                     <span
-                      key={x.id}
-                      className="inline-flex items-center gap-1 rounded-full bg-[#f1eee8] px-2 py-[3px] text-[9.5px] text-ink-2"
-                    >
-                      <span
-                        className={`h-1.5 w-1.5 rounded-full ${
-                          x.status === "done" ? "bg-accent" : "bg-[#d8d4cc]"
-                        }`}
-                      />
-                      <span className={x.status === "done" ? "line-through text-ink-3" : ""}>
-                        {x.title}
-                      </span>
-                    </span>
-                  ))}
-                </div>
+                      className="h-4 w-[2px] shrink-0 rounded-full"
+                      style={{ background: it.color }}
+                    />
+                    <div className="min-w-0">
+                      <p className="truncate text-[10.5px] text-ink">{it.title}</p>
+                      <p className="text-[9px] tabular-nums text-ink-3">
+                        {hhmm(it.start)}–{hhmm(it.end)}
+                        {it.location ? ` · ${it.location}` : ""}
+                      </p>
+                    </div>
+                    {it.kind === "block" ? (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void removeBlock(it.id);
+                        }}
+                        className="shrink-0 text-[11px] leading-none text-[#a9a49b] opacity-100 transition-colors hover:text-warn md:opacity-0 md:group-hover/item:opacity-100"
+                        aria-label="delete"
+                      >
+                        ×
+                      </button>
+                    ) : null}
+                  </div>
+                ))}
+
+                {empty ? (
+                  <span className="py-1 text-[10px] text-[#c8c4bc]">{t("week.empty")}</span>
+                ) : null}
               </div>
 
               <button
                 type="button"
-                onClick={() => setBlockDate(d.date)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setBlockDate(d.date);
+                }}
                 title={t("block.add")}
                 className="shrink-0 self-center rounded-full border border-line px-1.5 text-[11px] leading-tight text-[#c2beb6] opacity-0 transition-colors hover:border-accent hover:text-accent group-hover:opacity-100"
               >
@@ -368,6 +356,8 @@ export function WeekView({
           );
         })}
       </div>
+
+      {!calOpen ? <DayTasksPanel date={selDate} /> : null}
 
       {editorOpen ? (
         <div
