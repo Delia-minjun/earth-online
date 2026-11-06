@@ -34,6 +34,20 @@ body {
 }
 
 /*
+ * Tailwind 的 preflight 不把 button 设成 pointer（浏览器默认是 default），
+ * 全站按钮悬停因此都没有"可点"的提示。这里统一补上。
+ */
+button:not(:disabled),
+[role="button"]:not(:disabled) {
+  cursor: pointer;
+}
+
+button:disabled,
+[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+/*
  * 今日页三列：正文两列 + 右侧时间轴栏。
  * 写在这里而不是用 min-[1150px]: 任意断点 —— Tailwind 会把任意断点排在 lg 之前，
  * 结果永远被 lg:grid-cols-2 覆盖。这里不带 layer，优先级高于 utilities。

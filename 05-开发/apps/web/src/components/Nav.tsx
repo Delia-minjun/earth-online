@@ -91,7 +91,7 @@ export function Sidebar({
       <button
         type="button"
         onClick={() => onChange("reward")}
-        className="flex w-full items-center gap-2.5 rounded-[11px] px-1 py-0.5 text-left transition-opacity hover:opacity-80"
+        className="-mx-1.5 flex w-[calc(100%+0.75rem)] items-center gap-2.5 rounded-[11px] px-1.5 py-1 text-left transition-colors hover:bg-surface active:bg-accent-soft"
         title={t("reward.homeTitle")}
       >
         <img
