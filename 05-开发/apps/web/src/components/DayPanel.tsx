@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, hhmm, type ApiBlock, type ApiDay, type ApiWeekBlock } from "../api";
+import { api, COURSE_COLOR, hhmm, type ApiBlock, type ApiDay, type ApiWeekBlock } from "../api";
 import { BlockEditor } from "./BlockEditor";
 
 const WD_ZH = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
@@ -29,19 +29,28 @@ export function DayPanel({ date }: { date: string }) {
   const wd = i18n.language === "zh-CN" ? WD_ZH : WD_EN;
   const dow = new Date(`${date}T00:00:00`).getDay() || 7;
 
-  // 只展示当天的日程（时间块）；课程仍参与 BlockEditor 的冲突判断，但不在列表里铺开
+  // 当天的日程 = 课表里的课 + 自己排的时间块，按开始时间合并排序
   const items = useMemo(() => {
-    if (!day) return [] as { key: string; title: string; start: number; end: number; color: string; note: string }[];
-    return day.blocks
-      .map((b) => ({
-        key: `b-${b.id}`,
-        title: b.title,
-        start: b.start_min,
-        end: b.end_min,
-        color: b.category_color ?? "#d8d4cc",
-        note: `${b.end_min - b.start_min} ${t("today.min")}`,
-      }))
-      .sort((a, b) => a.start - b.start);
+    if (!day) return [] as { key: string; title: string; start: number; end: number; color: string; note: string; isCourse: boolean }[];
+    const courses = day.courses.map((c) => ({
+      key: `c-${c.id}`,
+      title: c.name,
+      start: c.start_min,
+      end: c.end_min,
+      color: COURSE_COLOR,
+      note: [c.location, t("today.course")].filter(Boolean).join(" · "),
+      isCourse: true,
+    }));
+    const blocks = day.blocks.map((b) => ({
+      key: `b-${b.id}`,
+      title: b.title,
+      start: b.start_min,
+      end: b.end_min,
+      color: b.category_color ?? "#d8d4cc",
+      note: `${b.end_min - b.start_min} ${t("today.min")}`,
+      isCourse: false,
+    }));
+    return [...courses, ...blocks].sort((a, b) => a.start - b.start);
   }, [day, t]);
 
   // BlockEditor 需要带 date 的块；这里把当天已有的块转换一下
@@ -91,6 +100,11 @@ export function DayPanel({ date }: { date: string }) {
                 {it.note ? ` · ${it.note}` : ""}
               </p>
             </div>
+            {it.isCourse ? (
+              <span className="shrink-0 rounded-full bg-surface-2 px-1.5 py-[1px] text-[9px] text-ink-3">
+                {t("today.course")}
+              </span>
+            ) : null}
           </li>
         ))}
         {items.length === 0 ? (
