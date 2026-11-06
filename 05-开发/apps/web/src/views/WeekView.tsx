@@ -133,7 +133,13 @@ function MonthGrid({ onPick, selected }: { onPick: (date: string) => void; selec
   );
 }
 
-export function WeekView({ mode }: { mode: "today" | "week" | "month" }) {
+export function WeekView({
+  mode,
+  onModeChange,
+}: {
+  mode: "today" | "week" | "month";
+  onModeChange: (mode: "today" | "week" | "month") => void;
+}) {
   const { t, i18n } = useTranslation();
   const [offset, setOffset] = useState(0);
   const [data, setData] = useState<ApiWeek | null>(null);
@@ -198,13 +204,10 @@ export function WeekView({ mode }: { mode: "today" | "week" | "month" }) {
     <div className="space-y-3">
       {/* 三段内容常驻，只切显隐：避免切换时重复挂载与取数造成页面跳动 */}
       <div className="today-grid space-y-3.5 lg:grid lg:grid-cols-2 lg:gap-3.5 lg:space-y-0">
-        <div className={`space-y-3 lg:col-span-2 ${mode === "today" ? "" : "hidden"}`}>
-          <TodayView />
-        </div>
-
-        <div className={`space-y-3 lg:col-span-2 ${mode === "today" ? "hidden" : ""}`}>
-          {mode !== "today" ? (
-            <div className="flex items-center justify-end gap-2">
+        <div className="space-y-1.5 lg:col-span-2">
+          {/* 切换条：贴正文左栏右边界，紧挨下面的内容，不留空白 */}
+          <div className="flex items-center justify-end gap-2">
+            {mode !== "today" ? (
               <button
                 type="button"
                 onClick={() => setEditorOpen(true)}
@@ -212,8 +215,35 @@ export function WeekView({ mode }: { mode: "today" | "week" | "month" }) {
               >
                 {t("course.editMode")}
               </button>
+            ) : null}
+            <div className="flex items-center rounded-full border border-line bg-surface p-0.5">
+              {(
+                [
+                  { key: "today", label: t("calendar.today") },
+                  { key: "week", label: t("calendar.week") },
+                  { key: "month", label: t("calendar.month") },
+                ] as const
+              ).map((opt) => (
+                <button
+                  key={opt.key}
+                  type="button"
+                  onClick={() => onModeChange(opt.key)}
+                  aria-pressed={mode === opt.key}
+                  className={`rounded-full px-3 py-1 text-[10.5px] transition-colors ${
+                    mode === opt.key ? "bg-accent text-white" : "text-ink-3 hover:text-ink"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
             </div>
-          ) : null}
+          </div>
+
+          <div className={`space-y-3 ${mode === "today" ? "" : "hidden"}`}>
+            <TodayView />
+          </div>
+
+          <div className={`space-y-3 ${mode === "today" ? "hidden" : ""}`}>
 
       <div className={`flex-wrap items-center gap-2 ${mode === "week" ? "flex" : "hidden"}`}>
         <button
@@ -355,6 +385,7 @@ export function WeekView({ mode }: { mode: "today" | "week" | "month" }) {
       </div>
 
       {mode === "week" ? <DayTasksPanel date={selDate} /> : null}
+          </div>
         </div>
 
         <TimelineRail />
