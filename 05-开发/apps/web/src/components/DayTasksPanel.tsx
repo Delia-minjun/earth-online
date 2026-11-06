@@ -86,7 +86,7 @@ export function DayTasksPanel({ date }: { date: string }) {
                 DDL {task.due_date.slice(5)}
               </span>
             ) : null}
-            {task.overdue ? (
+            {task.overdue && !task.due_date ? (
               <span className="shrink-0 rounded-full bg-warn-soft px-1.5 py-[1px] text-[9px] tabular-nums text-warn">
                 {t("task.overdue")} {task.scheduled_date?.slice(5)}
               </span>

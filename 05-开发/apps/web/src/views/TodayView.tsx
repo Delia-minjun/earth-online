@@ -345,7 +345,7 @@ export function TodayView() {
                         DDL {f.due_date.slice(5)}
                       </span>
                     ) : null}
-                    {f.overdue ? (
+                    {f.overdue && !f.due_date ? (
                       <span className="shrink-0 rounded-full bg-warn-soft px-1.5 py-[2px] text-[9px] tabular-nums text-warn">
                         {t("task.overdue")} {f.scheduled_date?.slice(5)}
                       </span>
