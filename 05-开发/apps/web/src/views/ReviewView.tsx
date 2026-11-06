@@ -41,54 +41,95 @@ function TimePie({
   total: number;
 }) {
   const { t } = useTranslation();
-  const R = 42;
-  const C = 2 * Math.PI * R;
 
   if (!slices.length || total === 0) {
-    return (
-      <p className="py-6 text-center text-[10.5px] text-[#c8c4bc]">{t("review.noTime")}</p>
-    );
+    return <p className="py-8 text-center text-[10.5px] text-[#c8c4bc]">{t("review.noTime")}</p>;
   }
 
-  let acc = 0;
-  const rings = slices.map((s) => {
-    const len = (s.minutes / total) * C;
-    const ring = { ...s, len, offset: -acc };
-    acc += len;
-    return ring;
+  const W = 360;
+  const H = 300;
+  const cx = W / 2;
+  const cy = 140;
+  const R_OUT = 92;
+  const R_IN = 58;
+
+  const polar = (r: number, deg: number) => {
+    const a = ((deg - 90) * Math.PI) / 180;
+    return [cx + r * Math.cos(a), cy + r * Math.sin(a)] as const;
+  };
+
+  const arcPath = (start: number, end: number) => {
+    const [x1, y1] = polar(R_OUT, start);
+    const [x2, y2] = polar(R_OUT, end);
+    const [x3, y3] = polar(R_IN, end);
+    const [x4, y4] = polar(R_IN, start);
+    const large = end - start > 180 ? 1 : 0;
+    return `M${x1},${y1} A${R_OUT},${R_OUT} 0 ${large} 1 ${x2},${y2} L${x3},${y3} A${R_IN},${R_IN} 0 ${large} 0 ${x4},${y4} Z`;
+  };
+
+  let cursor = 0;
+  const parts = slices.map((s) => {
+    const sweep = (s.minutes / total) * 360;
+    const start = cursor;
+    cursor += sweep;
+    const pct = (s.minutes / total) * 100;
+    const mid = start + sweep / 2;
+    const [lx1, ly1] = polar(R_OUT + 6, mid);
+    const [lx2, ly2] = polar(R_OUT + 26, mid);
+    const [tx, ty] = polar(R_OUT + 32, mid);
+    const right = Math.cos(((mid - 90) * Math.PI) / 180) >= 0;
+    return { ...s, start, end: cursor, pct, mid, lx1, ly1, lx2, ly2, tx, ty, right };
   });
 
-  const hoursOf = (m: number) => (m >= 60 ? `${(m / 60).toFixed(m % 60 === 0 ? 0 : 1)}` : `${m}m`);
+  const hoursOf = (m: number) =>
+    m >= 60
+      ? `${(m / 60).toFixed(m % 60 === 0 ? 0 : 1)}${t("week.hour")}`
+      : `${m}${t("week.min")}`;
 
   return (
-    <div className="flex items-center gap-4">
-      <svg viewBox="0 0 100 100" className="h-24 w-24 shrink-0 -rotate-90">
-        {rings.map((r) => (
+    <div className="flex flex-col items-center">
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-w-[420px]">
+        {parts.length === 1 ? (
           <circle
-            key={r.name}
-            cx="50"
-            cy="50"
-            r={R}
+            cx={cx}
+            cy={cy}
+            r={(R_OUT + R_IN) / 2}
             fill="none"
-            stroke={r.color}
-            strokeWidth="16"
-            strokeDasharray={`${r.len} ${C - r.len}`}
-            strokeDashoffset={r.offset}
+            stroke={parts[0]!.color}
+            strokeWidth={R_OUT - R_IN}
           />
-        ))}
+        ) : (
+          parts.map((p) => <path key={p.name} d={arcPath(p.start, p.end)} fill={p.color} />)
+        )}
+
+        {parts.map((p) =>
+          p.pct >= 5 ? (
+            <g key={`l-${p.name}`}>
+              <polyline
+                points={`${p.lx1},${p.ly1} ${p.lx2},${p.ly2}`}
+                fill="none"
+                stroke={p.color}
+                strokeWidth="1.5"
+              />
+              <text
+                x={p.right ? p.tx + 4 : p.tx - 4}
+                y={p.ty + 4}
+                textAnchor={p.right ? "start" : "end"}
+                className="fill-ink-2 text-[13px] tabular-nums"
+              >
+                {Math.round(p.pct)}%
+              </text>
+            </g>
+          ) : null,
+        )}
       </svg>
-      <ul className="min-w-0 flex-1 space-y-1">
-        {rings.map((r) => (
-          <li key={r.name} className="flex items-center gap-1.5 text-[10.5px] text-ink-2">
-            <span
-              className="h-1.5 w-1.5 shrink-0 rounded-full"
-              style={{ background: r.color }}
-            />
-            <span className="min-w-0 flex-1 truncate">{r.name}</span>
-            <span className="shrink-0 tabular-nums text-ink-3">
-              {hoursOf(r.minutes)}
-              {t("week.hour")} · {Math.round((r.minutes / total) * 100)}%
-            </span>
+
+      <ul className="mt-1 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5">
+        {parts.map((p) => (
+          <li key={`g-${p.name}`} className="flex items-center gap-1.5 text-[10.5px] text-ink-2">
+            <span className="h-2 w-2 shrink-0 rounded-sm" style={{ background: p.color }} />
+            <span className="truncate">{p.name}</span>
+            <span className="tabular-nums text-ink-3">{hoursOf(p.minutes)}</span>
           </li>
         ))}
       </ul>
