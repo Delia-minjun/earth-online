@@ -46,12 +46,12 @@ function TimePie({
     return <p className="py-8 text-center text-[10.5px] text-[#c8c4bc]">{t("review.noTime")}</p>;
   }
 
-  const W = 360;
-  const H = 300;
+  const W = 320;
+  const H = 250;
   const cx = W / 2;
-  const cy = 140;
-  const R_OUT = 92;
-  const R_IN = 58;
+  const cy = 118;
+  const R_OUT = 76;
+  const R_IN = 48;
 
   const polar = (r: number, deg: number) => {
     const a = ((deg - 90) * Math.PI) / 180;
@@ -88,7 +88,7 @@ function TimePie({
 
   return (
     <div className="flex flex-col items-center">
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-w-[440px]">
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-w-[330px]">
         {parts.length === 1 ? (
           <circle
             cx={cx}
@@ -259,7 +259,7 @@ export function ReviewView() {
       (x) => x.status !== "done" && x.scheduled_date !== null && x.scheduled_date < today,
     ).length;
 
-    // 按类别汇总时长（用于饼图）
+    // 按类别汇总时长（用于饼图）；上课时间单独算一类
     const byCat = new Map<string, { name: string; color: string; minutes: number }>();
     for (const b of blocks) {
       const key = b.category_id ?? "none";
@@ -273,9 +273,19 @@ export function ReviewView() {
       byCat.set(key, bucket);
     }
 
+    const courseMinutes = weekData?.summary?.courseMinutes ?? 0;
+    if (courseMinutes > 0) {
+      byCat.set("__course", {
+        name: t("review.courses"),
+        color: "#9BA7B0",
+        minutes: courseMinutes,
+      });
+    }
+
     return {
       blocks: blocks.length,
       minutes,
+      courseMinutes,
       duration:
         h > 0 ? `${h}${t("week.hour")}${m > 0 ? ` ${m}${t("week.min")}` : ""}` : `${m}${t("week.min")}`,
       done,
@@ -354,7 +364,10 @@ export function ReviewView() {
       </div>
 
       <Card title={t("review.timeSplit")}>
-        <TimePie slices={stats.slices} total={stats.minutes} />
+        <TimePie
+          slices={stats.slices}
+          total={stats.minutes + stats.courseMinutes}
+        />
       </Card>
 
       <div className="grid gap-3 sm:grid-cols-2">

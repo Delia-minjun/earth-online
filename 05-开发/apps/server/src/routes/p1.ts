@@ -891,6 +891,12 @@ api.get("/week/:year/:week", (c) => {
       )
       .get(info.startDate, info.endDate) as { n: number } | undefined)?.n ?? 0;
 
+  // 这一周上课的总分钟数（每门课每周上一次）
+  const courseMinutes = (courses as { start_min: number; end_min: number }[]).reduce(
+    (s, c) => s + (c.end_min - c.start_min),
+    0,
+  );
+
   return c.json({
     week: info,
     weekId: weekId(year, week),
@@ -898,7 +904,7 @@ api.get("/week/:year/:week", (c) => {
     blocks,
     courses,
     teachingWeek: weekNo,
-    summary: { habitDone, habitTotal, expense },
+    summary: { habitDone, habitTotal, expense, courseMinutes },
   });
 });
 
