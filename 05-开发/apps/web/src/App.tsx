@@ -90,13 +90,50 @@ export default function App() {
         <header
           className={`mx-auto flex w-full items-start justify-between gap-4 px-5 pt-7 md:px-8 md:pt-9 ${shellWidth}`}
         >
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <p className="text-[10px] uppercase tracking-[0.2em] text-ink-3">
               {t("app.title")}
             </p>
-            <h1 className="mt-1.5 truncate text-[22px] font-semibold leading-tight text-ink">
-              {isReward ? t("reward.homeTitle") : t(`nav.${view}`)}
-            </h1>
+            {/* 标题与切换条同一行，右端对齐正文右边界 */}
+            <div className="mt-1.5 flex items-center justify-between gap-4">
+              <h1 className="truncate text-[22px] font-semibold leading-tight text-ink">
+                {isReward ? t("reward.homeTitle") : t(`nav.${view}`)}
+              </h1>
+              <div className="flex shrink-0 items-center gap-2">
+                {isSchedule ? (
+                  <div className="flex items-center rounded-full border border-line bg-surface p-0.5">
+                    {(
+                      [
+                        { key: "today", label: t("calendar.today") },
+                        { key: "week", label: t("calendar.week") },
+                        { key: "month", label: t("calendar.month") },
+                      ] as const
+                    ).map((opt) => (
+                      <button
+                        key={opt.key}
+                        type="button"
+                        onClick={() => setDayMode(opt.key)}
+                        aria-pressed={dayMode === opt.key}
+                        className={`rounded-full px-3 py-1 text-[10.5px] transition-colors ${
+                          dayMode === opt.key
+                            ? "bg-accent text-white"
+                            : "text-ink-3 hover:text-ink"
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => setLang(lang === "zh-CN" ? "en-US" : "zh-CN")}
+                  className="shrink-0 rounded-full border border-line bg-surface px-3 py-1.5 text-[11px] text-ink-2 transition-colors hover:border-accent hover:text-ink"
+                >
+                  {t("action.lang")}
+                </button>
+              </div>
+            </div>
             <p className="mt-1 text-[11px] text-ink-3">
               {isTodayMode
                 ? `${dateText}${week ? ` · ${week.teachingWeek ? `${t("week.teaching", { n: week.teachingWeek })} · ` : ""}${t(
@@ -106,22 +143,12 @@ export default function App() {
                 : t(`sub.${view}`)}
             </p>
           </div>
-
-          <div className="flex shrink-0 items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setLang(lang === "zh-CN" ? "en-US" : "zh-CN")}
-              className="shrink-0 rounded-full border border-line bg-surface px-3 py-1.5 text-[11px] text-ink-2 transition-colors hover:border-accent hover:text-ink"
-            >
-              {t("action.lang")}
-            </button>
-          </div>
         </header>
 
         <main
           className={`mx-auto w-full flex-1 px-5 pt-5 md:px-8 md:pt-6 ${shellWidth}`}
         >
-          {isSchedule && <WeekView mode={dayMode} onModeChange={setDayMode} />}
+          {isSchedule && <WeekView mode={dayMode} />}
           {view === "review" && <ReviewView />}
           {isReward && <RewardView />}
           {view === "settings" && <SettingsView />}

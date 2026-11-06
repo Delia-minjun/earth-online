@@ -30,7 +30,7 @@ function Mini({
 
 const DONE = "done";
 
-export function TodayView({ topRight }: { topRight?: React.ReactNode }) {
+export function TodayView() {
   const { t } = useTranslation();
   const [day, setDay] = useState<ApiDay | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -205,7 +205,6 @@ export function TodayView({ topRight }: { topRight?: React.ReactNode }) {
       <div className="space-y-3.5 lg:grid lg:grid-cols-2 lg:gap-3.5 lg:space-y-0">
         {/* 今日任务：横跨正文两列 */}
         <div className="space-y-3.5 lg:col-span-2">
-          {topRight ? <div className="flex justify-end">{topRight}</div> : null}
           <Card title={t("today.focus")} action={`${doneCount}/${focus.length}`}>
             <ul className="divide-y divide-line-2">
               {focus.map((f) =>

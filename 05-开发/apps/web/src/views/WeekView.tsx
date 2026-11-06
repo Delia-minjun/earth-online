@@ -133,13 +133,7 @@ function MonthGrid({ onPick, selected }: { onPick: (date: string) => void; selec
   );
 }
 
-export function WeekView({
-  mode,
-  onModeChange,
-}: {
-  mode: "today" | "week" | "month";
-  onModeChange: (mode: "today" | "week" | "month") => void;
-}) {
+export function WeekView({ mode }: { mode: "today" | "week" | "month" }) {
   const { t, i18n } = useTranslation();
   const [offset, setOffset] = useState(0);
   const [data, setData] = useState<ApiWeek | null>(null);
@@ -200,50 +194,26 @@ export function WeekView({
     });
   }, [offset, wd, today]);
 
-  /** 三段开关：今日段塞进任务卡上方，其余段落单独一行 */
-  const modeSwitch = (
-    <div className="flex items-center rounded-full border border-line bg-surface p-0.5">
-      {(
-        [
-          { key: "today", label: t("calendar.today") },
-          { key: "week", label: t("calendar.week") },
-          { key: "month", label: t("calendar.month") },
-        ] as const
-      ).map((opt) => (
-        <button
-          key={opt.key}
-          type="button"
-          onClick={() => onModeChange(opt.key)}
-          aria-pressed={mode === opt.key}
-          className={`rounded-full px-3 py-1 text-[10.5px] transition-colors ${
-            mode === opt.key ? "bg-accent text-white" : "text-ink-3 hover:text-ink"
-          }`}
-        >
-          {opt.label}
-        </button>
-      ))}
-    </div>
-  );
-
   return (
     <div className="space-y-3">
       {/* 三段内容常驻，只切显隐：避免切换时重复挂载与取数造成页面跳动 */}
       <div className="today-grid space-y-3.5 lg:grid lg:grid-cols-2 lg:gap-3.5 lg:space-y-0">
         <div className={`space-y-3 lg:col-span-2 ${mode === "today" ? "" : "hidden"}`}>
-          <TodayView topRight={modeSwitch} />
+          <TodayView />
         </div>
 
         <div className={`space-y-3 lg:col-span-2 ${mode === "today" ? "hidden" : ""}`}>
-        <div className="flex items-center justify-end gap-2">
-          <button
-            type="button"
-            onClick={() => setEditorOpen(true)}
-            className="rounded-full border border-line bg-surface px-3 py-1.5 text-[10.5px] text-ink-2 transition-colors hover:border-accent hover:text-ink"
-          >
-            {t("course.editMode")}
-          </button>
-          {modeSwitch}
-        </div>
+          {mode !== "today" ? (
+            <div className="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setEditorOpen(true)}
+                className="rounded-full border border-line bg-surface px-3 py-1.5 text-[10.5px] text-ink-2 transition-colors hover:border-accent hover:text-ink"
+              >
+                {t("course.editMode")}
+              </button>
+            </div>
+          ) : null}
 
       <div className={`flex-wrap items-center gap-2 ${mode === "week" ? "flex" : "hidden"}`}>
         <button
