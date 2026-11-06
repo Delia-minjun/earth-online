@@ -44,7 +44,7 @@
   },
   "today": {
     "title": "今日",
-    "focus": "今日任务",
+    "focus": "任务",
     "timeline": "时间轴",
     "min": "分钟",
     "habits": "习惯打卡",
