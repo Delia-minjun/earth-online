@@ -108,7 +108,16 @@
     "priority2": "Urgent",
     "overdue": "Late",
     "ddl": "DDL",
-    "ddlHint": "Deadline, optional"
+    "ddlHint": "Deadline, optional",
+    "ddlTitle": "Set deadline",
+    "ddlCustom": "Custom",
+    "ddlClear": "Clear DDL",
+    "ddlQuick": {
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "sunday": "Sun",
+      "nextMonday": "Next Mon"
+    }
   },
   "habit": {
     "streak": "{{n}}-day streak"

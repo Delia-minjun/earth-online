@@ -109,7 +109,16 @@
     "priority2": "紧急",
     "overdue": "延迟",
     "ddl": "DDL",
-    "ddlHint": "截止日期，可留空"
+    "ddlHint": "截止日期，可留空",
+    "ddlTitle": "设置截止日期",
+    "ddlCustom": "自定义",
+    "ddlClear": "清除 DDL",
+    "ddlQuick": {
+      "today": "今天",
+      "tomorrow": "明天",
+      "sunday": "这周日",
+      "nextMonday": "下周一"
+    }
   },
   "habit": {
     "streak": "连续 {{n}} 天"

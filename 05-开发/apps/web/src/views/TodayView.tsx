@@ -10,6 +10,7 @@ import {
   type ApiTask,
 } from "../api";
 import { Card } from "../components/Card";
+import { DdlPicker } from "../components/DdlPicker";
 import { BodyCard, MealsCard, MoneyCard } from "../components/Records";
 
 function Mini({
@@ -58,15 +59,15 @@ export function TodayView() {
 
   /* ---- 今日任务 ---- */
   const [draft, setDraft] = useState("");
-  const [ddlOpen, setDdlOpen] = useState(false);
   const [ddlDraft, setDdlDraft] = useState("");
+  /** 弹窗是给「新任务」还是「编辑中的任务」设 DDL */
+  const [ddlTarget, setDdlTarget] = useState<"new" | "edit" | null>(null);
   const addFocus = async () => {
     const title = draft.trim();
     if (!title) return;
     setDraft("");
     const dueDate = ddlDraft || undefined;
     setDdlDraft("");
-    setDdlOpen(false);
     await api.addTask(title, undefined, undefined, dueDate);
     await reload();
   };
@@ -288,13 +289,17 @@ export function TodayView() {
                         onChange={(e) => setTaskForm((v) => ({ ...v, date: e.target.value }))}
                         className="rounded-md border border-line bg-surface px-1.5 py-1 text-[10.5px] tabular-nums text-ink-2 outline-none"
                       />
-                      <input
-                        type="date"
-                        value={taskForm.dueDate}
-                        onChange={(e) => setTaskForm((v) => ({ ...v, dueDate: e.target.value }))}
-                        title={t("task.ddl")}
-                        className="rounded-md border border-line bg-surface px-1.5 py-1 text-[10.5px] tabular-nums text-ink-2 outline-none"
-                      />
+                      <button
+                        type="button"
+                        onClick={() => setDdlTarget("edit")}
+                        className={`rounded-md border px-1.5 py-1 text-[10.5px] tabular-nums transition-colors ${
+                          taskForm.dueDate
+                            ? "border-[#e0c4bb] bg-warn-soft text-warn"
+                            : "border-line bg-surface text-ink-2 hover:border-accent"
+                        }`}
+                      >
+                        {taskForm.dueDate ? `DDL ${taskForm.dueDate.slice(5)}` : t("task.ddl")}
+                      </button>
                       <button
                         type="button"
                         onClick={() => void saveTask()}
@@ -393,14 +398,11 @@ export function TodayView() {
                 />
                 <button
                   type="button"
-                  onClick={() => setDdlOpen((v) => !v)}
-                  aria-pressed={ddlOpen || Boolean(ddlDraft)}
+                  onClick={() => setDdlTarget("new")}
                   className={`shrink-0 rounded-full border px-1.5 py-[1px] text-[9px] transition-colors ${
                     ddlDraft
                       ? "border-[#e0c4bb] bg-warn-soft text-warn"
-                      : ddlOpen
-                        ? "border-accent bg-accent-soft text-accent"
-                        : "border-line text-[#a9a49b] hover:border-accent hover:text-accent"
+                      : "border-line text-[#a9a49b] hover:border-accent hover:text-accent"
                   }`}
                 >
                   {ddlDraft ? `DDL ${ddlDraft.slice(5)}` : t("task.ddl")}
@@ -419,26 +421,6 @@ export function TodayView() {
                   ✓
                 </button>
               </div>
-              {ddlOpen ? (
-                <div className="mt-1.5 flex items-center gap-2 pl-5">
-                  <input
-                    type="date"
-                    value={ddlDraft}
-                    onChange={(e) => setDdlDraft(e.target.value)}
-                    className="rounded-md border border-line bg-surface px-1.5 py-1 text-[10.5px] tabular-nums text-ink-2 outline-none"
-                  />
-                  <span className="text-[9px] text-ink-3">{t("task.ddlHint")}</span>
-                  {ddlDraft ? (
-                    <button
-                      type="button"
-                      onClick={() => setDdlDraft("")}
-                      className="text-[9px] text-[#a9a49b] underline decoration-dotted hover:text-warn"
-                    >
-                      {t("common.clear")}
-                    </button>
-                  ) : null}
-                </div>
-              ) : null}
             </div>
           </Card>
         </div>
@@ -720,6 +702,16 @@ export function TodayView() {
           </div>
         </div>
       ) : null}
+
+      <DdlPicker
+        open={ddlTarget !== null}
+        value={ddlTarget === "edit" ? taskForm.dueDate : ddlDraft}
+        onClose={() => setDdlTarget(null)}
+        onPick={(v) => {
+          if (ddlTarget === "edit") setTaskForm((f) => ({ ...f, dueDate: v ?? "" }));
+          else setDdlDraft(v ?? "");
+        }}
+      />
     </div>
   );
 }
