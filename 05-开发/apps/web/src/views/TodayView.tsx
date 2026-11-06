@@ -37,7 +37,7 @@ const END_SLOTS = Array.from({ length: 144 }, (_, i) => (i + 1) * 10);
 
 const DONE = "done";
 
-export function TodayView() {
+export function TodayView({ topRight }: { topRight?: React.ReactNode }) {
   const { t } = useTranslation();
   const [day, setDay] = useState<ApiDay | null>(null);
   const [meta, setMeta] = useState<ApiMeta | null>(null);
@@ -260,6 +260,7 @@ export function TodayView() {
       <div className="today-grid space-y-3.5 lg:grid lg:grid-cols-2 lg:gap-3.5 lg:space-y-0">
         {/* 今日任务：横跨正文两列 */}
         <div className="space-y-3.5 lg:col-span-2">
+          {topRight ? <div className="flex justify-end">{topRight}</div> : null}
           <Card title={t("today.focus")} action={`${doneCount}/${focus.length}`}>
             <ul className="divide-y divide-line-2">
               {focus.map((f) =>
