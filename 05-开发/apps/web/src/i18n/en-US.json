@@ -302,6 +302,7 @@
     "segments": "{{n}} blocks",
     "budgetPct": "{{n}}% of monthly budget",
     "timeSplit": "Time split",
+    "timeTotal": "total",
     "noTime": "No time blocks this week",
     "uncategorized": "Uncategorized",
     "keep": "KEEP",

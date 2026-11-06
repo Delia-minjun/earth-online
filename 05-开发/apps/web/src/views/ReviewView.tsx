@@ -88,7 +88,7 @@ function TimePie({
 
   return (
     <div className="flex flex-col items-center">
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-w-[420px]">
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-w-[440px]">
         {parts.length === 1 ? (
           <circle
             cx={cx}
@@ -102,26 +102,54 @@ function TimePie({
           parts.map((p) => <path key={p.name} d={arcPath(p.start, p.end)} fill={p.color} />)
         )}
 
-        {parts.map((p) =>
-          p.pct >= 5 ? (
-            <g key={`l-${p.name}`}>
-              <polyline
-                points={`${p.lx1},${p.ly1} ${p.lx2},${p.ly2}`}
-                fill="none"
-                stroke={p.color}
-                strokeWidth="1.5"
-              />
-              <text
-                x={p.right ? p.tx + 4 : p.tx - 4}
-                y={p.ty + 4}
-                textAnchor={p.right ? "start" : "end"}
-                className="fill-ink-2 text-[13px] tabular-nums"
-              >
-                {Math.round(p.pct)}%
-              </text>
-            </g>
-          ) : null,
-        )}
+        {/* 圆心的总量，避免中间空一块 */}
+        <text
+          x={cx}
+          y={cy - 4}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          className="fill-ink text-[18px] font-semibold tabular-nums"
+        >
+          {hoursOf(total)}
+        </text>
+        <text
+          x={cx}
+          y={cy + 16}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          className="fill-ink-3 text-[11px]"
+        >
+          {parts.length === 1 ? "100%" : t("review.timeTotal")}
+        </text>
+
+        {/* 多段才在圆外标百分比；单段直接放圆心，避免一条孤零零的引线 */}
+        {parts.length > 1
+          ? parts.map((p) => {
+              if (p.pct < 5) return null;
+              const [bx, by] = polar(R_OUT + 14, p.mid);
+              const ex = bx + (p.right ? 16 : -16);
+              return (
+                <g key={`l-${p.name}`}>
+                  <polyline
+                    points={`${p.lx1},${p.ly1} ${bx},${by} ${ex},${by}`}
+                    fill="none"
+                    stroke={p.color}
+                    strokeWidth="1.2"
+                    strokeLinejoin="round"
+                  />
+                  <text
+                    x={ex + (p.right ? 5 : -5)}
+                    y={by}
+                    textAnchor={p.right ? "start" : "end"}
+                    dominantBaseline="middle"
+                    className="fill-ink-2 text-[12px] font-medium tabular-nums"
+                  >
+                    {Math.round(p.pct)}%
+                  </text>
+                </g>
+              );
+            })
+          : null}
       </svg>
 
       <ul className="mt-1 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5">
