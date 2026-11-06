@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 export type ViewKey =
   | "today"
   | "week"
-  | "projects"
   | "habits"
   | "review"
   | "study"
@@ -14,7 +13,6 @@ export type ViewKey =
 export const NAV_ITEMS: { key: ViewKey; implemented: boolean; phase?: string }[] = [
   { key: "today", implemented: true },
   { key: "week", implemented: true },
-  { key: "projects", implemented: true },
   { key: "review", implemented: true },
   { key: "study", implemented: false, phase: "P5" },
   { key: "settings", implemented: true },

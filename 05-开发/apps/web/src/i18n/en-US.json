@@ -6,7 +6,6 @@
   "nav": {
     "today": "Today",
     "week": "Calendar",
-    "projects": "Projects",
     "habits": "Habits",
     "review": "Review",
     "study": "Study",
@@ -181,7 +180,6 @@
   },
   "sub": {
     "week": "See this week by day; switch to Month for the whole month",
-    "projects": "Break long-running work into projects, then tasks",
     "review": "Look back: keep, improve, stop, start",
     "reward": "Earn coins from real work, spend them on rewards you define",
     "settings": "Models, term and preferences",
