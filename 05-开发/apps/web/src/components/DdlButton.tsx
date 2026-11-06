@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { DDL_TONE_CLASS, ddlTone } from "../ddl";
 
 /**
  * DDL 按钮：点一下直接弹出系统日历（原生 date picker），不再有中间弹窗。
@@ -49,9 +50,9 @@ export function DdlButton({
       <button
         type="button"
         onClick={openPicker}
-        className={`rounded-full border tabular-nums transition-colors ${pad} ${
+        className={`rounded-full border transition-colors ${pad} ${
           value
-            ? "border-[#e0c4bb] bg-warn-soft text-warn"
+            ? `border-line ${DDL_TONE_CLASS[ddlTone(value)]}`
             : "border-line bg-surface text-[#a9a49b] hover:border-accent hover:text-accent"
         }`}
       >

@@ -11,6 +11,7 @@ import {
 } from "../api";
 import { Card } from "../components/Card";
 import { DdlButton } from "../components/DdlButton";
+import { DDL_TONE_CLASS, ddlTone } from "../ddl";
 import { BodyCard, MealsCard, MoneyCard } from "../components/Records";
 
 function Mini({
@@ -338,11 +339,7 @@ export function TodayView() {
                     </div>
                     {f.due_date ? (
                       <span
-                        className={`shrink-0 rounded-full px-1.5 py-[2px] text-[9px] tabular-nums ${
-                          f.due_date < (day?.date ?? "") && f.status !== DONE
-                            ? "bg-warn-soft text-warn"
-                            : "bg-surface-2 text-ink-3"
-                        }`}
+                        className={`shrink-0 rounded-full px-1.5 py-[2px] text-[9px] tabular-nums ${DDL_TONE_CLASS[ddlTone(f.due_date, f.status === DONE)]}`}
                         title={t("task.ddl")}
                       >
                         DDL {f.due_date.slice(5)}

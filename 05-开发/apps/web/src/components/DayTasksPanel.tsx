@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, type ApiDay, type ApiTask } from "../api";
+import { DDL_TONE_CLASS, ddlTone } from "../ddl";
 
 const WD_ZH = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
 const WD_EN = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -79,7 +80,9 @@ export function DayTasksPanel({ date }: { date: string }) {
               {task.title}
             </span>
             {task.due_date ? (
-              <span className="shrink-0 rounded-full bg-surface-2 px-1.5 py-[1px] text-[9px] tabular-nums text-ink-3">
+              <span
+                className={`shrink-0 rounded-full px-1.5 py-[1px] text-[9px] tabular-nums ${DDL_TONE_CLASS[ddlTone(task.due_date, task.status === "done")]}`}
+              >
                 DDL {task.due_date.slice(5)}
               </span>
             ) : null}
