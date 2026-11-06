@@ -10,7 +10,7 @@ import {
   type ApiTask,
 } from "../api";
 import { Card } from "../components/Card";
-import { DdlPicker } from "../components/DdlPicker";
+import { DdlButton } from "../components/DdlButton";
 import { BodyCard, MealsCard, MoneyCard } from "../components/Records";
 
 function Mini({
@@ -60,8 +60,6 @@ export function TodayView() {
   /* ---- 今日任务 ---- */
   const [draft, setDraft] = useState("");
   const [ddlDraft, setDdlDraft] = useState("");
-  /** 弹窗是给「新任务」还是「编辑中的任务」设 DDL */
-  const [ddlTarget, setDdlTarget] = useState<"new" | "edit" | null>(null);
   const addFocus = async () => {
     const title = draft.trim();
     if (!title) return;
@@ -289,17 +287,11 @@ export function TodayView() {
                         onChange={(e) => setTaskForm((v) => ({ ...v, date: e.target.value }))}
                         className="rounded-md border border-line bg-surface px-1.5 py-1 text-[10.5px] tabular-nums text-ink-2 outline-none"
                       />
-                      <button
-                        type="button"
-                        onClick={() => setDdlTarget("edit")}
-                        className={`rounded-md border px-1.5 py-1 text-[10.5px] tabular-nums transition-colors ${
-                          taskForm.dueDate
-                            ? "border-[#e0c4bb] bg-warn-soft text-warn"
-                            : "border-line bg-surface text-ink-2 hover:border-accent"
-                        }`}
-                      >
-                        {taskForm.dueDate ? `DDL ${taskForm.dueDate.slice(5)}` : t("task.ddl")}
-                      </button>
+                      <DdlButton
+                        size="md"
+                        value={taskForm.dueDate}
+                        onChange={(v) => setTaskForm((f) => ({ ...f, dueDate: v ?? "" }))}
+                      />
                       <button
                         type="button"
                         onClick={() => void saveTask()}
@@ -396,17 +388,7 @@ export function TodayView() {
                   placeholder={t("today.focusAdd")}
                   className="w-full bg-transparent text-[12px] text-ink outline-none placeholder:text-[#c8c4bc]"
                 />
-                <button
-                  type="button"
-                  onClick={() => setDdlTarget("new")}
-                  className={`shrink-0 rounded-full border px-1.5 py-[1px] text-[9px] transition-colors ${
-                    ddlDraft
-                      ? "border-[#e0c4bb] bg-warn-soft text-warn"
-                      : "border-line text-[#a9a49b] hover:border-accent hover:text-accent"
-                  }`}
-                >
-                  {ddlDraft ? `DDL ${ddlDraft.slice(5)}` : t("task.ddl")}
-                </button>
+                <DdlButton value={ddlDraft} onChange={(v) => setDdlDraft(v ?? "")} />
                 <button
                   type="button"
                   onClick={() => void addFocus()}
@@ -702,16 +684,6 @@ export function TodayView() {
           </div>
         </div>
       ) : null}
-
-      <DdlPicker
-        open={ddlTarget !== null}
-        value={ddlTarget === "edit" ? taskForm.dueDate : ddlDraft}
-        onClose={() => setDdlTarget(null)}
-        onPick={(v) => {
-          if (ddlTarget === "edit") setTaskForm((f) => ({ ...f, dueDate: v ?? "" }));
-          else setDdlDraft(v ?? "");
-        }}
-      />
     </div>
   );
 }
