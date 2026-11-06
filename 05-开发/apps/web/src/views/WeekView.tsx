@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, COURSE_COLOR, hhmm, isoWeekOf, mondayOfThisWeek, shiftWeeks, type ApiWeek } from "../api";
 import { BlockEditor } from "../components/BlockEditor";
+import { DayPanel } from "../components/DayPanel";
 import { CourseEditor } from "./CourseEditor";
 
 const WD_ZH = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
@@ -21,7 +22,7 @@ type Item = {
 };
 
 /** 月历：点某天跳到那一周 */
-function MonthGrid({ onPick }: { onPick: (date: string) => void }) {
+function MonthGrid({ onPick, selected }: { onPick: (date: string) => void; selected?: string }) {
   const { t, i18n } = useTranslation();
   const today = ymd(new Date());
   const [month, setMonth] = useState(today.slice(0, 7));
@@ -101,6 +102,7 @@ function MonthGrid({ onPick }: { onPick: (date: string) => void }) {
           if (!date) return <span key={`e-${i}`} />;
           const info = byDate[date];
           const isToday = date === today;
+          const isSelected = date === selected;
           const day = Number(date.slice(8));
           return (
             <button
@@ -108,9 +110,11 @@ function MonthGrid({ onPick }: { onPick: (date: string) => void }) {
               type="button"
               onClick={() => onPick(date)}
               className={`flex h-9 flex-col items-center justify-center rounded-lg text-[10.5px] transition-colors ${
-                isToday
-                  ? "bg-accent-soft font-semibold text-ink"
-                  : "text-ink-2 hover:bg-surface-2"
+                isSelected
+                  ? "bg-accent font-semibold text-white"
+                  : isToday
+                    ? "bg-accent-soft font-semibold text-ink"
+                    : "text-ink-2 hover:bg-surface-2"
               }`}
             >
               <span className="tabular-nums">{day}</span>
@@ -174,6 +178,7 @@ export function WeekView({
   };
 
   const [blockDate, setBlockDate] = useState<string | null>(null);
+  const [selDate, setSelDate] = useState<string>(() => ymd(new Date()));
 
   const wd = i18n.language === "zh-CN" ? WD_ZH : WD_EN;
   const today = ymd(new Date());
@@ -195,7 +200,7 @@ export function WeekView({
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-2">
+      <div className={`flex-wrap items-center gap-2 ${calOpen ? "hidden" : "flex"}`}>
         <button
           type="button"
           onClick={() => setOffset((v) => v - 1)}
@@ -224,7 +229,21 @@ export function WeekView({
         </button>
       </div>
 
-      {calOpen ? <MonthGrid onPick={(date) => jumpToDate(date)} /> : null}
+      {calOpen ? (
+        <>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setEditorOpen(true)}
+              className="ml-auto rounded-full border border-line bg-surface px-3 py-1.5 text-[10.5px] text-ink-2 transition-colors hover:border-accent hover:text-ink"
+            >
+              {t("course.editMode")}
+            </button>
+          </div>
+          <MonthGrid selected={selDate} onPick={(date) => setSelDate(date)} />
+          <DayPanel date={selDate} />
+        </>
+      ) : null}
 
       <BlockEditor
         open={blockDate !== null}
@@ -237,7 +256,7 @@ export function WeekView({
 
       {error ? <p className="text-[10.5px] text-warn">{error}</p> : null}
 
-      <div className="overflow-hidden rounded-2xl border border-line bg-surface">
+      <div className={`overflow-hidden rounded-2xl border border-line bg-surface ${calOpen ? "hidden" : ""}`}>
         {days.map((d, idx) => {
           const courses: Item[] = (data?.courses ?? [])
             .filter((c) => c.weekday === d.weekdayIndex)
