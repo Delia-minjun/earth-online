@@ -96,7 +96,7 @@ export default function App() {
             </p>
             <div className="mt-1.5 flex items-center gap-3">
               <h1 className="truncate text-[22px] font-semibold leading-tight text-ink">
-                {isReward ? t("reward.homeTitle") : isTodayMode ? dateText : t(`nav.${view}`)}
+                {isReward ? t("reward.homeTitle") : t(`nav.${view}`)}
               </h1>
               {isSchedule ? (
                 <div className="flex shrink-0 items-center rounded-full border border-line bg-surface p-0.5">
@@ -126,12 +126,10 @@ export default function App() {
             </div>
             <p className="mt-1 text-[11px] text-ink-3">
               {isTodayMode
-                ? week
-                  ? `${week.teachingWeek ? `${t("week.teaching", { n: week.teachingWeek })} · ` : ""}${t(
-                      "week.range",
-                      { start: short(week.startDate), end: short(week.endDate) },
-                    )}`
-                  : "—"
+                ? `${dateText}${week ? ` · ${week.teachingWeek ? `${t("week.teaching", { n: week.teachingWeek })} · ` : ""}${t(
+                    "week.range",
+                    { start: short(week.startDate), end: short(week.endDate) },
+                  )}` : ""}`
                 : t(`sub.${view}`)}
             </p>
           </div>
