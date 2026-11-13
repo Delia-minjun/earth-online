@@ -154,6 +154,25 @@
     "last30": "Last 30 days",
     "noWeight": "No weight logged yet — enter one above and the curve appears"
   },
+  "tour": {
+    "skip": "Skip",
+    "replay": "Replay the tour",
+    "prev": "Back",
+    "next": "Next",
+    "done": "Get started",
+    "logoTitle": "This is home",
+    "logoText": "Click the icon to come back home anytime. Home is Rewards — balance and redemptions.",
+    "navTitle": "Five sections",
+    "navText": "Schedule (today / week / month), Review, Study (coming), Settings. Drag to reorder.",
+    "modesTitle": "Today / Week / Month",
+    "modesText": "One page, three views: today's plan, this week's layout, the whole month.",
+    "tasksTitle": "Tasks",
+    "tasksText": "Today's to-dos. Set a deadline or priority; ticking one earns coins automatically.",
+    "railTitle": "Timeline & pomodoro",
+    "railText": "Fixed view of today's schedule. The ◷ button is a pomodoro — finishing it logs a time block.",
+    "walletTitle": "Wallet & shop",
+    "walletText": "Balance, six area bars and your own reward shop. You can only redeem with coins you have."
+  },
   "focus": {
     "title": "Pomodoro",
     "start": "Start focus",

@@ -87,6 +87,7 @@ export function Sidebar({
     <aside className="hidden w-52 shrink-0 flex-col border-r border-line bg-surface-2 px-4 py-6 md:flex">
       <button
         type="button"
+        data-tour="logo"
         onClick={() => onChange("reward")}
         className="-mx-1.5 flex w-[calc(100%+0.75rem)] items-center gap-2.5 rounded-[11px] px-1.5 py-1 text-left transition-colors hover:bg-surface active:bg-accent-soft"
         title={t("reward.homeTitle")}
@@ -101,7 +102,7 @@ export function Sidebar({
       </button>
       <PoemLine />
 
-      <nav className="mt-7 space-y-1">
+      <nav className="mt-7 space-y-1" data-tour="nav">
         {order.map((key, index) => {
           const item = NAV_ITEMS.find((i) => i.key === key);
           const isActive = key === active;
@@ -154,6 +155,14 @@ export function Sidebar({
               : "…"}
         </span>
         {version ? <span className="ml-auto tabular-nums">v{version}</span> : null}
+        <button
+          type="button"
+          onClick={() => window.dispatchEvent(new Event("life:tour"))}
+          title={t("tour.replay")}
+          className="ml-1 grid h-4 w-4 place-items-center rounded-full border border-line text-[9px] leading-none text-ink-3 transition-colors hover:border-accent hover:text-accent"
+        >
+          ?
+        </button>
       </div>
     </aside>
   );

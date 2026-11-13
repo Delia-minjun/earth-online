@@ -8,14 +8,16 @@ import { WeekView } from "./views/WeekView";
 import { ReviewView } from "./views/ReviewView";
 import { SettingsView } from "./views/SettingsView";
 import { PlaceholderView } from "./views/PlaceholderView";
+import { Tour, resetTour, tourPending } from "./components/Tour";
 
 export default function App() {
   const { t, i18n } = useTranslation();
-  const [view, setView] = useState<ViewKey>("week");
+  const [view, setView] = useState<ViewKey>("reward");
   const [dayMode, setDayMode] = useState<"today" | "week" | "month">("today");
   const [week, setWeek] = useState<WeekInfo | null>(null);
   const [health, setHealth] = useState<HealthInfo | null>(null);
   const [failed, setFailed] = useState(false);
+  const [tourOpen, setTourOpen] = useState(() => tourPending());
 
   useEffect(() => {
     let alive = true;
@@ -39,6 +41,17 @@ export default function App() {
   useEffect(() => {
     document.documentElement.lang = i18n.language;
   }, [i18n.language]);
+
+  // 侧栏的问号按钮可以重看引导
+  useEffect(() => {
+    const onReplay = () => {
+      resetTour();
+      setTourOpen(true);
+      setView("reward");
+    };
+    window.addEventListener("life:tour", onReplay);
+    return () => window.removeEventListener("life:tour", onReplay);
+  }, []);
 
   // 连不上时每 5 秒重试一次，服务恢复后提示自动消失
   useEffect(() => {
@@ -113,7 +126,7 @@ export default function App() {
                 </p>
 
                 {isSchedule ? (
-                  <div className="flex shrink-0 items-center rounded-full border border-line bg-surface p-0.5">
+                  <div className="flex shrink-0 items-center rounded-full border border-line bg-surface p-0.5" data-tour="modes">
                     {(
                       [
                         { key: "today", label: t("calendar.today") },
@@ -142,6 +155,7 @@ export default function App() {
 
             <div className="flex justify-start lg:col-start-3 lg:row-start-1 lg:justify-end lg:self-start">
               <button
+                data-tour="lang"
                 type="button"
                 onClick={() => setLang(lang === "zh-CN" ? "en-US" : "zh-CN")}
                 className="shrink-0 rounded-full border border-line bg-surface px-3 py-1.5 text-[11px] text-ink-2 transition-colors hover:border-accent hover:text-ink"
@@ -167,6 +181,59 @@ export default function App() {
       </div>
 
       <BottomNav active={view} onChange={setView} />
+
+      {tourOpen ? (
+        <Tour
+          onDone={() => setTourOpen(false)}
+          steps={[
+            {
+              selector: '[data-tour="logo"]',
+              title: t("tour.logoTitle"),
+              text: t("tour.logoText"),
+              prepare: () => setView("reward"),
+            },
+            {
+              selector: '[data-tour="nav"]',
+              title: t("tour.navTitle"),
+              text: t("tour.navText"),
+              prepare: () => setView("reward"),
+            },
+            {
+              selector: '[data-tour="modes"]',
+              title: t("tour.modesTitle"),
+              text: t("tour.modesText"),
+              prepare: () => {
+                setView("week");
+                setDayMode("today");
+              },
+            },
+            {
+              selector: '[data-tour="tasks"]',
+              title: t("tour.tasksTitle"),
+              text: t("tour.tasksText"),
+              prepare: () => {
+                setView("week");
+                setDayMode("today");
+              },
+            },
+            {
+              selector: '[data-tour="rail"]',
+              title: t("tour.railTitle"),
+              text: t("tour.railText"),
+              prepare: () => {
+                setView("week");
+                setDayMode("today");
+              },
+            },
+            {
+              selector: '[data-tour="wallet"]',
+              title: t("tour.walletTitle"),
+              text: t("tour.walletText"),
+              prepare: () => setView("reward"),
+            },
+          ]}
+        />
+      ) : null}
     </div>
   );
 }

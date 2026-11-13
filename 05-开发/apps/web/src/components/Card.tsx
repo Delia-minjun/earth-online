@@ -5,14 +5,17 @@ export function Card({
   action,
   children,
   className = "",
+  ...rest
 }: {
   title?: string;
   action?: ReactNode;
   children: ReactNode;
   className?: string;
+  "data-tour"?: string;
 }) {
   return (
     <section
+      {...rest}
       className={`rounded-2xl border border-line bg-surface p-4 shadow-[0_6px_20px_-14px_rgba(88,82,72,0.5)] ${className}`}
     >
       {title ? (

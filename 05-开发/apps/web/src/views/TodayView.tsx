@@ -206,7 +206,7 @@ export function TodayView() {
       <div className="space-y-3.5 lg:grid lg:grid-cols-2 lg:gap-3.5 lg:space-y-0">
         {/* 今日任务：横跨正文两列 */}
         <div className="space-y-3.5 lg:col-span-2">
-          <Card title={t("today.focus")} action={`${doneCount}/${focus.length}`}>
+          <Card data-tour="tasks" title={t("today.focus")} action={`${doneCount}/${focus.length}`}>
             <ul className="divide-y divide-line-2">
               {focus.map((f) =>
                 editTaskId === f.id ? (

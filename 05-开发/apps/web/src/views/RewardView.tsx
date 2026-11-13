@@ -104,7 +104,7 @@ export function RewardView() {
       {error ? <p className="text-[10px] text-warn">{error}</p> : null}
 
       <div className="grid gap-3.5 lg:grid-cols-2">
-        <Card>
+        <Card data-tour="wallet">
           <p className="text-[11px] text-ink-3">{t("reward.balance")}</p>
           <div className="mt-1 flex items-baseline gap-2">
             <span className="text-[42px] font-semibold leading-none tracking-tight text-ink">
