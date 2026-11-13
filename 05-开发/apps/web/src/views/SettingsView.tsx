@@ -287,7 +287,6 @@ export function SettingsView() {
             {t("settings.presetCustom")}
           </span>
         </div>
-        <p className="mt-1 text-[9.5px] leading-relaxed text-[#bcb8b0]">{t("settings.presetHint")}</p>
 
         {info?.configured ? (
           <p className="mt-2 text-[11px] text-ink-2">
