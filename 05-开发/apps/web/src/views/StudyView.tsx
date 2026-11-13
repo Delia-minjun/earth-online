@@ -264,7 +264,7 @@ export function StudyView() {
               if (e.key === "Enter") void addSubject();
             }}
             placeholder={t("study.newSubject")}
-            className="w-24 bg-transparent text-[10.5px] text-ink outline-none placeholder:text-[#c8c4bc]"
+            className="w-16 bg-transparent text-[10.5px] text-ink outline-none placeholder:text-[#c8c4bc]"
           />
           <button
             type="button"
@@ -283,7 +283,7 @@ export function StudyView() {
           <p className="text-[11px] leading-relaxed text-ink-3">{t("study.emptyHint")}</p>
         </Card>
       ) : (
-        <div className="grid gap-3.5 lg:grid-cols-2">
+        <div className="grid items-start gap-3.5 lg:grid-cols-2">
           {/* 左：资料 */}
           <Card
             title={`${active.name} · ${t("study.materials")}`}
@@ -464,25 +464,36 @@ export function StudyView() {
       )}
 
       {upcoming.length ? (
-        <Card title={t("study.exams")}>
-          <ul className="space-y-1">
-            {upcoming.map((e) => {
-              const days = Math.round(
-                (new Date(`${e.date}T00:00:00`).getTime() - new Date(new Date().toDateString()).getTime()) /
-                  86_400_000,
-              );
-              return (
-                <li key={e.id} className="flex items-center gap-2 text-[11px] text-ink-2">
-                  <span className="shrink-0 tabular-nums text-ink-3">{e.date.slice(5)}</span>
-                  <span className="min-w-0 flex-1 truncate">{e.title}</span>
-                  <span className="shrink-0 rounded-full bg-warn-soft px-1.5 py-[1px] text-[9px] text-warn">
-                    {t("study.daysLeft", { n: days })}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        </Card>
+        // 考试做成一条横排的窄条，不再占一整个卡片高度
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-2xl border border-line bg-surface px-3 py-2">
+          <span className="text-[10.5px] font-semibold text-ink-3">{t("study.exams")}</span>
+          {upcoming.map((e) => {
+            const days = Math.round(
+              (new Date(`${e.date}T00:00:00`).getTime() - new Date(new Date().toDateString()).getTime()) /
+                86_400_000,
+            );
+            return (
+              <span key={e.id} className="flex items-center gap-1.5 text-[11px] text-ink-2">
+                <span className="tabular-nums text-ink-3">{e.date.slice(5)}</span>
+                <span className="max-w-[9rem] truncate">{e.title}</span>
+                <span className="shrink-0 rounded-full bg-warn-soft px-1.5 py-[1px] text-[9px] text-warn">
+                  {t("study.daysLeft", { n: days })}
+                </span>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await api.deleteExam(e.id);
+                    await loadAll();
+                  }}
+                  className="text-[10px] text-[#c8c4bc] hover:text-warn"
+                  aria-label="delete"
+                >
+                  ×
+                </button>
+              </span>
+            );
+          })}
+        </div>
       ) : null}
 
       {/* 校对弹窗 */}
