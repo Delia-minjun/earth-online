@@ -76,10 +76,35 @@ function startServer() {
   });
 }
 
+/** 窗口状态偏好：fullscreen / maximized（存在 userData 下，一个几百字节的小文件） */
+function prefFile() {
+  return path.join(app.getPath("userData"), "window-state.txt");
+}
+
+function readWindowPref() {
+  try {
+    return fs.readFileSync(prefFile(), "utf8").trim();
+  } catch {
+    return "";
+  }
+}
+
+function writeWindowPref(value) {
+  try {
+    fs.mkdirSync(path.dirname(prefFile()), { recursive: true });
+    fs.writeFileSync(prefFile(), value, "utf8");
+  } catch {
+    /* 写不了就算了，不影响使用 */
+  }
+}
+
 function createWindow() {
   const iconPath = isDev
     ? path.join(__dirname, "..", "build", "icon.ico")
     : path.join(process.resourcesPath, "icon.ico");
+
+  // 记一下上次退出时是不是全屏；默认按最大化启动（等于"打开就是满屏"）
+  const preferFullscreen = readWindowPref() === "fullscreen";
 
   win = new BrowserWindow({
     width: 1280,
@@ -89,9 +114,17 @@ function createWindow() {
     backgroundColor: "#f4f2ee",
     title: "地球 Online",
     autoHideMenuBar: true,
+    fullscreen: preferFullscreen,
     icon: fs.existsSync(iconPath) ? nativeImage.createFromPath(iconPath) : undefined,
     webPreferences: { contextIsolation: true, nodeIntegration: false },
   });
+
+  // 启动即最大化（铺满屏幕但保留标题栏，能拖能缩）
+  win.maximize();
+
+  // 用户按 F11 切全屏 / 双击标题栏时记住，下次照旧
+  win.on("enter-full-screen", () => writeWindowPref("fullscreen"));
+  win.on("leave-full-screen", () => writeWindowPref("maximized"));
 
   win.loadURL(`http://127.0.0.1:${PORT}`);
 
