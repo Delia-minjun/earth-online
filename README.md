@@ -362,7 +362,14 @@ git push origin v0.1.9
    - 平时怎么做：改完 → 本地 typecheck / 测试 / 构建 → `git commit` → 攒着。
    - 发版时：`git push` + `git tag -a vX.Y.Z` + `git push origin vX.Y.Z`，由 CI 出安装包。
 
+12. **Git commit messages are written in English.** Subject line uses `type(scope): summary`
+    (`feat` / `fix` / `style` / `docs` / `chore` / `ci` / `test` / `refactor`), body in English too.
+    - Code comments, UI copy, docs and chat replies stay Chinese — only commit messages change.
+    - 中文提交只保留在历史里，不重写；从这条约定落地起，新提交一律英文。
+
 ## 需求速览
+
+### 2026-11-13 代码审查修复说明
 
 2026-11-13 代码审查修复：复盘切周不会串写，离页前保存到原周；跨午夜专注按天完整记录；默认学习分类删除后专注仍可完成；软删除时间块不再阻挡分类删除；同一任务仅奖励一次领域进度，增长前先结算衰减。启动时自动执行 `011_task_progress.sql`，为历史已完成/已发任务奖励的记录补记进度领取状态。
 
