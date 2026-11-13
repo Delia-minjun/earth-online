@@ -138,6 +138,15 @@
     "last30": "Last 30 days",
     "noWeight": "No weight logged yet — enter one above and the curve appears"
   },
+  "workout": {
+    "title": "Workout",
+    "empty": "No workout logged today",
+    "addTitle": "Log a workout",
+    "editTitle": "Edit workout",
+    "namePlaceholder": "What did you do (e.g. running)",
+    "notePlaceholder": "Note (optional)",
+    "total": "Total"
+  },
   "meals": {
     "title": "Meals",
     "breakfast": "AM",

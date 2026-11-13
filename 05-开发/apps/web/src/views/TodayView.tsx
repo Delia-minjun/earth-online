@@ -11,6 +11,7 @@ import { Card } from "../components/Card";
 import { DdlButton } from "../components/DdlButton";
 import { DDL_TONE_CLASS, ddlTone } from "../ddl";
 import { BodyCard, MealsCard, MoneyCard } from "../components/Records";
+import { WorkoutCard } from "../components/WorkoutCard";
 
 function Mini({
   title,
@@ -386,6 +387,8 @@ export function TodayView() {
         <MoneyCard date={day.date} />
 
         <BodyCard date={day.date} />
+
+        <WorkoutCard date={day.date} />
 
         <MealsCard date={day.date} />
       </div>

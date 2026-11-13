@@ -10,7 +10,7 @@ import {
 } from "../api";
 import { Card } from "./Card";
 
-const WORKOUTS = ["有氧", "臀腿", "肩背", "燃脂", "手臂", "拉伸"];
+
 const SLOTS = ["breakfast", "lunch", "dinner", "snack"] as const;
 
 const yuan = (n: number) =>
@@ -225,12 +225,6 @@ export function BodyCard({ date }: { date: string }) {
     await save({ weight: value });
   };
 
-  const tags = (row.workout ?? "").split(",").filter(Boolean);
-  const toggleWorkout = async (tag: string) => {
-    const next = tags.includes(tag) ? tags.filter((x) => x !== tag) : [...tags, tag];
-    await save({ workout: next.join(",") || null });
-  };
-
   const weighed = history.filter((h) => h.weight != null);
   const last = weighed[weighed.length - 1];
   const first = weighed[0];
@@ -261,26 +255,6 @@ export function BodyCard({ date }: { date: string }) {
           className="w-20 rounded-lg border border-line bg-surface-2 px-2 py-1 text-[12px] tabular-nums text-ink outline-none placeholder:text-[#c8c4bc]"
         />
         <span className="text-[10px] text-ink-3">kg</span>
-      </div>
-
-      <div className="mt-2 flex flex-wrap gap-1">
-        {WORKOUTS.map((w) => {
-          const on = tags.includes(w);
-          return (
-            <button
-              key={w}
-              type="button"
-              onClick={() => void toggleWorkout(w)}
-              className={`rounded-full px-2 py-[3px] text-[10px] transition-colors ${
-                on
-                  ? "bg-accent text-white"
-                  : "border border-line bg-surface text-ink-3 hover:border-accent"
-              }`}
-            >
-              {w}
-            </button>
-          );
-        })}
       </div>
 
       <div className="mt-3 border-t border-line-2 pt-2.5">

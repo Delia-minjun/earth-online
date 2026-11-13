@@ -139,6 +139,15 @@
     "last30": "近 30 天",
     "noWeight": "还没有体重记录，在上面填一次就会出现曲线"
   },
+  "workout": {
+    "title": "锻炼",
+    "empty": "今天还没记录锻炼",
+    "addTitle": "记一条锻炼",
+    "editTitle": "修改锻炼",
+    "namePlaceholder": "练了什么（如：跑步）",
+    "notePlaceholder": "备注（可选）",
+    "total": "合计"
+  },
   "meals": {
     "title": "饮食",
     "breakfast": "早",

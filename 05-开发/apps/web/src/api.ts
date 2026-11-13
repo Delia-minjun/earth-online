@@ -134,6 +134,15 @@ export interface ApiBodyLog {
   workout: string | null;
 }
 
+export interface ApiWorkout {
+  id: string;
+  date: string;
+  name: string;
+  tag: string | null;
+  minutes: number;
+  note: string | null;
+}
+
 export interface ApiMealDay {
   date: string;
   breakfast: string;
@@ -383,6 +392,21 @@ export const api = {
   bodyLog: (from: string, to: string) => request<ApiBodyLog[]>(`/body?from=${from}&to=${to}`),
   saveBody: (date: string, patch: { weight?: number | null; workout?: string | null }) =>
     request<ApiBodyLog>(`/body/${date}`, { method: "PUT", body: JSON.stringify(patch) }),
+
+  workouts: (date: string) => request<ApiWorkout[]>(`/workouts?date=${date}`),
+  addWorkout: (input: {
+    date: string;
+    name: string;
+    tag?: string | null;
+    minutes: number;
+    note?: string | null;
+  }) => request<ApiWorkout>("/workouts", { method: "POST", body: JSON.stringify(input) }),
+  updateWorkout: (
+    id: string,
+    patch: Partial<{ name: string; tag: string | null; minutes: number; note: string | null }>,
+  ) => request<ApiWorkout>(`/workouts/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
+  deleteWorkout: (id: string) =>
+    request<{ ok: true }>(`/workouts/${id}`, { method: "DELETE" }),
 
   meals: (date: string) => request<ApiMealDay>(`/meals/${date}`),
   saveMeals: (date: string, patch: Partial<Omit<ApiMealDay, "date">>) =>

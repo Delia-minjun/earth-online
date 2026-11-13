@@ -276,6 +276,82 @@ p2.get("/money/categories", (c) => {
     return c.json(db.prepare("SELECT * FROM body_log WHERE date = ?").get(date));
   });
 
+  /* ---------------- 锻炼 ---------------- */
+
+  p2.get("/workouts", (c) => {
+    const from = c.req.query("from") ?? c.req.query("date") ?? today();
+    const to = c.req.query("to") ?? c.req.query("date") ?? today();
+    const rows = getDb()
+      .prepare(
+        `SELECT id, date, name, tag, minutes, note FROM workout_log
+          WHERE deleted_at IS NULL AND date BETWEEN ? AND ?
+          ORDER BY date, created_at`,
+      )
+      .all(from, to);
+    return c.json(rows);
+  });
+
+  const workoutBody = z.object({
+    date: z.string().regex(DATE_RE),
+    name: z.string().trim().min(1).max(40),
+    tag: z.string().max(20).nullable().optional(),
+    minutes: z.number().int().min(0).max(600),
+    note: z.string().max(200).nullable().optional(),
+  });
+
+  p2.post("/workouts", async (c) => {
+    const r = await readBody(c, workoutBody);
+    if (!r.ok) return c.json({ error: r.error }, 400);
+    const id = uid();
+    getDb()
+      .prepare(
+        `INSERT INTO workout_log (id, date, name, tag, minutes, note) VALUES (?, ?, ?, ?, ?, ?)`,
+      )
+      .run(id, r.data.date, r.data.name, r.data.tag ?? null, r.data.minutes, r.data.note ?? null);
+    return c.json(
+      getDb().prepare("SELECT id, date, name, tag, minutes, note FROM workout_log WHERE id = ?").get(id),
+      201,
+    );
+  });
+
+  p2.patch("/workouts/:id", async (c) => {
+    const id = c.req.param("id");
+    const r = await readBody(
+      c,
+      workoutBody.partial().extend({ date: z.string().regex(DATE_RE).optional() }),
+    );
+    if (!r.ok) return c.json({ error: r.error }, 400);
+
+    const db = getDb();
+    const cur = db
+      .prepare("SELECT * FROM workout_log WHERE id = ? AND deleted_at IS NULL")
+      .get(id) as
+      | { date: string; name: string; tag: string | null; minutes: number; note: string | null }
+      | undefined;
+    if (!cur) return c.json({ error: "not found" }, 404);
+
+    db.prepare(
+      `UPDATE workout_log SET date = ?, name = ?, tag = ?, minutes = ?, note = ? WHERE id = ?`,
+    ).run(
+      r.data.date ?? cur.date,
+      r.data.name ?? cur.name,
+      r.data.tag !== undefined ? r.data.tag : cur.tag,
+      r.data.minutes ?? cur.minutes,
+      r.data.note !== undefined ? r.data.note : cur.note,
+      id,
+    );
+    return c.json(
+      db.prepare("SELECT id, date, name, tag, minutes, note FROM workout_log WHERE id = ?").get(id),
+    );
+  });
+
+  p2.delete("/workouts/:id", (c) => {
+    getDb()
+      .prepare("UPDATE workout_log SET deleted_at = datetime('now') WHERE id = ?")
+      .run(c.req.param("id"));
+    return c.json({ ok: true });
+  });
+
   /* ---------------- 饮食 ---------------- */
 
   const mealSchema = z.object({
