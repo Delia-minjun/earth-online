@@ -151,6 +151,55 @@ export interface ApiMealDay {
   snack: string;
 }
 
+export interface CoinRules {
+  taskPer30: number;
+  habit: number;
+  habitStreak7: number;
+  focus25: number;
+  review: number;
+  dailyCap: number;
+  decayPerDay: number;
+  decayFloor: number;
+}
+
+export interface ApiCoinEntry {
+  id: string;
+  date: string;
+  amount: number;
+  kind: string;
+  ref_id: string | null;
+  note: string | null;
+  created_at: string;
+}
+
+export interface ApiWallet {
+  date: string;
+  balance: number;
+  todayIn: number;
+  todayOut: number;
+  weekIn: number;
+  weekOut: number;
+  rules: CoinRules;
+  entries: ApiCoinEntry[];
+}
+
+export interface ApiAreaProgress {
+  id: string;
+  name: string;
+  color: string;
+  pct: number;
+}
+
+export interface ApiRewardItem {
+  id: string;
+  name: string;
+  price: number;
+  money: number;
+  money_category_id: string | null;
+  archived: number;
+  sort: number;
+}
+
 export interface ApiCalendarDay {
   blocks: number;
   minutes: number;
@@ -411,6 +460,36 @@ export const api = {
   meals: (date: string) => request<ApiMealDay>(`/meals/${date}`),
   saveMeals: (date: string, patch: Partial<Omit<ApiMealDay, "date">>) =>
     request<ApiMealDay>(`/meals/${date}`, { method: "PUT", body: JSON.stringify(patch) }),
+
+  /* ---- P3 奖惩经济 ---- */
+  wallet: (date?: string) =>
+    request<ApiWallet>(`/coins${date ? `?date=${date}` : ""}`),
+  coinRules: () => request<CoinRules>("/coins/rules"),
+  saveCoinRules: (patch: Partial<CoinRules>) =>
+    request<CoinRules>("/coins/rules", { method: "PUT", body: JSON.stringify(patch) }),
+  earnCoins: (input: {
+    kind: "review" | "bonus";
+    amount: number;
+    date?: string;
+    refId?: string;
+    note?: string;
+    areaId?: string;
+  }) => request<{ ok: true; amount: number; balance: number }>("/coins/earn", {
+    method: "POST",
+    body: JSON.stringify(input),
+  }),
+  areaProgress: () => request<ApiAreaProgress[]>("/areas/progress"),
+  rewards: () => request<ApiRewardItem[]>("/rewards"),
+  addReward: (input: { name: string; price: number; money?: number; moneyCategoryId?: string }) =>
+    request<ApiRewardItem>("/rewards", { method: "POST", body: JSON.stringify(input) }),
+  updateReward: (
+    id: string,
+    patch: Partial<{ name: string; price: number; money: number; moneyCategoryId: string }>,
+  ) => request<ApiRewardItem>(`/rewards/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
+  deleteReward: (id: string) =>
+    request<{ ok: true }>(`/rewards/${id}`, { method: "DELETE" }),
+  redeemReward: (id: string) =>
+    request<{ ok: true; balance: number }>(`/rewards/${id}/redeem`, { method: "POST" }),
 
   calendar: (month: string) =>
     request<{ month: string; byDate: Record<string, ApiCalendarDay> }>(`/calendar/${month}`),

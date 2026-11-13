@@ -5,6 +5,7 @@ import type { HealthInfo } from "@life/shared";
 import { PROJECT_ROOT, dbFile } from "./db.ts";
 import { api } from "./routes/p1.ts";
 import { p2 } from "./routes/p2.ts";
+import { p3 } from "./routes/p3.ts";
 
 /**
  * 组装 Hono 应用但不监听端口——测试可以直接 app.request() 打进来。
@@ -26,6 +27,7 @@ export function createApp(
 
   app.route("/api", api);
   app.route("/api", p2);
+  app.route("/api", p3);
 
   // 生产模式托管前端构建产物；开发模式由 Vite 单独跑并代理 /api
   app.use("/*", serveStatic({ root: webDist }));
