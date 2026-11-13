@@ -226,37 +226,43 @@ export function StudyView() {
     <div className="space-y-3.5">
       {error ? <p className="text-[10.5px] text-warn">{error}</p> : null}
 
-      {/* 科目条 */}
+      {/* 科目条：左边已有科目，右边新建 */}
       <div className="flex flex-wrap items-center gap-1.5">
-        {subjects.map((s) => (
-          <button
-            key={s.id}
-            type="button"
-            onClick={() => pickSubject(s.id)}
-            className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] transition-colors ${
-              s.id === activeId
-                ? "bg-accent text-white"
-                : "border border-line bg-surface text-ink-2 hover:border-accent"
-            }`}
-          >
-            <span
-              className="h-1.5 w-1.5 rounded-full"
-              style={{ background: s.id === activeId ? "rgba(255,255,255,.8)" : (s.color ?? "#9BA7B0") }}
-            />
-            {s.name}
-            {s.due > 0 ? (
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+          {subjects.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => pickSubject(s.id)}
+              className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] transition-colors ${
+                s.id === activeId
+                  ? "bg-accent text-white"
+                  : "border border-line bg-surface text-ink-2 hover:border-accent"
+              }`}
+            >
               <span
-                className={`rounded-full px-1 text-[9px] ${
-                  s.id === activeId ? "bg-white/25" : "bg-warn-soft text-warn"
-                }`}
-              >
-                {s.due}
-              </span>
-            ) : null}
-          </button>
-        ))}
-        {/* 新科目：输入框和 ＋ 合成一个胶囊 */}
-        <div className="flex items-center gap-1 rounded-full border border-line bg-surface py-[3px] pl-2.5 pr-[3px] transition-colors focus-within:border-[#cfc9be]">
+                className="h-1.5 w-1.5 rounded-full"
+                style={{ background: s.id === activeId ? "rgba(255,255,255,.8)" : (s.color ?? "#9BA7B0") }}
+              />
+              {s.name}
+              {s.due > 0 ? (
+                <span
+                  className={`rounded-full px-1 text-[9px] ${
+                    s.id === activeId ? "bg-white/25" : "bg-warn-soft text-warn"
+                  }`}
+                >
+                  {s.due}
+                </span>
+              ) : null}
+            </button>
+          ))}
+          {subjects.length === 0 ? (
+            <span className="text-[10.5px] text-[#c8c4bc]">{t("study.noSubject")}</span>
+          ) : null}
+        </div>
+
+        {/* 新科目：输入框和 ＋ 合成一个胶囊，靠右 */}
+        <div className="ml-auto flex items-center gap-1 rounded-full border border-line bg-surface py-[3px] pl-2.5 pr-[3px] transition-colors focus-within:border-[#cfc9be]">
           <input
             value={newSubject}
             onChange={(e) => setNewSubject(e.target.value)}

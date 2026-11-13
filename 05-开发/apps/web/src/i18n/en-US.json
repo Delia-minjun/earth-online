@@ -446,6 +446,7 @@
     "exams": "Exam countdown",
     "daysLeft": "{{n}} days left",
     "generated": "{{n}} cards created",
-    "coins": "+{{n}} coins"
+    "coins": "+{{n}} coins",
+    "noSubject": "No subjects yet — create one on the right"
   }
 }
