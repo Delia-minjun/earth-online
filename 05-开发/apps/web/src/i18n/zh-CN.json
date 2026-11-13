@@ -354,6 +354,7 @@
     "updAvailable": "发现新版本 {{v}}，正在下载",
     "updDownloading": "正在下载 {{n}}%",
     "updDownloaded": "新版本 {{v}} 已下载，重启后生效",
+    "updWhatChanged": "本次更新内容",
     "updError": "检查失败：{{msg}}",
     "updUnsupported": "当前环境不支持自动更新",
     "openDataDir": "打开数据目录",    "guide": "引导教程",

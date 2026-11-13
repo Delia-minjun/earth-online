@@ -10,6 +10,7 @@ type DeskState = {
   version: string | null;
   percent: number;
   detail: string;
+  notes: string;
   at: string;
 };
 type DeskApi = {
@@ -63,6 +64,17 @@ function DesktopCard() {
   return (
     <Card title={t("settings.desktop")} action={info ? `v${info.version}` : null}>
       <p className="text-[10.5px] leading-relaxed text-ink-3">{stateText}</p>
+
+      {st?.notes ? (
+        <details className="mt-2 rounded-lg border border-line-2 bg-surface-2 px-2.5 py-1.5">
+          <summary className="cursor-pointer text-[10px] text-ink-3">
+            {t("settings.updWhatChanged")}
+          </summary>
+          <pre className="mt-1.5 max-h-40 overflow-auto whitespace-pre-wrap break-words text-[10px] leading-relaxed text-ink-2">
+            {st.notes}
+          </pre>
+        </details>
+      ) : null}
 
       <div className="mt-2 flex flex-wrap items-center gap-2">
         <button

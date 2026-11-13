@@ -23,6 +23,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          # 生成更新说明要比较上一个 tag，浅克隆拿不到历史
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@v4
         with:
@@ -77,6 +80,30 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           node ../../desktop-tools/node_modules/electron-builder/out/cli/cli.js --win --publish always --config electron-builder.yml
+
+      # 用提交记录生成 Release 说明，客户端更新弹窗会显示这段
+      - name: Release notes from commits
+        if: success()
+        shell: bash
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          PREV=$(git describe --tags --abbrev=0 "${TAG}^" 2>/dev/null || echo "")
+          if [ -n "$PREV" ]; then
+            RANGE="${PREV}..${TAG}"
+            echo "## 本次更新（${PREV} → ${TAG}）" > notes.md
+          else
+            RANGE="${TAG}"
+            echo "## 本次更新 ${TAG}" > notes.md
+          fi
+          echo "" >> notes.md
+          git log ${RANGE} --no-merges --pretty=format:"- %s" >> notes.md
+          echo "" >> notes.md
+          echo "" >> notes.md
+          echo "安装包见下方 Assets。" >> notes.md
+          gh release edit "${TAG}" --notes-file notes.md
 
       - name: Upload installer artifact
         uses: actions/upload-artifact@v4

@@ -260,6 +260,7 @@ let updateState = {
   version: null,
   percent: 0,
   detail: "",
+  notes: "",
   at: "",
 };
 
@@ -277,6 +278,26 @@ function setUpdateState(patch) {
   logUpdate(`${updateState.state} ${updateState.version ?? ""} ${updateState.detail}`);
   if (win && !win.isDestroyed()) {
     win.webContents.send("desk:update", updateState);
+  }
+}
+
+/** 从 GitHub Release 里取这一版的更新说明（正文由 CI 用提交记录生成） */
+async function fetchReleaseNotes(version) {
+  const tag = `v${version}`;
+  const api = `https://api.github.com/repos/Delia-minjun/earth-online/releases/tags/${tag}`;
+  try {
+    const res = await fetch(api, {
+      headers: { accept: "application/vnd.github+json", "user-agent": "earth-online" },
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!res.ok) return { notes: "", url: `https://github.com/Delia-minjun/earth-online/releases/tag/${tag}` };
+    const data = await res.json();
+    return {
+      notes: String(data.body ?? "").trim(),
+      url: data.html_url ?? `https://github.com/Delia-minjun/earth-online/releases/tag/${tag}`,
+    };
+  } catch {
+    return { notes: "", url: `https://github.com/Delia-minjun/earth-online/releases/tag/${tag}` };
   }
 }
 
@@ -318,19 +339,30 @@ function setupUpdater() {
     setUpdateState({ state: "downloading", percent: Math.round(p?.percent ?? 0) }),
   );
   autoUpdater.on("update-downloaded", async (info) => {
-    setUpdateState({ state: "downloaded", version: info?.version ?? null, percent: 100 });
+    const { notes, url } = await fetchReleaseNotes(info.version);
+    const trimmed = notes.length > 1200 ? `${notes.slice(0, 1200)}\n…` : notes;
+    setUpdateState({
+      state: "downloaded",
+      version: info?.version ?? null,
+      percent: 100,
+      notes: trimmed,
+    });
+
     const res = await dialog.showMessageBox({
       type: "info",
-      buttons: ["立即重启", "下次再说"],
+      buttons: ["立即重启", "稍后再说", "查看详情"],
       defaultId: 0,
       cancelId: 1,
-      title: "有新版本",
+      noLink: true,
+      title: `新版本 ${info.version}`,
       message: `新版本 ${info.version} 已下载完成`,
-      detail: "重启后生效。数据不受影响。",
+      detail: `${trimmed || "（这次没有写更新说明）"}\n\n重启后生效，数据不受影响。`,
     });
     if (res.response === 0) {
       quitting = true;
       autoUpdater.quitAndInstall();
+    } else if (res.response === 2) {
+      shell.openExternal(url);
     }
   });
   autoUpdater.on("error", (err) =>
