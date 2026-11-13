@@ -422,7 +422,7 @@
     "materials": "Materials",
     "materialTitle": "Title (e.g. Ch.3 Fourier transform)",
     "materialPlaceholder": "Paste slide text or notes…",
-    "uploadImage": "Upload image (OCR)",
+    "uploadImage": "Upload file (PDF/Word/PPT/MD/image)",
     "verified": "Proofread",
     "raw": "Needs proofread",
     "view": "View",
@@ -447,6 +447,11 @@
     "daysLeft": "{{n}} days left",
     "generated": "{{n}} cards created",
     "coins": "+{{n}} coins",
-    "noSubject": "No subjects yet — create one on the right"
+    "noSubject": "No subjects yet — create one on the right",
+    "pdfNoText": "No extractable text in this PDF (likely scanned). Screenshot it and upload the image instead",
+    "unsupportedType": "Unsupported file type — use PDF / Word / PPT / Markdown / image",
+    "emptyFile": "No text found in this file",
+    "tooLarge": "File is over 25MB — split or compress it first",
+    "courseMaterials": "Course materials"
   }
 }

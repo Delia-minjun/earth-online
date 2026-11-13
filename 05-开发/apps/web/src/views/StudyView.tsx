@@ -123,7 +123,7 @@ export function StudyView() {
     }
   };
 
-  /** 选图 → 转 base64 → 后端 OCR */
+  /** 选文件 → 文本类直接抽字，图片走 OCR */
   const addMaterialImage = async (file: File) => {
     if (!active) return;
     setBusy(true);
@@ -134,25 +134,52 @@ export function StudyView() {
       const bytes = new Uint8Array(buf);
       for (let i = 0; i < bytes.length; i += 1) binary += String.fromCharCode(bytes[i]!);
       const b64 = btoa(binary);
-      const created = await api.addMaterial({
+      const isImage = file.type.startsWith("image/") || /\.(png|jpe?g|webp|gif)$/i.test(file.name);
+
+      if (isImage) {
+        const created = await api.addMaterial({
+          subjectId: active.id,
+          title: file.name.replace(/\.[^.]+$/, ""),
+          kind: "image",
+          content: "",
+          source: file.name,
+          imageBase64: b64,
+          imageMime: file.type || "image/png",
+        });
+        if (created.ocrError === "NOKEY") setError(t("study.noKey"));
+        else if (created.ocrError === "VISION_UNSUPPORTED") setError(t("study.visionUnsupported"));
+        else if (created.ocrError) setError(created.ocrError);
+        await loadSubject(active.id);
+        await loadAll();
+        setEditing(created);
+        setEditText(created.content);
+        return;
+      }
+
+      const created = await api.uploadMaterialFile({
         subjectId: active.id,
-        title: file.name.replace(/\.[^.]+$/, ""),
-        kind: "image",
-        content: "",
-        source: file.name,
-        imageBase64: b64,
-        imageMime: file.type || "image/png",
+        filename: file.name,
+        base64: b64,
       });
-      if (created.ocrError === "NOKEY") setError(t("study.noKey"));
-      else if (created.ocrError === "VISION_UNSUPPORTED") setError(t("study.visionUnsupported"));
-      else if (created.ocrError) setError(created.ocrError);
       await loadSubject(active.id);
       await loadAll();
-      // 直接进校对，省一次点击
       setEditing(created);
       setEditText(created.content);
     } catch (e) {
-      setError((e as Error).message);
+      const msg = (e as Error).message;
+      setError(
+        msg.includes("pdf_no_text")
+          ? t("study.pdfNoText")
+          : msg.includes("unsupported_type")
+            ? t("study.unsupportedType")
+            : msg.includes("empty_content")
+              ? t("study.emptyFile")
+              : msg.includes("too_large")
+                ? t("study.tooLarge")
+                : msg.includes("NOKEY")
+                  ? t("study.noKey")
+                  : msg,
+      );
     } finally {
       setBusy(false);
     }
@@ -293,7 +320,7 @@ export function StudyView() {
         <div className="space-y-3.5">
           {/* 资料 */}
           <Card
-            title={`${active.name} · ${t("study.materials")}`}
+            title={t("study.courseMaterials")}
             action={
               <button
                 type="button"
@@ -338,7 +365,7 @@ export function StudyView() {
                   <input
                     ref={fileRef}
                     type="file"
-                    accept="image/*"
+                    accept=".pdf,.docx,.pptx,.md,.markdown,.txt,image/*"
                     className="hidden"
                     onChange={(e) => {
                       const f = e.target.files?.[0];

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getDb } from "../db.ts";
 import { DATE_RE, today } from "../lib/dates.ts";
 import { generateCards, ocrImage } from "../lib/ai.ts";
+import { extractDocument } from "../lib/office.ts";
 import { bumpArea, earn, getRules } from "../lib/coins.ts";
 
 export const p5 = new Hono();
@@ -28,6 +29,14 @@ function addDays(date: string, days: number): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
+
+function mimeOf(filename: string): string {
+  const ext = filename.toLowerCase().match(/\.([a-z0-9]+)$/)?.[1] ?? "";
+  if (ext === "png") return "image/png";
+  if (ext === "webp") return "image/webp";
+  if (ext === "gif") return "image/gif";
+  return "image/jpeg";
+}
 /* ---------------- 科目 ---------------- */
 
 const SUBJECT_COLS = "id, name, color, archived, sort";
@@ -154,6 +163,71 @@ p5.post("/study/materials", async (c) => {
   );
 });
 
+
+/** 上传文件（md / txt / docx / pptx / pdf / 图片）→ 抽文字入库，状态仍是「待校对」 */
+p5.post("/study/materials/file", async (c) => {
+  const r = await readBody(
+    c,
+    z.object({
+      subjectId: z.string(),
+      filename: z.string().min(1).max(200),
+      base64: z.string().min(16),
+      title: z.string().trim().max(120).optional(),
+    }),
+  );
+  if (!r.ok) return c.json({ error: r.error }, 400);
+
+  let buf: Buffer;
+  try {
+    buf = Buffer.from(r.data.base64, "base64");
+  } catch {
+    return c.json({ error: "bad_base64" }, 400);
+  }
+  if (buf.length > 25 * 1024 * 1024) return c.json({ error: "too_large" }, 413);
+
+  const { kind, text } = extractDocument(r.data.filename, buf);
+  if (kind === "unknown") return c.json({ error: "unsupported_type" }, 400);
+
+  const db = getDb();
+  const id = uid();
+  const title = r.data.title?.trim() || r.data.filename.replace(/\.[^.]+$/, "");
+
+  if (kind === "image") {
+    // 图片走 OCR
+    let content = "";
+    let error: string | null = null;
+    try {
+      content = await ocrImage(buf.toString("base64"), mimeOf(r.data.filename));
+    } catch (e) {
+      const msg = (e as Error).message;
+      error = msg === "NOKEY" || msg === "VISION_UNSUPPORTED" ? msg : msg;
+    }
+    if (!content.trim()) return c.json({ error: error ?? "ocr_empty" }, 422);
+    db.prepare(
+      `INSERT INTO material (id, subject_id, title, kind, source, content, status)
+       VALUES (?, ?, ?, 'image', ?, ?, 'raw')`,
+    ).run(id, r.data.subjectId, title, r.data.filename, content);
+    return c.json(db.prepare(`SELECT ${MATERIAL_COLS} FROM material WHERE id = ?`).get(id), 201);
+  }
+
+  if (!text.trim()) {
+    return c.json({ error: kind === "pdf" ? "pdf_no_text" : "empty_content" }, 422);
+  }
+
+  db.prepare(
+    `INSERT INTO material (id, subject_id, title, kind, source, content, status)
+     VALUES (?, ?, ?, ?, ?, ?, 'raw')`,
+  ).run(id, r.data.subjectId, title, kind === "text" ? "text" : "file", r.data.filename, text);
+
+  return c.json(
+    {
+      ...(db.prepare(`SELECT ${MATERIAL_COLS} FROM material WHERE id = ?`).get(id) as object),
+      extracted: kind,
+      chars: text.length,
+    },
+    201,
+  );
+});
 p5.patch("/study/materials/:id", async (c) => {
   const id = c.req.param("id");
   const r = await readBody(

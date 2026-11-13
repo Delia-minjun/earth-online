@@ -643,6 +643,16 @@ export const api = {
     imageBase64?: string;
     imageMime?: string;
   }) => request<ApiMaterial>("/study/materials", { method: "POST", body: JSON.stringify(input) }),
+  uploadMaterialFile: (input: {
+    subjectId: string;
+    filename: string;
+    base64: string;
+    title?: string;
+  }) =>
+    request<ApiMaterial>("/study/materials/file", {
+      method: "POST",
+      body: JSON.stringify(input),
+    }, 120_000),
   updateMaterial: (
     id: string,
     patch: { title?: string; content?: string; status?: "raw" | "verified" },
@@ -730,7 +740,7 @@ export interface ApiMaterial {
   id: string;
   subject_id: string;
   title: string;
-  kind: "text" | "image" | "link";
+  kind: "text" | "image" | "link" | "file";
   source: string | null;
   content: string;
   status: "raw" | "verified";

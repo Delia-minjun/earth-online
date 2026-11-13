@@ -423,7 +423,7 @@
     "materials": "资料",
     "materialTitle": "资料标题（如：第三章 傅里叶变换）",
     "materialPlaceholder": "把课件文字、笔记粘进来…",
-    "uploadImage": "上传图片（OCR）",
+    "uploadImage": "上传文件（PDF/Word/PPT/MD/图片）",
     "verified": "已校对",
     "raw": "待校对",
     "view": "查看",
@@ -448,6 +448,11 @@
     "daysLeft": "还有 {{n}} 天",
     "generated": "生成了 {{n}} 张卡片",
     "coins": "复习奖励 +{{n}} 币",
-    "noSubject": "还没有科目，右边新建一个"
+    "noSubject": "还没有科目，右边新建一个",
+    "pdfNoText": "这份 PDF 里没有可提取的文字（多半是扫描件），请截图后用「上传文件」传图片走识别",
+    "unsupportedType": "暂不支持这种文件，请上传 PDF / Word / PPT / Markdown / 图片",
+    "emptyFile": "这个文件里没读到文字",
+    "tooLarge": "文件超过 25MB，请拆分或压缩后再传",
+    "courseMaterials": "课程资料"
   }
 }
