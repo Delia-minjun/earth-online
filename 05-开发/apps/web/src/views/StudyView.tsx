@@ -27,6 +27,7 @@ export function StudyView() {
   // 新建资料
   const [matText, setMatText] = useState("");
   const [openMaterial, setOpenMaterial] = useState(false);
+  const [noteOpen, setNoteOpen] = useState(false);
   // 校对
   const [editing, setEditing] = useState<ApiMaterial | null>(null);
   const [editText, setEditText] = useState("");
@@ -125,7 +126,7 @@ export function StudyView() {
   };
 
   /** 选文件 → 文本类直接抽字，图片走 OCR */
-  const addMaterialImage = async (file: File) => {
+  const uploadOne = async (file: File) => {
     if (!active) return;
     setBusy(true);
     setError(null);
@@ -188,6 +189,19 @@ export function StudyView() {
                   ? t("study.noKey")
                   : msg,
       );
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  /** 批量上传：拖进来的、多选的都走这里 */
+  const uploadMany = async (files: FileList | File[]) => {
+    if (!active) return;
+    const list = Array.from(files);
+    if (list.length === 0) return;
+    setBusy(true);
+    try {
+      for (const f of list) await uploadOne(f);
     } finally {
       setBusy(false);
     }
@@ -340,46 +354,67 @@ export function StudyView() {
             }
           >
             {openMaterial ? (
-              <div className="mb-2 space-y-1.5 rounded-xl border border-line-2 bg-surface-2 p-2.5">
-                {/* 上传是主操作，放最上面 */}
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => fileRef.current?.click()}
-                    className="rounded-lg border border-line bg-surface px-2.5 py-1.5 text-[10.5px] text-ink-2 transition-colors hover:border-accent hover:text-accent"
-                  >
-                    {t("study.uploadImage")}
-                  </button>
-                  <input
-                    ref={fileRef}
-                    type="file"
-                    accept=".pdf,.docx,.pptx,.md,.markdown,.txt,image/*"
-                    className="hidden"
-                    onChange={(e) => {
-                      const f = e.target.files?.[0];
-                      if (f) void addMaterialImage(f);
-                      e.target.value = "";
-                    }}
-                  />
+              <div className="mb-2 space-y-2 rounded-xl border border-line-2 bg-surface-2 p-2.5">
+                {/* 资料基本都是文件：上传做成主要入口，也支持拖拽 */}
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => fileRef.current?.click()}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") fileRef.current?.click();
+                  }}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (e.dataTransfer.files.length) void uploadMany(e.dataTransfer.files);
+                  }}
+                  className="cursor-pointer rounded-lg border border-dashed border-[#d5cfc4] bg-surface px-3 py-4 text-center transition-colors hover:border-accent hover:bg-accent-soft/20"
+                >
+                  <p className="text-[11px] text-ink-2">
+                    {busy ? t("study.uploading") : t("study.dropHint")}
+                  </p>
+                  <p className="mt-0.5 text-[9.5px] text-[#b9b4aa]">{t("study.dropTypes")}</p>
                 </div>
-
-                <textarea
-                  value={matText}
-                  onChange={(e) => setMatText(e.target.value)}
-                  rows={4}
-                  placeholder={t("study.notePlaceholder")}
-                  className="w-full resize-none rounded-lg border border-line bg-surface px-2 py-1.5 text-[11.5px] leading-relaxed text-ink outline-none placeholder:text-[#c8c4bc]"
+                <input
+                  ref={fileRef}
+                  type="file"
+                  multiple
+                  accept=".pdf,.docx,.pptx,.md,.markdown,.txt,image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    if (e.target.files?.length) void uploadMany(e.target.files);
+                    e.target.value = "";
+                  }}
                 />
-                <div className="flex items-center gap-2">
+
+                {/* 备注是可选项，默认收起 */}
+                {noteOpen ? (
+                  <div className="space-y-1.5">
+                    <textarea
+                      value={matText}
+                      onChange={(e) => setMatText(e.target.value)}
+                      rows={2}
+                      placeholder={t("study.notePlaceholder")}
+                      className="w-full resize-none rounded-lg border border-line bg-surface px-2 py-1.5 text-[11px] leading-relaxed text-ink outline-none placeholder:text-[#c8c4bc]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => void addMaterialText()}
+                      disabled={busy || !matText.trim()}
+                      className="rounded-lg bg-accent px-2.5 py-1.5 text-[10px] font-semibold text-white disabled:opacity-50"
+                    >
+                      {t("study.saveAsMaterial")}
+                    </button>
+                  </div>
+                ) : (
                   <button
                     type="button"
-                    onClick={() => void addMaterialText()}
-                    disabled={busy || !matText.trim()}
-                    className="rounded-lg bg-accent px-2.5 py-1.5 text-[10.5px] font-semibold text-white disabled:opacity-50"
+                    onClick={() => setNoteOpen(true)}
+                    className="text-[10px] text-ink-3 transition-colors hover:text-accent"
                   >
-                    {t("common.save")}
+                    ＋ {t("study.notePlaceholder")}
                   </button>
-                </div>
+                )}
               </div>
             ) : null}
 

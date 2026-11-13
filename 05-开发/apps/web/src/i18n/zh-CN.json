@@ -455,6 +455,10 @@
     "emptyFile": "这个文件里没读到文字",
     "tooLarge": "文件超过 25MB，请拆分或压缩后再传",
     "courseMaterials": "课程资料",
-    "notePlaceholder": "添加备注"
+    "notePlaceholder": "添加备注",
+    "dropHint": "把课件拖进来，或点击选择文件",
+    "dropTypes": "支持 PDF / Word / PPT / Markdown / 图片，可多选",
+    "uploading": "正在读取文件…",
+    "saveAsMaterial": "只存这段文字为资料"
   }
 }
