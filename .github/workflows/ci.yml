@@ -35,7 +35,10 @@ jobs:
         run: |
           node -v
           pnpm -v
-          pnpm install --no-frozen-lockfile
+          # pnpm 11 会把未批准的构建脚本当成错误（ERR_PNPM_IGNORED_BUILDS）：
+          # 本仓库只有 esbuild 有 postinstall，而它只是校验二进制（平台包是 optionalDependency，
+          # 不跑 postinstall 也能用，vite build 已实测通过）。所以这里统一跳过脚本。
+          pnpm install --no-frozen-lockfile --ignore-scripts
 
       - name: Typecheck (server + web)
         run: pnpm typecheck

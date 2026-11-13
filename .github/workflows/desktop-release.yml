@@ -38,7 +38,7 @@ jobs:
         run: |
           node -v
           pnpm -v
-          pnpm install --no-frozen-lockfile
+          pnpm install --no-frozen-lockfile --ignore-scripts
 
       - name: Build web
         run: pnpm --filter @life/web build
@@ -49,7 +49,8 @@ jobs:
       - name: Install packaging toolchain (electron + builder)
         working-directory: 05-开发/desktop-tools
         run: |
-          pnpm install --config.node-linker=hoisted
+          pnpm install --config.node-linker=hoisted --ignore-scripts
+          # electron 的二进制是 postinstall 下载的，这里显式补一次
           node node_modules/electron/install.js
 
       - name: Set version
