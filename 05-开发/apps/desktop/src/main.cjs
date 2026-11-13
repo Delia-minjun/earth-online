@@ -448,6 +448,12 @@ function setupIpc() {
     }
     return updateState;
   });
+  ipcMain.handle("desk:install", () => {
+    if (!autoUpdaterRef) return false;
+    quitting = true;
+    autoUpdaterRef.quitAndInstall();
+    return true;
+  });
   ipcMain.handle("desk:open-data", async () => {
     await shell.openPath(dataDir());
     return true;

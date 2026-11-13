@@ -359,6 +359,7 @@
     "updAvailable": "发现新版本 {{v}}，正在下载",
     "updDownloading": "正在下载 {{n}}%",
     "updDownloaded": "新版本 {{v}} 已下载，重启后生效",
+    "updRestart": "重启并安装",
     "updDownloadNow": "下载 {{v}}",
     "updWhatChanged": "本次更新内容",
     "updError": "检查失败：{{msg}}",

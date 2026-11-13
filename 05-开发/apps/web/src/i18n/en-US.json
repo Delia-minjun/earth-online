@@ -358,6 +358,7 @@
     "updAvailable": "New version {{v}} found, downloading",
     "updDownloading": "Downloading {{n}}%",
     "updDownloaded": "Version {{v}} downloaded — restart to apply",
+    "updRestart": "Restart & install",
     "updDownloadNow": "Download {{v}}",
     "updWhatChanged": "What changed",
     "updError": "Check failed: {{msg}}",

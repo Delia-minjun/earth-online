@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld("desktop", {
   status: () => ipcRenderer.invoke("desk:status"),
   check: () => ipcRenderer.invoke("desk:check"),
   promptUpdate: () => ipcRenderer.invoke("desk:prompt-update"),
+  install: () => ipcRenderer.invoke("desk:install"),
   openDataDir: () => ipcRenderer.invoke("desk:open-data"),
   onUpdate: (cb) => {
     const handler = (_e, state) => cb(state);

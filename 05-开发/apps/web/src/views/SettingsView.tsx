@@ -18,107 +18,102 @@ type DeskApi = {
   status: () => Promise<DeskState>;
   check: () => Promise<DeskState>;
   promptUpdate: () => Promise<DeskState>;
+  install: () => Promise<boolean>;
   openDataDir: () => Promise<boolean>;
   onUpdate: (cb: (s: DeskState) => void) => () => void;
 };
 
-/** 只在桌面版显示：版本、更新检查（有可见反馈）、数据目录 */
-function DesktopCard() {
+/** 桌面版的更新状态 → 一句人话 */
+function updateText(st: DeskState | null, t: (k: string, o?: Record<string, unknown>) => string) {
+  switch (st?.state) {
+    case "checking":
+      return t("settings.updChecking");
+    case "available":
+      return t("settings.updAvailable", { v: st.version ?? "" });
+    case "downloading":
+      return t("settings.updDownloading", { n: st.percent });
+    case "downloaded":
+      return t("settings.updDownloaded", { v: st.version ?? "" });
+    case "latest":
+      return t("settings.updLatest");
+    case "error":
+      return t("settings.updError", { msg: st.detail });
+    case "unsupported":
+      return t("settings.updUnsupported");
+    default:
+      return t("settings.updNever");
+  }
+}
+
+/**
+ * 更新按钮：
+ * - 已是最新 → 灰掉并写「已是最新版本」
+ * - 有新版本 → 红色「下载 x.y.z」
+ * - 下载完 → 「重启并安装」
+ * - 其它 → 「检查更新」
+ */
+function UpdateButton({
+  state,
+  busy,
+  onCheck,
+  onPrompt,
+  onInstall,
+}: {
+  state: DeskState | null;
+  busy: boolean;
+  onCheck: () => void;
+  onPrompt: () => void;
+  onInstall: () => void;
+}) {
   const { t } = useTranslation();
-  const desk = (window as unknown as { desktop?: DeskApi }).desktop;
-  const [info, setInfo] = useState<{ version: string; dataDir: string; packaged: boolean } | null>(
-    null,
-  );
-  const [st, setSt] = useState<DeskState | null>(null);
-  const [busy, setBusy] = useState(false);
+  const s = state?.state;
+  const base =
+    "shrink-0 rounded-full px-3 py-1.5 text-[10.5px] font-semibold transition-colors disabled:opacity-60";
 
-  useEffect(() => {
-    if (!desk) return;
-    void desk.info().then(setInfo).catch(() => undefined);
-    void desk.status().then(setSt).catch(() => undefined);
-    return desk.onUpdate(setSt);
-  }, [desk]);
-
-  if (!desk) return null;
-
-  const stateText = (() => {
-    switch (st?.state) {
-      case "checking":
-        return t("settings.updChecking");
-      case "available":
-        return t("settings.updAvailable", { v: st.version ?? "" });
-      case "downloading":
-        return t("settings.updDownloading", { n: st.percent });
-      case "downloaded":
-        return t("settings.updDownloaded", { v: st.version ?? "" });
-      case "latest":
-        return t("settings.updLatest");
-      case "error":
-        return t("settings.updError", { msg: st.detail });
-      case "unsupported":
-        return t("settings.updUnsupported");
-      default:
-        return st?.at ? t("settings.updIdle") : t("settings.updNever");
-    }
-  })();
-
+  if (busy || s === "checking") {
+    return (
+      <button type="button" disabled className={`${base} bg-accent text-white`}>
+        {t("settings.updChecking")}
+      </button>
+    );
+  }
+  if (s === "downloaded") {
+    return (
+      <button type="button" onClick={onInstall} className={`${base} bg-[#c96a5a] text-white hover:opacity-90`}>
+        {t("settings.updRestart")}
+      </button>
+    );
+  }
+  if (s === "available") {
+    return (
+      <button type="button" onClick={onPrompt} className={`${base} bg-[#c96a5a] text-white hover:opacity-90`}>
+        {t("settings.updDownloadNow", { v: state?.version ?? "" })}
+      </button>
+    );
+  }
+  if (s === "downloading") {
+    return (
+      <button type="button" disabled className={`${base} bg-accent text-white`}>
+        {t("settings.updDownloading", { n: state?.percent ?? 0 })}
+      </button>
+    );
+  }
+  if (s === "latest") {
+    return (
+      <button type="button" disabled className={`${base} border border-line bg-surface-2 text-ink-3`}>
+        {t("settings.updLatest")}
+      </button>
+    );
+  }
   return (
-    <Card title={t("settings.desktop")} action={info ? `v${info.version}` : null}>
-      <p className="text-[10.5px] leading-relaxed text-ink-3">{stateText}</p>
-
-      {st?.notes ? (
-        <details className="mt-2 rounded-lg border border-line-2 bg-surface-2 px-2.5 py-1.5">
-          <summary className="cursor-pointer text-[10px] text-ink-3">
-            {t("settings.updWhatChanged")}
-          </summary>
-          <pre className="mt-1.5 max-h-40 overflow-auto whitespace-pre-wrap break-words text-[10px] leading-relaxed text-ink-2">
-            {st.notes}
-          </pre>
-        </details>
-      ) : null}
-
-      <div className="mt-2 flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          disabled={busy || st?.state === "checking" || st?.state === "downloading"}
-          onClick={async () => {
-            setBusy(true);
-            try {
-              setSt(await desk.check());
-            } finally {
-              setBusy(false);
-            }
-          }}
-          className="shrink-0 rounded-full bg-accent px-3 py-1.5 text-[10.5px] font-semibold text-white disabled:opacity-60"
-        >
-          {busy || st?.state === "checking" ? t("settings.updChecking") : t("settings.checkUpdate")}
-        </button>
-        {st?.state === "available" ? (
-          <button
-            type="button"
-            onClick={() => void desk.promptUpdate()}
-            className="shrink-0 rounded-full bg-[#c96a5a] px-3 py-1.5 text-[10.5px] font-semibold text-white transition-opacity hover:opacity-90"
-          >
-            {t("settings.updDownloadNow", { v: st.version ?? "" })}
-          </button>
-        ) : null}
-        <button
-          type="button"
-          onClick={() => void desk.openDataDir()}
-          className="shrink-0 rounded-full border border-line px-3 py-1.5 text-[10.5px] text-ink-2 transition-colors hover:border-accent hover:text-ink"
-        >
-          {t("settings.openDataDir")}
-        </button>
-      </div>
-
-      {info ? (
-        <p className="mt-2 break-all text-[9.5px] leading-relaxed text-[#bcb8b0]">{info.dataDir}</p>
-      ) : null}
-    </Card>
+    <button type="button" onClick={onCheck} className={`${base} bg-accent text-white hover:opacity-90`}>
+      {t("settings.checkUpdate")}
+    </button>
   );
 }
 
-export function SettingsView() {  const { t } = useTranslation();
+export function SettingsView() {
+  const { t } = useTranslation();
   const [info, setInfo] = useState<AiConfigInfo | null>(null);
   const [keyInput, setKeyInput] = useState("");
   const [model, setModel] = useState("kimi-latest");
@@ -129,6 +124,9 @@ export function SettingsView() {  const { t } = useTranslation();
   /** 真实版本与库路径：桌面版取 app.getVersion()，网页版取 /api/health */
   const [version, setVersion] = useState<string | null>(null);
   const [dbPath, setDbPath] = useState<string | null>(null);
+  const desk = (window as unknown as { desktop?: DeskApi }).desktop;
+  const [upd, setUpd] = useState<DeskState | null>(null);
+  const [updBusy, setUpdBusy] = useState(false);
 
   /** 常用服务商预设：点一下把 base + 模型填好，Key 仍要自己填 */
   const PRESETS: { key: string; base: string; model: string; vision: boolean }[] = [
@@ -159,6 +157,8 @@ export function SettingsView() {  const { t } = useTranslation();
           setDbPath(i.dataDir);
         })
         .catch(() => undefined);
+      void desk.status().then(setUpd).catch(() => undefined);
+      return desk.onUpdate(setUpd);
     } else {
       void fetch("/api/health")
         .then((r) => r.json() as Promise<{ version?: string; db?: string }>)
@@ -424,19 +424,59 @@ export function SettingsView() {  const { t } = useTranslation();
         </div>
       </Card>
 
-      <DesktopCard />
-
       <Card title={t("settings.about")}>
         <dl className="space-y-1.5 text-[11px]">
-          <div className="flex justify-between">
-            <dt className="text-ink-3">{t("settings.version")}</dt>
+          <div className="flex justify-between gap-3">
+            <dt className="shrink-0 text-ink-3">{t("settings.version")}</dt>
             <dd className="text-ink-2 tabular-nums">{version ?? "—"}</dd>
           </div>
-          <div className="flex justify-between">
-            <dt className="text-ink-3">{t("settings.storage")}</dt>
+          <div className="flex justify-between gap-3">
+            <dt className="shrink-0 text-ink-3">{t("settings.storage")}</dt>
             <dd className="break-all text-right text-ink-2">{dbPath ?? "data/life.db"}</dd>
           </div>
         </dl>
+
+        {desk ? (
+          <>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <UpdateButton
+                state={upd}
+                busy={updBusy}
+                onCheck={async () => {
+                  setUpdBusy(true);
+                  try {
+                    setUpd(await desk.check());
+                  } finally {
+                    setUpdBusy(false);
+                  }
+                }}
+                onPrompt={() => void desk.promptUpdate()}
+                onInstall={() => void desk.install()}
+              />
+              <button
+                type="button"
+                onClick={() => void desk.openDataDir()}
+                className="shrink-0 rounded-full border border-line px-3 py-1.5 text-[10.5px] text-ink-2 transition-colors hover:border-accent hover:text-ink"
+              >
+                {t("settings.openDataDir")}
+              </button>
+            </div>
+
+            <p className="mt-2 text-[10px] leading-relaxed text-ink-3">{updateText(upd, t)}</p>
+
+            {upd?.notes ? (
+              <details className="mt-2 rounded-lg border border-line-2 bg-surface-2 px-2.5 py-1.5">
+                <summary className="cursor-pointer text-[10px] text-ink-3">
+                  {t("settings.updWhatChanged")}
+                </summary>
+                <pre className="mt-1.5 max-h-40 overflow-auto whitespace-pre-wrap break-words text-[10px] leading-relaxed text-ink-2">
+                  {upd.notes}
+                </pre>
+              </details>
+            ) : null}
+          </>
+        ) : null}
+
         <p className="mt-2.5 text-[10px] leading-relaxed text-[#c8c4bc]">{t("settings.localOnly")}</p>
       </Card>
     </div>
