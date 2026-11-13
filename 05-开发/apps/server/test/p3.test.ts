@@ -93,6 +93,24 @@ test("领域进度条：返回六条且都在 0..1", async () => {
   }
 });
 
+test("兑换：3 秒内重复点击只扣一次", async () => {
+  const item = await call("/rewards", {
+    method: "POST",
+    body: JSON.stringify({ name: "贴纸", price: 5, money: 0 }),
+  });
+  assert.equal(item.status, 201);
+
+  const before = (await call("/coins")).body.balance;
+  const first = await call(`/rewards/${item.body.id}/redeem`, { method: "POST" });
+  assert.equal(first.status, 200);
+
+  const second = await call(`/rewards/${item.body.id}/redeem`, { method: "POST" });
+  assert.equal(second.status, 409, "手抖双击不应扣两次");
+  assert.equal(second.body.error, "duplicate");
+
+  assert.equal(before - (await call("/coins")).body.balance, 5, "只扣一次");
+});
+
 test("完成任务自动发币，重复勾选不重复发", async () => {
   const task = await call("/tasks", { method: "POST", body: JSON.stringify({ title: "[测试] 写作业" }) });
   assert.equal(task.status, 201);

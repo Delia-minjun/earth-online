@@ -174,6 +174,17 @@ p3.post("/rewards/:id/redeem", (c) => {
     .get(id) as { name: string; price: number; money: number; money_category_id: string | null } | undefined;
   if (!item) return c.json({ error: "not found" }, 404);
 
+  // 防手抖：同一个奖赏 3 秒内重复兑换只算一次（双击、网络重试都挡得住）
+  const recent = db
+    .prepare(
+      `SELECT created_at FROM coin_entry
+        WHERE kind = 'redeem' AND ref_id = ?
+          AND created_at > datetime('now', '-3 seconds')
+        LIMIT 1`,
+    )
+    .get(id);
+  if (recent) return c.json({ error: "duplicate" }, 409);
+
   const ok = spend({ amount: item.price, kind: "redeem", refId: id, note: item.name });
   if (!ok) return c.json({ error: "insufficient" }, 409);
 

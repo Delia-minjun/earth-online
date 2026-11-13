@@ -27,6 +27,7 @@ export function RewardView() {
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft>(EMPTY);
   const [busy, setBusy] = useState(false);
+  const [redeeming, setRedeeming] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -88,12 +89,15 @@ export function RewardView() {
   };
 
   const redeem = async (item: ApiRewardItem) => {
-    if (!wallet || wallet.balance < item.price) return;
+    if (!wallet || wallet.balance < item.price || redeeming) return;
+    setRedeeming(item.id);
     try {
       await api.redeemReward(item.id);
       await load();
     } catch (e) {
       setError((e as Error).message);
+    } finally {
+      setRedeeming(null);
     }
   };
 
@@ -194,14 +198,14 @@ export function RewardView() {
                   <button
                     type="button"
                     onClick={() => void redeem(r)}
-                    disabled={!afford}
+                    disabled={!afford || redeeming === r.id}
                     className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold transition-colors ${
                       afford
                         ? "bg-accent text-white hover:opacity-90"
                         : "border border-line bg-surface text-ink-3"
-                    }`}
+                    } disabled:opacity-60`}
                   >
-                    {t("reward.redeem")}
+                    {redeeming === r.id ? t("reward.redeeming") : t("reward.redeem")}
                   </button>
                 </div>
               );

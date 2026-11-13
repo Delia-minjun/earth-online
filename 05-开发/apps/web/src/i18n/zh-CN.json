@@ -97,6 +97,7 @@
     "decay": "每日 −1%，下限 40%",
     "shop": "奖赏商店",
     "redeem": "兑换",
+    "redeeming": "兑换中…",
     "ledger": "最近的账本",
     "ledgerAll": "查看全部",
     "todayIn": "今日 +{{n}}",
