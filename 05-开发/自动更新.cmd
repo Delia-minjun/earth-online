@@ -39,8 +39,8 @@ if errorlevel 1 (
 
 echo 重启服务 >> "%LOG%"
 for /f "tokens=5" %%p in ('netstat -ano ^| findstr ":7788" ^| findstr "LISTENING"') do taskkill /PID %%p /F >nul 2>&1
-timeout /t 2 /nobreak >nul
+ping -n 3 127.0.0.1 >nul
 start "" /min powershell -NoProfile -WindowStyle Hidden -Command "Start-Process -WindowStyle Hidden -FilePath '%NODE%' -ArgumentList 'apps\server\src\index.ts' -WorkingDirectory '%DEV%'"
-timeout /t 3 /nobreak >nul
+ping -n 4 127.0.0.1 >nul
 echo 更新完成 >> "%LOG%"
 exit /b 0
