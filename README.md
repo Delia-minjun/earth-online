@@ -2,7 +2,10 @@
 
 个人使用的「地球 Online」——把 Excel 周计划表变成能自动汇总、能自己记账、能给自己发币的系统。当前阶段：**P3 完成**（核心闭环 / 记录类 / 奖惩经济 / 番茄钟）。
 
-> 想直接试用？跳到 [保姆级安装与使用](#保姆级安装与使用)。
+![CI](https://github.com/Delia-minjun/earth-online/actions/workflows/ci.yml/badge.svg)
+
+> 想直接试用？**下载安装包**（[Releases](https://github.com/Delia-minjun/earth-online/releases/latest)），双击即可。
+> 想从源码跑？跳到 [保姆级安装与使用](#保姆级安装与使用从源码跑)。
 
 ## 目录结构
 
@@ -30,7 +33,29 @@
 | 双语 | 中文 / English 一键切换 |
 | 其它 | 离线状态提示、深色图标、桌面快捷方式 |
 
-## 保姆级安装与使用
+## 下载安装（推荐给不想碰命令行的人）
+
+**直接下这个，双击装完就能用**：
+
+👉 **https://github.com/Delia-minjun/earth-online/releases/latest**
+
+文件名：`EarthOnline-x.y.z-x64.exe`（约 85 MB）
+
+| 步骤 | 做什么 |
+|---|---|
+| 1 | 点开上面的链接，下载最新那个 `.exe` |
+| 2 | 双击运行（Windows 可能提示"Windows 已保护你的电脑"——因为我们没买代码签名证书，点 **更多信息 → 仍要运行**） |
+| 3 | 一路「下一步」，可以自己选安装位置 |
+| 4 | 装完桌面出现「地球 Online」图标，双击打开即可 |
+
+装好之后：
+
+- **不用装 Node**、不用命令行，服务和应用打包在一起
+- **自动更新**：每次启动 6 秒后静默检查新版本，下载完弹窗问你要不要重启
+- **数据位置**：`%APPDATA%\地球 Online\life.db`（想备份就复制这个文件）
+- **卸载**：设置 → 应用 → 地球 Online → 卸载（数据不会被删，要清就手动删上面那个目录）
+
+## 保姆级安装与使用（从源码跑）
 
 > 只写 Windows。照着做就行，不需要事先会用命令行。
 
@@ -253,8 +278,10 @@ git fetch → 对比本地与 origin/main
 
 | 形态 | 怎么来 | 适合谁 |
 |---|---|---|
-| **免安装版** | 本地 `pack:portable` 生成 `release\win-unpacked\地球 Online.exe` | 自己用、快速验证 |
-| **安装包** | GitHub Actions 打 tag 自动构建 `EarthOnline-Setup-x.y.z.exe` | 发给别人 |
+| **安装包**（.exe） | 打 tag 后 GitHub Actions 自动构建，发布到 Releases | 发给别人、要自动更新 |
+| **免安装版**（zip/exe） | 本地 `pnpm pack:portable` 或双击 `打安装包.cmd` | 自己用、不想装 |
+
+安装包当前版本：见 [Releases](https://github.com/Delia-minjun/earth-online/releases)（最新 `v0.1.8` 起可用）。
 
 ### 本地打免安装版
 
@@ -267,16 +294,21 @@ pnpm pack:portable
 
 产物在 `05-开发\apps\desktop\release\win-unpacked\`，整个文件夹可以拷走，双击 `地球 Online.exe` 即用。
 
-> 本机不做安装包（NSIS 需要往临时目录写文件，DSH 沙箱里会失败）。安装包统一交给 CI 构建。
+> 本机（助手所在环境）不做安装包：NSIS 要往临时目录写文件、还要提权，会被沙箱拒绝。安装包统一交给 CI。
 
 ### 发安装包（打 tag 触发）
 
 ```bat
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.1.9
+git push origin v0.1.9
 ```
 
-`.github/workflows/desktop-release.yml` 会自动：装依赖 → 构建前端 → 打包服务端 → 打 NSIS 安装包 → 上传到 GitHub Releases。
+`.github/workflows/desktop-release.yml` 会自动：装依赖 → 构建前端 → 打包服务端 → 打 NSIS 安装包 → 上传到 GitHub Releases（含 `latest.yml`，自动更新靠它）。
+
+> 一条硬经验：`windows-latest` 的默认 shell 是 pwsh，工作流里别写 bash 语法（`set -o pipefail`、`tee`），
+> 否则会在"看起来很正常的步骤"上莫名失败，且报错只是一句 `exit code 127`。
+> 另外 electron-builder 在 Windows 上会解压 winCodeSign（内含 macOS 软链），
+> 没开「开发者模式」时会因为无法创建符号链接而失败——那时加 `--config.win.signAndEditExecutable=false`。
 
 ### 自动更新怎么工作
 
