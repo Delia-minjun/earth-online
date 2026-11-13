@@ -82,7 +82,8 @@ jobs:
           git config user.email "actions@github.com"
           git add ci-logs/bundle.log
           git commit -m "ci: bundle 失败日志（临时排查）" || exit 0
-          git push
+          # tag 触发时 HEAD 是分离的，必须显式推到 main
+          git push origin HEAD:main
 
       - name: Install packaging toolchain (electron + builder)
         working-directory: 05-开发/desktop-tools
