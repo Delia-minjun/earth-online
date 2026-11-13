@@ -361,6 +361,7 @@ git push origin v0.1.9
    - 理由：每发一版，用户端就要下载 85MB 并重启一次；频繁发版是打扰。
    - 平时怎么做：改完 → 本地 typecheck / 测试 / 构建 → `git commit` → 攒着。
    - 发版时：`git push` + `git tag -a vX.Y.Z` + `git push origin vX.Y.Z`，由 CI 出安装包。
+   - 版本号按 `0.x.y`：整块功能（如 P5 学习）进次版本号 `0.2.0`；修复与小改动进修订号 `0.2.1`。
 
 12. **Git commit messages are written in English.** Subject line uses `type(scope): summary`
     (`feat` / `fix` / `style` / `docs` / `chore` / `ci` / `test` / `refactor`), body in English too.
