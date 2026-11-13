@@ -35,6 +35,8 @@ win:
   artifactName: EarthOnline-${version}-${arch}.${ext}
 
 nsis:
+  # 用自定义片段把安装目录固定为显示名（默认会用包名 @lifedesktop）
+  include: build/installer.nsh
   oneClick: false
   perMachine: false
   allowToChangeInstallationDirectory: true
