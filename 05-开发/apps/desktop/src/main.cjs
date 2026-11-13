@@ -439,13 +439,52 @@ function setupIpc() {
   ipcMain.handle("desk:status", () => updateState);
   ipcMain.handle("desk:check", () => runUpdateCheck());
   ipcMain.handle("desk:prompt-update", async () => {
-    // 点侧栏版本号：有已知新版本就直接弹说明；否则先检查
+    // 点侧栏版本号：有已知新版本就直接弹说明；否则先检查，再按结果给反馈
     if (pendingUpdate) {
       await promptUpdate();
-    } else {
-      await runUpdateCheck();
-      if (pendingUpdate) await promptUpdate();
+      return updateState;
     }
+
+    await runUpdateCheck();
+
+    if (pendingUpdate) {
+      await promptUpdate();
+      return updateState;
+    }
+
+    // 已是最新 / 出错 / 不支持：也要有反应，否则点了像没点
+    if (updateState.state === "latest") {
+      const res = await dialog.showMessageBox({
+        type: "info",
+        buttons: ["知道了", "查看更新记录"],
+        defaultId: 0,
+        cancelId: 0,
+        noLink: true,
+        title: "已是最新版本",
+        message: `已是最新版本 ${app.getVersion()}`,
+        detail: "没有可用的更新。想回顾以前改了什么，可以打开更新记录。",
+      });
+      if (res.response === 1) {
+        shell.openExternal("https://github.com/Delia-minjun/earth-online/releases");
+      }
+    } else if (updateState.state === "error") {
+      dialog.showMessageBox({
+        type: "warning",
+        buttons: ["知道了"],
+        title: "检查更新失败",
+        message: "没能检查更新",
+        detail: `${updateState.detail || "未知原因"}\n\n常见原因：网络不通、或 GitHub 暂时不可用。`,
+      });
+    } else if (updateState.state === "unsupported") {
+      dialog.showMessageBox({
+        type: "info",
+        buttons: ["知道了"],
+        title: "不支持自动更新",
+        message: "当前环境不支持自动更新",
+        detail: updateState.detail || "开发模式或非安装版不会检查更新。",
+      });
+    }
+
     return updateState;
   });
   ipcMain.handle("desk:install", () => {

@@ -175,7 +175,9 @@
     "walletText": "Balance, six area bars and your own reward shop. You can only redeem with coins you have."
   },
   "update": {
-    "newVersionTip": "New version available — click to see what changed"
+    "newVersionTip": "New version available — click to see what changed",
+    "clickToCheck": "Click to check for updates",
+    "checking": "Checking…"
   },
   "focus": {
     "title": "Pomodoro",

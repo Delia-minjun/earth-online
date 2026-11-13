@@ -176,7 +176,9 @@
     "walletText": "余额、六领域进度条、自己定的奖赏商店都在这里。先有币才能兑换，不会透支。"
   },
   "update": {
-    "newVersionTip": "有新版本，点这里查看更新内容"
+    "newVersionTip": "有新版本，点这里查看更新内容",
+    "clickToCheck": "点击检查更新",
+    "checking": "检查中…"
   },
   "focus": {
     "title": "番茄钟",

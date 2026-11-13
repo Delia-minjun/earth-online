@@ -55,6 +55,7 @@ export function Sidebar({
 
   /** 桌面版有新版本时，版本号右上角显示红点 */
   const [hasUpdate, setHasUpdate] = useState(false);
+  const [checking, setChecking] = useState(false);
   useEffect(() => {
     const d = (
       window as unknown as {
@@ -174,16 +175,32 @@ export function Sidebar({
         {version ? (
           <button
             type="button"
-            onClick={() => {
-              const d = (window as unknown as { desktop?: { promptUpdate: () => void } }).desktop;
-              if (d) d.promptUpdate();
+            onClick={async () => {
+              const d = (
+                window as unknown as {
+                  desktop?: { promptUpdate: () => Promise<unknown> };
+                }
+              ).desktop;
+              if (!d) return;
+              setChecking(true);
+              try {
+                await d.promptUpdate();
+              } finally {
+                setChecking(false);
+              }
             }}
-            title={hasUpdate ? t("update.newVersionTip") : `v${version}`}
+            title={
+              checking
+                ? t("update.checking")
+                : hasUpdate
+                  ? t("update.newVersionTip")
+                  : t("update.clickToCheck")
+            }
             className="relative ml-auto rounded-full px-1 tabular-nums transition-colors hover:text-accent"
           >
-            v{version}
+            {checking ? t("update.checking") : `v${version}`}
             {/* 有新版本时右上角红点；点版本号会弹出更新说明 */}
-            {hasUpdate ? (
+            {hasUpdate && !checking ? (
               <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-[#c96a5a] ring-1 ring-surface-2" />
             ) : null}
           </button>
