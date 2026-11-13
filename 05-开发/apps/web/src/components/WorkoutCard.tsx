@@ -215,7 +215,7 @@ export function WorkoutCard({ date }: { date: string }) {
                 onClick={() => setOpen(false)}
                 className="rounded-full border border-line px-3 py-1.5 text-[11px] text-ink-2 hover:border-accent"
               >
-                {t("action.cancel")}
+                {t("common.cancel")}
               </button>
               <button
                 type="button"
