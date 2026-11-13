@@ -234,6 +234,47 @@ p5.post("/study/materials/file", async (c) => {
     201,
   );
 });
+
+/** 前端把 PDF 渲染成图片后逐页发来，这里走视觉模型 OCR，合并成一份资料 */
+p5.post("/study/materials/ocr-pages", async (c) => {
+  const r = await readBody(
+    c,
+    z.object({
+      subjectId: z.string(),
+      title: z.string().trim().min(1).max(120),
+      pages: z
+        .array(z.object({ base64: z.string().min(16), mime: z.string().default("image/jpeg") }))
+        .min(1)
+        .max(20),
+    }),
+  );
+  if (!r.ok) return c.json({ error: r.error }, 400);
+
+  const parts: string[] = [];
+  for (let i = 0; i < r.data.pages.length; i += 1) {
+    const page = r.data.pages[i]!;
+    try {
+      const text = await ocrImage(page.base64, page.mime);
+      if (text.trim()) parts.push(`【第 ${i + 1} 页】\n${text.trim()}`);
+    } catch (e) {
+      const msg = (e as Error).message;
+      if (msg === "NOKEY" || msg === "VISION_UNSUPPORTED") return c.json({ error: msg }, 400);
+      return c.json({ error: `page ${i + 1}: ${msg}` }, 502);
+    }
+  }
+  if (parts.length === 0) return c.json({ error: "ocr_empty" }, 422);
+
+  const body = parts.join("\n\n").slice(0, 200_000);
+  const db = getDb();
+  const id = uid();
+  db.prepare(
+    `INSERT INTO material (id, subject_id, title, kind, source, content, status)
+     VALUES (?, ?, ?, 'image', ?, ?, 'raw')`,
+  ).run(id, r.data.subjectId, r.data.title, `pdf-${r.data.pages.length}p`, body);
+
+  return c.json(db.prepare(`SELECT ${MATERIAL_COLS} FROM material WHERE id = ?`).get(id), 201);
+});
+
 p5.patch("/study/materials/:id", async (c) => {
   const id = c.req.param("id");
   const r = await readBody(

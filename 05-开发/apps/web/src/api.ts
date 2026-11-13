@@ -653,6 +653,16 @@ export const api = {
       method: "POST",
       body: JSON.stringify(input),
     }, 120_000),
+  /** PDF 无文字层时：前端渲染页面 → 逐页 OCR，合并成一份资料 */
+  ocrPages: (input: {
+    subjectId: string;
+    title: string;
+    pages: { base64: string; mime: string }[];
+  }) =>
+    request<ApiMaterial>("/study/materials/ocr-pages", {
+      method: "POST",
+      body: JSON.stringify(input),
+    }, 180_000),
   updateMaterial: (
     id: string,
     patch: { title?: string; content?: string; status?: "raw" | "verified" },

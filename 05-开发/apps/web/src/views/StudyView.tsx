@@ -9,6 +9,7 @@ import {
   type ApiSubject,
 } from "../api";
 import { Card } from "../components/Card";
+import { renderPdfPages } from "../lib/pdfPages";
 
 /** 学习：科目 → 资料 → 卡片 → 间隔重复复习 */
 export function StudyView() {
@@ -158,11 +159,26 @@ export function StudyView() {
         return;
       }
 
-      let created = await api.uploadMaterialFile({
-        subjectId: active.id,
-        filename: file.name,
-        base64: b64,
-      });
+      const isPdf = /\.pdf$/i.test(file.name);
+      let created: ApiMaterial;
+      try {
+        created = await api.uploadMaterialFile({
+          subjectId: active.id,
+          filename: file.name,
+          base64: b64,
+        });
+      } catch (e) {
+        const msg = (e as Error).message;
+        const needsVision = isPdf && (msg.includes("pdf_no_text") || msg.includes("garbled_text"));
+        if (!needsVision) throw e;
+        // 没有文字层或是乱码：像 agent 一样「看页面」
+        const pages = await renderPdfPages(file, { maxPages: 10 });
+        created = await api.ocrPages({
+          subjectId: active.id,
+          title: file.name.replace(/\.[^.]+$/, ""),
+          pages: pages.map((b) => ({ base64: b, mime: "image/jpeg" })),
+        });
+      }
       const note = matText.trim();
       if (note) {
         created = await api.updateMaterial(created.id, {
