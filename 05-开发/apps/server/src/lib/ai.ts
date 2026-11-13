@@ -19,8 +19,10 @@ interface StoredAi {
   base?: string;
 }
 
-const DEFAULT_BASE = "https://api.deepseek.com/v1";
-const DEFAULT_MODEL = "deepseek-chat";
+// DeepSeek 的 OpenAI 兼容端点是 https://api.deepseek.com（不需要 /v1，加了也兼容）
+const DEFAULT_BASE = "https://api.deepseek.com";
+// deepseek-flash 支持图片输入；老的 deepseek-chat 已退役并按其服务
+const DEFAULT_MODEL = "deepseek-flash";
 
 function fileKey(): string {
   for (const f of KEY_FILES) {
@@ -159,7 +161,8 @@ export async function testAiConfig(cfg: AiConfig): Promise<{ ok: boolean; detail
 }
 
 /** 名字里带这些的，基本都能读图 */
-const VISION_HINTS = /(vision|multimodal|omni|vl\b|vlm|gpt-4o|gpt-4\.1|claude-3|gemini)/i;
+const VISION_HINTS =
+  /(vision|multimodal|omni|vl\b|vlm|gpt-4o|gpt-4\.1|gpt-5|claude-3|gemini|deepseek-flash)/i;
 
 export function looksVisionCapable(model: string): boolean {
   return VISION_HINTS.test(model);

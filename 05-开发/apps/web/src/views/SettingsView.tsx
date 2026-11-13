@@ -18,7 +18,7 @@ export function SettingsView() {
   const PRESETS: { key: string; base: string; model: string; vision: boolean }[] = [
     { key: "openai", base: "https://api.openai.com/v1", model: "gpt-4o", vision: true },
     { key: "kimi", base: "https://api.moonshot.cn/v1", model: "moonshot-v1-8k-vision-preview", vision: true },
-    { key: "deepseek", base: "https://api.deepseek.com/v1", model: "deepseek-chat", vision: false },
+    { key: "deepseek", base: "https://api.deepseek.com", model: "deepseek-flash", vision: true },
     { key: "ollama", base: "http://127.0.0.1:11434/v1", model: "llama3.2-vision", vision: true },
   ];
 
