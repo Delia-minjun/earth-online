@@ -453,6 +453,7 @@
     "unsupportedType": "Unsupported file type — use PDF / Word / PPT / Markdown / image",
     "emptyFile": "No text found in this file",
     "tooLarge": "File is over 25MB — split or compress it first",
-    "courseMaterials": "Course materials"
+    "courseMaterials": "Course materials",
+    "notePlaceholder": "Add a note"
   }
 }

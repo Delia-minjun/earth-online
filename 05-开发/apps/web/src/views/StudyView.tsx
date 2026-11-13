@@ -25,7 +25,6 @@ export function StudyView() {
   // 新建科目
   const [newSubject, setNewSubject] = useState("");
   // 新建资料
-  const [matTitle, setMatTitle] = useState("");
   const [matText, setMatText] = useState("");
   const [openMaterial, setOpenMaterial] = useState(false);
   // 校对
@@ -102,16 +101,18 @@ export function StudyView() {
   };
 
   const addMaterialText = async () => {
-    if (!active || !matTitle.trim() || !matText.trim()) return;
+    if (!active || !matText.trim()) return;
     setBusy(true);
     try {
+      // 没有标题输入框了：用首行当标题
+      const firstLine = matText.trim().split("\n")[0] ?? "";
+      const title = (firstLine.trim() || new Date().toISOString().slice(5, 16)).slice(0, 24);
       await api.addMaterial({
         subjectId: active.id,
-        title: matTitle.trim(),
+        title,
         kind: "text",
         content: matText.trim(),
       });
-      setMatTitle("");
       setMatText("");
       setOpenMaterial(false);
       await loadSubject(active.id);
@@ -156,11 +157,18 @@ export function StudyView() {
         return;
       }
 
-      const created = await api.uploadMaterialFile({
+      let created = await api.uploadMaterialFile({
         subjectId: active.id,
         filename: file.name,
         base64: b64,
       });
+      const note = matText.trim();
+      if (note) {
+        created = await api.updateMaterial(created.id, {
+          content: `${created.content}\n\n${note}`,
+        });
+        setMatText("");
+      }
       await loadSubject(active.id);
       await loadAll();
       setEditing(created);
@@ -333,32 +341,12 @@ export function StudyView() {
           >
             {openMaterial ? (
               <div className="mb-2 space-y-1.5 rounded-xl border border-line-2 bg-surface-2 p-2.5">
-                <input
-                  value={matTitle}
-                  onChange={(e) => setMatTitle(e.target.value)}
-                  placeholder={t("study.materialTitle")}
-                  className="w-full rounded-lg border border-line bg-surface px-2 py-1.5 text-[11.5px] text-ink outline-none placeholder:text-[#c8c4bc]"
-                />
-                <textarea
-                  value={matText}
-                  onChange={(e) => setMatText(e.target.value)}
-                  rows={4}
-                  placeholder={t("study.materialPlaceholder")}
-                  className="w-full resize-none rounded-lg border border-line bg-surface px-2 py-1.5 text-[11.5px] leading-relaxed text-ink outline-none placeholder:text-[#c8c4bc]"
-                />
+                {/* 上传是主操作，放最上面 */}
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => void addMaterialText()}
-                    disabled={busy || !matTitle.trim() || !matText.trim()}
-                    className="rounded-lg bg-accent px-2.5 py-1.5 text-[10.5px] font-semibold text-white disabled:opacity-50"
-                  >
-                    {t("common.save")}
-                  </button>
-                  <button
-                    type="button"
                     onClick={() => fileRef.current?.click()}
-                    className="rounded-lg border border-line px-2.5 py-1.5 text-[10.5px] text-ink-2 hover:border-accent"
+                    className="rounded-lg border border-line bg-surface px-2.5 py-1.5 text-[10.5px] text-ink-2 transition-colors hover:border-accent hover:text-accent"
                   >
                     {t("study.uploadImage")}
                   </button>
@@ -373,6 +361,24 @@ export function StudyView() {
                       e.target.value = "";
                     }}
                   />
+                </div>
+
+                <textarea
+                  value={matText}
+                  onChange={(e) => setMatText(e.target.value)}
+                  rows={4}
+                  placeholder={t("study.notePlaceholder")}
+                  className="w-full resize-none rounded-lg border border-line bg-surface px-2 py-1.5 text-[11.5px] leading-relaxed text-ink outline-none placeholder:text-[#c8c4bc]"
+                />
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void addMaterialText()}
+                    disabled={busy || !matText.trim()}
+                    className="rounded-lg bg-accent px-2.5 py-1.5 text-[10.5px] font-semibold text-white disabled:opacity-50"
+                  >
+                    {t("common.save")}
+                  </button>
                 </div>
               </div>
             ) : null}
@@ -426,7 +432,7 @@ export function StudyView() {
                   </div>
                 </li>
               ))}
-              {materials.length === 0 ? (
+              {materials.length === 0 && !openMaterial ? (
                 <li className="py-2 text-[10.5px] text-[#c8c4bc]">{t("study.noMaterial")}</li>
               ) : null}
             </ul>

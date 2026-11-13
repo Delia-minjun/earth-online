@@ -454,6 +454,7 @@
     "unsupportedType": "暂不支持这种文件，请上传 PDF / Word / PPT / Markdown / 图片",
     "emptyFile": "这个文件里没读到文字",
     "tooLarge": "文件超过 25MB，请拆分或压缩后再传",
-    "courseMaterials": "课程资料"
+    "courseMaterials": "课程资料",
+    "notePlaceholder": "添加备注"
   }
 }
