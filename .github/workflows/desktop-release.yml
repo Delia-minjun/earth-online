@@ -44,46 +44,17 @@ jobs:
         run: pnpm --filter @life/web build
 
       - name: Bundle server + web for desktop
-        # windows-latest 默认 shell 是 pwsh，这里显式用 bash（runner 自带 Git Bash）
-        shell: bash
         run: |
-          set -o pipefail
-          {
-            echo "== 环境 =="
-            node -v
-            pnpm -v
-            echo "== esbuild 解析 =="
-            node -e "console.log(require.resolve('esbuild'))" 2>&1 || true
-            echo "== 直接跑打包脚本 =="
-            node apps/desktop/scripts/build.mjs 2>&1
-          } | tee /tmp/bundle.log
+          node -e "console.log('esbuild:', require.resolve('esbuild'))"
+          node apps/desktop/scripts/build.mjs
 
-      # 失败时把日志写进运行摘要，这样不用登录也能看到原因
-      - name: Bundle log (summary)
+      # 把环境与结论写进运行摘要（公开页面可读）
+      - name: Bundle summary
         if: always()
-        shell: bash
+        shell: pwsh
         run: |
-          {
-            echo "### bundle 输出"
-            echo '```'
-            tail -60 /tmp/bundle.log 2>/dev/null || echo "(没有输出)"
-            echo '```'
-            echo "pnpm 版本: $(pnpm -v) / node: $(node -v)"
-          } >> "$GITHUB_STEP_SUMMARY"
-
-      # 临时排查用：失败时把日志提交回仓库（GITHUB_TOKEN 的 push 不会触发新工作流）
-      - name: Publish bundle log on failure (debug)
-        if: failure()
-        shell: bash
-        run: |
-          mkdir -p ci-logs
-          cp /tmp/bundle.log ci-logs/bundle.log 2>/dev/null || echo "(没有 log 文件)" > ci-logs/bundle.log
-          git config user.name "github-actions"
-          git config user.email "actions@github.com"
-          git add ci-logs/bundle.log
-          git commit -m "ci: bundle 失败日志（临时排查）" || exit 0
-          # tag 触发时 HEAD 是分离的，必须显式推到 main
-          git push origin HEAD:main
+          "### Bundle 结果" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+          "node $(node -v) / pnpm $(pnpm -v)" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
 
       - name: Install packaging toolchain (electron + builder)
         working-directory: 05-开发/desktop-tools

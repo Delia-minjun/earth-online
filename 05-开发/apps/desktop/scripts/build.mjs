@@ -1,7 +1,14 @@
 // 把服务端打成单文件 server.mjs，并把前端产物复制到 dist/web
 // 用法：node scripts/build.mjs
-import { cpSync, mkdirSync, rmSync, copyFileSync, existsSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  rmSync,
+  statSync,
+} from "node:fs";
+import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url)); // apps/desktop/scripts
@@ -14,6 +21,35 @@ const outDir = join(desktop, "dist");
 console.log(`[desktop] cwd        ${process.cwd()}`);
 console.log(`[desktop] 服务端入口 ${serverEntry}`);
 console.log(`[desktop] 前端产物   ${webDist}`);
+
+/**
+ * 自己实现目录复制：cpSync 在 Windows runner 上出过 127 且没有堆栈，
+ * 这里逐文件复制并打印，出错时能直接看到是哪个路径挂了。
+ */
+function copyDir(from, to, label) {
+  let files = 0;
+  const walk = (src, dst) => {
+    if (!existsSync(src)) throw new Error(`${label}：源目录不存在 ${src}`);
+    if (!statSync(src).isDirectory()) {
+      copyFileSync(src, dst);
+      files += 1;
+      return;
+    }
+    mkdirSync(dst, { recursive: true });
+    for (const name of readdirSync(src)) {
+      walk(join(src, name), join(dst, name));
+    }
+  };
+  try {
+    walk(from, to);
+  } catch (err) {
+    console.error(`[desktop] ✗ ${label} 失败：${relative(dev, from)} → ${relative(desktop, to)}`);
+    console.error(`[desktop]   ${err?.code ?? ""} ${err?.message ?? err}`);
+    if (err?.path) console.error(`[desktop]   path: ${err.path}`);
+    process.exit(1);
+  }
+  console.log(`[desktop] ✓ ${label}：${files} 个文件`);
+}
 
 let esbuild;
 try {
@@ -44,17 +80,15 @@ await esbuild.build({
 });
 
 if (!existsSync(join(webDist, "index.html"))) {
-  console.warn("[desktop] 前端还没构建，先跑 pnpm --filter @life/web build");
+  console.error("[desktop] 前端还没构建，先跑 pnpm --filter @life/web build");
   process.exit(1);
 }
 console.log("[desktop] 复制前端 → dist/web");
-cpSync(webDist, join(outDir, "web"), { recursive: true });
+copyDir(webDist, join(outDir, "web"), "复制前端");
 
 // 迁移脚本是运行时读的 .sql，得原样带进安装包
 console.log("[desktop] 复制迁移 → dist/migrations");
-cpSync(join(dev, "apps", "server", "migrations"), join(outDir, "migrations"), {
-  recursive: true,
-});
+copyDir(join(dev, "apps", "server", "migrations"), join(outDir, "migrations"), "复制迁移");
 
 const icon = join(desktop, "build", "icon.ico");
 if (!existsSync(icon)) {
