@@ -104,6 +104,9 @@ export function SettingsView() {  const { t } = useTranslation();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
   const [models, setModels] = useState<{ all: string[]; vision: string[] } | null>(null);
+  /** 真实版本与库路径：桌面版取 app.getVersion()，网页版取 /api/health */
+  const [version, setVersion] = useState<string | null>(null);
+  const [dbPath, setDbPath] = useState<string | null>(null);
 
   /** 常用服务商预设：点一下把 base + 模型填好，Key 仍要自己填 */
   const PRESETS: { key: string; base: string; model: string; vision: boolean }[] = [
@@ -124,6 +127,25 @@ export function SettingsView() {  const { t } = useTranslation();
 
   useEffect(() => {
     void load().catch((e: Error) => setMessage({ kind: "err", text: e.message }));
+
+    const desk = (window as unknown as { desktop?: DeskApi }).desktop;
+    if (desk) {
+      void desk
+        .info()
+        .then((i) => {
+          setVersion(`v${i.version}`);
+          setDbPath(i.dataDir);
+        })
+        .catch(() => undefined);
+    } else {
+      void fetch("/api/health")
+        .then((r) => r.json() as Promise<{ version?: string; db?: string }>)
+        .then((h) => {
+          setVersion(h.version ?? null);
+          setDbPath(h.db ?? null);
+        })
+        .catch(() => undefined);
+    }
   }, []);
 
   const save = async () => {
@@ -386,11 +408,11 @@ export function SettingsView() {  const { t } = useTranslation();
         <dl className="space-y-1.5 text-[11px]">
           <div className="flex justify-between">
             <dt className="text-ink-3">{t("settings.version")}</dt>
-            <dd className="text-ink-2">0.1.0 · P3</dd>
+            <dd className="text-ink-2 tabular-nums">{version ?? "—"}</dd>
           </div>
           <div className="flex justify-between">
             <dt className="text-ink-3">{t("settings.storage")}</dt>
-            <dd className="text-ink-2">data/life.db</dd>
+            <dd className="break-all text-right text-ink-2">{dbPath ?? "data/life.db"}</dd>
           </div>
         </dl>
         <p className="mt-2.5 text-[10px] leading-relaxed text-[#c8c4bc]">{t("settings.localOnly")}</p>

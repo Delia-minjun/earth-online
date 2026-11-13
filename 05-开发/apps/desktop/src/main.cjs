@@ -63,6 +63,7 @@ function startServer() {
       LIFE_DATA_DIR: dir,
       LIFE_WEB_DIST: webDist,
       LIFE_MIGRATIONS_DIR: resource("migrations"),
+      LIFE_VERSION: app.getVersion(),
       PORT: String(PORT),
     },
     stdio: "ignore",

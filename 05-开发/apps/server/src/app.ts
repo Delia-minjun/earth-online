@@ -19,7 +19,8 @@ export function createApp(
   app.get("/api/health", (c) => {
     const body: HealthInfo = {
       ok: true,
-      version: "0.1.0",
+      // 桌面版会把 app.getVersion() 通过 LIFE_VERSION 传进来；命令行版显示 dev
+      version: process.env.LIFE_VERSION ?? "dev",
       now: new Date().toISOString(),
       db: dbFile(),
     };
