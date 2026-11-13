@@ -370,7 +370,6 @@
     "about": "About",
     "version": "Version",
     "storage": "Storage",
-    "localOnly": "Everything is stored on this machine. Only timetable screenshots are sent to the provider configured above.",
     "source": {
       "env": "env var",
       "db": "local settings",

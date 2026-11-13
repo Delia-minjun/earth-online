@@ -474,7 +474,6 @@ export function SettingsView() {
           </>
         ) : null}
 
-        <p className="mt-2.5 text-[10px] leading-relaxed text-[#c8c4bc]">{t("settings.localOnly")}</p>
       </Card>
     </div>
   );
