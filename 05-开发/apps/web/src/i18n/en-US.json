@@ -177,6 +177,7 @@
   "focus": {
     "title": "Pomodoro",
     "short": "Focus",
+    "startShort": "Start focus",
     "running": "Focusing",
     "start": "Start focus",
     "finish": "Finish",

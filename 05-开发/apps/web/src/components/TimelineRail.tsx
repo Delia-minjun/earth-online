@@ -86,44 +86,42 @@ export function TimelineRail() {
           {t("today.timeline")}
           {focus ? <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-accent" /> : null}
         </h2>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setFocusOpen(true)}
-            title={t("focus.title")}
-            className={`flex shrink-0 items-center gap-1 rounded-full border px-2 py-[1px] text-[9.5px] leading-none transition-colors ${
-              focus
-                ? "border-accent bg-accent-soft text-accent"
-                : "border-line text-ink-3 hover:border-accent hover:text-accent"
-            }`}
-            aria-label={t("focus.title")}
-          >
-            <svg
-              width="9"
-              height="9"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.4"
-              strokeLinecap="round"
-              aria-hidden="true"
-            >
-              <circle cx="12" cy="13.5" r="7.5" />
-              <path d="M12 10v3.5l2.5 2" />
-              <path d="M9.5 2.5h5" />
-            </svg>
-            {focus ? t("focus.running") : t("focus.short")}
-          </button>
-          <button
-            type="button"
-            onClick={() => setBlockOpen((v) => !v)}
-            className="text-[14px] leading-none text-[#c2beb6] transition-colors hover:text-accent"
-            aria-label={t("action.add")}
-          >
-            {blockOpen ? "−" : "＋"}
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => setBlockOpen((v) => !v)}
+          className="text-[14px] leading-none text-[#c2beb6] transition-colors hover:text-accent"
+          aria-label={t("action.add")}
+        >
+          {blockOpen ? "−" : "＋"}
+        </button>
       </header>
+
+      {/* 番茄钟入口：整行按钮，别再藏在小字里 */}
+      <button
+        type="button"
+        onClick={() => setFocusOpen(true)}
+        className={`mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-[11.5px] transition-colors ${
+          focus
+            ? "border-accent bg-accent-soft font-semibold text-accent"
+            : "border-line bg-surface-2 text-ink-2 hover:border-accent hover:text-accent"
+        }`}
+      >
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          aria-hidden="true"
+        >
+          <circle cx="12" cy="13.5" r="7.5" />
+          <path d="M12 10v3.5l2.5 2" />
+          <path d="M9.5 2.5h5" />
+        </svg>
+        {focus ? t("focus.running") : t("focus.startShort")}
+      </button>
 
       <FocusModal
         open={focusOpen}
