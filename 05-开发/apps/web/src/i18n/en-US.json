@@ -1,7 +1,6 @@
 {
   "app": {
-    "title": "Earth Online",
-    "badge": "Local build · P2 done"
+    "title": "Earth Online"
   },
   "nav": {
     "week": "Schedule",
