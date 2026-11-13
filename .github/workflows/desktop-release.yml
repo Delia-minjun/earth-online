@@ -46,7 +46,15 @@ jobs:
       - name: Bundle server + web for desktop
         run: |
           set -o pipefail
-          pnpm --filter @life/desktop prepare-bundle 2>&1 | tee /tmp/bundle.log
+          {
+            echo "== 环境 =="
+            node -v
+            pnpm -v
+            echo "== esbuild 解析 =="
+            node -e "console.log(require.resolve('esbuild'))" 2>&1 || true
+            echo "== 直接跑打包脚本 =="
+            node apps/desktop/scripts/build.mjs 2>&1
+          } | tee /tmp/bundle.log
 
       # 失败时把输出写进运行摘要，这样不用登录也能看到原因
       - name: Bundle log (summary)
