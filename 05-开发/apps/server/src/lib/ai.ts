@@ -145,8 +145,7 @@ export async function parseTimetableImage(base64: string, mime: string): Promise
   return extractCourses(content);
 }
 
-/** 用 /models 探活，不消耗生成额度 */
-export async function testAiConfig(cfg: AiConfig): Promise<{ ok: boolean; detail: string }> {
+/** 用 /models 探活，不消耗生成额度 */export async function testAiConfig(cfg: AiConfig): Promise<{ ok: boolean; detail: string }> {
   if (!cfg.apiKey) return { ok: false, detail: "NOKEY" };
   try {
     const res = await fetch(`${cfg.base.replace(/\/$/, "")}/models`, {
@@ -192,4 +191,98 @@ export async function listModels(
   } catch (e) {
     return { ok: false, models: [], vision: [], detail: (e as Error).message };
   }
+}
+
+/* ---------------- 学习 Agent：OCR 与出卡片 ---------------- */
+
+type Msg = { role: "user"; content: unknown };
+
+async function chatOnce(cfg: AiConfig, messages: Msg[], temperature = 0): Promise<string> {
+  const res = await fetch(`${cfg.base.replace(/\/$/, "")}/chat/completions`, {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `Bearer ${cfg.apiKey}` },
+    signal: AbortSignal.timeout(120_000),
+    body: JSON.stringify({ model: cfg.model, temperature, messages }),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    if (/image|vision|multimodal|unsupported/i.test(text) && res.status >= 400 && res.status < 500) {
+      throw new Error("VISION_UNSUPPORTED");
+    }
+    throw new Error(`${res.status}: ${text.slice(0, 200)}`);
+  }
+  const data = (await res.json()) as { choices?: { message?: { content?: string } }[] };
+  return data.choices?.[0]?.message?.content ?? "";
+}
+
+/** 把图片里的文字原样转录出来（用于扫描件/截图） */
+export async function ocrImage(base64: string, mime: string): Promise<string> {
+  const cfg = resolveAiConfig();
+  if (!cfg.apiKey) throw new Error("NOKEY");
+  const content = await chatOnce(cfg, [
+    {
+      role: "user",
+      content: [
+        { type: "image_url", image_url: { url: `data:${mime};base64,${base64}` } },
+        {
+          type: "text",
+          text: "把这张图里的文字全部转录出来，保持原有段落与顺序。不要总结、不要解释、不要加 markdown。认不出的字用 ？ 代替。",
+        },
+      ],
+    },
+  ]);
+  return content.trim();
+}
+
+export interface GeneratedCard {
+  front: string;
+  back: string;
+  ref?: string;
+}
+
+const CARD_PROMPT = (subject: string, count: number, text: string) => `你是背书卡片生成器。基于下面这份「${subject}」的学习资料，生成 ${count} 张问答卡片，只输出 JSON：
+
+{"cards":[{"front":"问题（简短、可自测）","back":"答案（要点式，别超过 80 字）","ref":"出处提示，如 第3段 / 公式2"}]}
+
+规则：
+- 只根据资料内容出题，不要引入资料里没有的知识；资料没讲到的不要编
+- 一个问题只考一个点；答案要能独立看懂
+- 优先考概念、定义、公式、易混点，不要出「这段讲了什么」这种空泛题
+- 中文出题；若资料是英文，问题与答案都用英文
+
+资料正文：
+""" 
+${text.slice(0, 12000)}
+"""`;
+
+/** 从资料正文生成背记卡片 */
+export async function generateCards(
+  text: string,
+  subject: string,
+  count = 8,
+): Promise<GeneratedCard[]> {
+  const cfg = resolveAiConfig();
+  if (!cfg.apiKey) throw new Error("NOKEY");
+  const raw = await chatOnce(cfg, [{ role: "user", content: CARD_PROMPT(subject, count, text) }], 0.2);
+
+  const cleaned = raw.replace(/```json/gi, "").replace(/```/g, "").trim();
+  const start = cleaned.indexOf("{");
+  const end = cleaned.lastIndexOf("}");
+  const body = start >= 0 && end > start ? cleaned.slice(start, end + 1) : cleaned;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(body);
+  } catch {
+    throw new Error("模型返回的不是合法 JSON");
+  }
+  const list = (parsed as { cards?: unknown }).cards;
+  if (!Array.isArray(list)) throw new Error("模型没有返回 cards 数组");
+  return (list as GeneratedCard[])
+    .filter((c) => c && typeof c.front === "string" && typeof c.back === "string")
+    .map((c) => ({
+      front: String(c.front).trim(),
+      back: String(c.back).trim(),
+      ref: c.ref ? String(c.ref).trim() : undefined,
+    }))
+    .filter((c) => c.front && c.back);
 }

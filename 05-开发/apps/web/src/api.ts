@@ -623,6 +623,61 @@ export const api = {
 
   saveJournal: (date: string, body: string) =>
     request<ApiJournal>(`/journal/${date}`, { method: "PUT", body: JSON.stringify({ body }) }),
+  /* ---- P5a 学习 ---- */
+  subjects: () => request<ApiSubject[]>("/study/subjects"),
+  addSubject: (input: { name: string; color?: string }) =>
+    request<ApiSubject>("/study/subjects", { method: "POST", body: JSON.stringify(input) }),
+  renameSubject: (id: string, patch: { name?: string; color?: string }) =>
+    request<ApiSubject>(`/study/subjects/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
+  deleteSubject: (id: string) =>
+    request<{ ok: true }>(`/study/subjects/${id}`, { method: "DELETE" }),
+
+  materials: (subjectId?: string) =>
+    request<ApiMaterial[]>(`/study/materials${subjectId ? `?subjectId=${subjectId}` : ""}`),
+  addMaterial: (input: {
+    subjectId: string;
+    title: string;
+    kind?: "text" | "image" | "link";
+    content?: string;
+    source?: string;
+    imageBase64?: string;
+    imageMime?: string;
+  }) => request<ApiMaterial>("/study/materials", { method: "POST", body: JSON.stringify(input) }),
+  updateMaterial: (
+    id: string,
+    patch: { title?: string; content?: string; status?: "raw" | "verified" },
+  ) => request<ApiMaterial>(`/study/materials/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
+  deleteMaterial: (id: string) =>
+    request<{ ok: true }>(`/study/materials/${id}`, { method: "DELETE" }),
+  generateCards: (materialId: string, count = 8) =>
+    request<{ cards: { id: string; front: string; back: string; ref?: string }[] }>(
+      `/study/materials/${materialId}/generate`,
+      { method: "POST", body: JSON.stringify({ count }) },
+      120_000,
+    ),
+
+  cards: (subjectId?: string) =>
+    request<ApiCard[]>(`/study/cards${subjectId ? `?subjectId=${subjectId}` : ""}`),
+  addCard: (input: { subjectId: string; front: string; back: string; ref?: string }) =>
+    request<ApiCard>("/study/cards", { method: "POST", body: JSON.stringify(input) }),
+  deleteCard: (id: string) => request<{ ok: true }>(`/study/cards/${id}`, { method: "DELETE" }),
+
+  reviewQueue: (subjectId?: string) =>
+    request<{ date: string; cards: ApiReviewCard[] }>(
+      `/study/review/queue${subjectId ? `?subjectId=${subjectId}` : ""}`,
+    ),
+  reviewCard: (id: string, rating: "again" | "good" | "easy") =>
+    request<ApiCard & { coins: number }>(`/study/cards/${id}/review`, {
+      method: "POST",
+      body: JSON.stringify({ rating }),
+    }),
+  studyStats: () => request<ApiStudyStats>("/study/stats"),
+
+  exams: () => request<ApiExam[]>("/study/exams"),
+  addExam: (input: { title: string; date: string; subjectId?: string }) =>
+    request<ApiExam>("/study/exams", { method: "POST", body: JSON.stringify(input) }),
+  deleteExam: (id: string) => request<{ ok: true }>(`/study/exams/${id}`, { method: "DELETE" }),
+
 };
 
 /** 课表统一用这个颜色；时间块才按类别分色 */
@@ -645,7 +700,7 @@ export function isoWeekOf(date: Date): { isoYear: number; isoWeek: number } {
   const yearStart = Date.UTC(isoYear, 0, 1);
   const isoWeek = Math.ceil(((d.getTime() - yearStart) / 86400000 + 1) / 7);
   return { isoYear, isoWeek };
-}
+};
 
 /** 本周一（本地零点） */
 export function mondayOfThisWeek(): Date {
@@ -657,4 +712,63 @@ export function mondayOfThisWeek(): Date {
 
 export function shiftWeeks(date: Date, delta: number): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate() + delta * 7);
+}
+
+/* ---------------- P5a 学习 ---------------- */
+
+export interface ApiSubject {
+  id: string;
+  name: string;
+  color: string | null;
+  sort: number;
+  materials: number;
+  cards: number;
+  due: number;
+}
+
+export interface ApiMaterial {
+  id: string;
+  subject_id: string;
+  title: string;
+  kind: "text" | "image" | "link";
+  source: string | null;
+  content: string;
+  status: "raw" | "verified";
+  page_from: number | null;
+  page_to: number | null;
+  created_at: string;
+  ocrError?: string | null;
+}
+
+export interface ApiCard {
+  id: string;
+  subject_id: string;
+  material_id: string | null;
+  front: string;
+  back: string;
+  ref: string | null;
+  box: number;
+  due_date: string;
+  reviewed_at: string | null;
+}
+
+export interface ApiReviewCard extends ApiCard {
+  subject_name: string;
+  subject_color: string | null;
+}
+
+export interface ApiStudyStats {
+  date: string;
+  reviewedToday: number;
+  due: number;
+  total: number;
+  byBox: { box: number; n: number }[];
+}
+
+export interface ApiExam {
+  id: string;
+  title: string;
+  date: string;
+  subject_id: string | null;
+  subject_name: string | null;
 }

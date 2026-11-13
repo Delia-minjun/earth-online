@@ -13,7 +13,7 @@ export type ViewKey =
 export const NAV_ITEMS: { key: ViewKey; implemented: boolean; phase?: string }[] = [
   { key: "week", implemented: true },
   { key: "review", implemented: true },
-  { key: "study", implemented: false, phase: "P5" },
+  { key: "study", implemented: true },
   { key: "settings", implemented: true },
 ];
 

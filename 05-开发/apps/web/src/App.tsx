@@ -6,6 +6,7 @@ import { BottomNav, Sidebar, type ViewKey } from "./components/Nav";
 import { RewardView } from "./views/RewardView";
 import { WeekView } from "./views/WeekView";
 import { ReviewView } from "./views/ReviewView";
+import { StudyView } from "./views/StudyView";
 import { SettingsView } from "./views/SettingsView";
 import { PlaceholderView } from "./views/PlaceholderView";
 import { Tour, resetTour, tourPending } from "./components/Tour";
@@ -171,11 +172,13 @@ export default function App() {
         >
           {isSchedule && <WeekView mode={dayMode} onModeChange={setDayMode} />}
           {view === "review" && <ReviewView />}
+          {view === "study" && <StudyView />}
           {isReward && <RewardView />}
           {view === "settings" && <SettingsView />}
           {!isSchedule &&
             !isReward &&
             view !== "review" &&
+            view !== "study" &&
             view !== "settings" && <PlaceholderView nameKey={`nav.${view}`} />}
         </main>
       </div>
