@@ -107,6 +107,8 @@ copyDir(webDist, join(outDir, "web"), "复制前端");
 // 迁移脚本是运行时读的 .sql，得原样带进安装包
 console.log("[desktop] 复制迁移 → dist/migrations");
 copyDir(join(dev, "apps", "server", "migrations"), join(outDir, "migrations"), "复制迁移");
+// pdf.js legacy build：解析 PDF 文字层，运行时按相对路径加载
+copyDir(join(dev, "apps", "server", "vendor"), join(outDir, "vendor"), "复制 pdf.js");
 
 const icon = join(desktop, "build", "icon.ico");
 if (!existsSync(icon)) {

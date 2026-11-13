@@ -93,47 +93,63 @@ export function pptxText(buf: Buffer): string {
 }
 
 /**
- * .pdf：只做「能拿到文字」的尽力提取——解压 FlateDecode 流后抓 Tj/TJ 里的字符串。
- * 扫描版 PDF（整页是图片）拿不到文字，会返回空串，由调用方提示改用截图 OCR。
+ * .pdf：用 pdf.js（legacy build，随仓库自带）抽取文字层。
+ * 有 ToUnicode 的 PDF（Word/LaTeX 导出的）能拿到正确文字；
+ * 扫描件没有文字层，返回空串，由调用方提示改用截图 OCR。
  */
-export function pdfText(buf: Buffer): string {
-  const chunks: string[] = [];
-  const raw = buf.toString("latin1");
-  const re = /stream\r?\n/g;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(raw)) !== null) {
-    const start = m.index + m[0].length;
-    const end = raw.indexOf("endstream", start);
-    if (end < 0) continue;
-    const slice = buf.subarray(start, end);
-    let data: Buffer | null = null;
+async function loadPdfjs(): Promise<typeof import("../../vendor/pdfjs/pdf.mjs")> {
+  // 依次尝试若干相对位置：源码目录、打包后的 dist 目录
+  const candidates = [
+    new URL("../../vendor/pdfjs/pdf.mjs", import.meta.url),
+    new URL("../vendor/pdfjs/pdf.mjs", import.meta.url),
+    new URL("./vendor/pdfjs/pdf.mjs", import.meta.url),
+  ];
+  let lastErr: unknown = null;
+  for (const url of candidates) {
     try {
-      data = inflateRawSync(slice);
-    } catch {
-      try {
-        // 有些流带 zlib 头（78 9c），inflateRaw 会失败
-        data = inflateSync(slice);
-      } catch {
-        // 没压缩的流（无 /Filter）直接用原文
-        data = slice;
-      }
-    }
-    if (!data) continue;
-    const text = data.toString("latin1");
-    // 抓 (...) Tj 与 [...] TJ
-    for (const hit of text.matchAll(/\((?:\\.|[^\\()])*\)/g)) {
-      const s = hit[0]
-        .slice(1, -1)
-        .replace(/\\([nrtbf()\\])/g, (_x, c: string) =>
-          c === "n" ? "\n" : c === "r" ? "\n" : c === "t" ? "\t" : c,
-        )
-        .replace(/\\([0-7]{1,3})/g, (_x, o: string) => String.fromCharCode(parseInt(o, 8)));
-      if (s.trim()) chunks.push(s);
+      const mod = (await import(url.href)) as typeof import("../../vendor/pdfjs/pdf.mjs");
+      const worker = new URL("pdf.worker.mjs", url);
+      mod.GlobalWorkerOptions.workerSrc = worker.href;
+      return mod;
+    } catch (e) {
+      lastErr = e;
     }
   }
-  const text = chunks.join("").replace(/[ \t]{2,}/g, " ").trim();
-  // PDF 里中文常被拆成乱码，这里只保留有意义的可打印结果
-  return text.length > 40 ? text : "";
+  throw lastErr instanceof Error ? lastErr : new Error("pdf.js 加载失败");
+}
+
+const PDF_MAX_PAGES = 60;
+const PDF_MAX_CHARS = 200_000;
+
+export async function pdfText(buf: Buffer): Promise<string> {
+  const pdfjs = await loadPdfjs();
+  const doc = await pdfjs.getDocument({
+    data: new Uint8Array(buf),
+    useSystemFonts: false,
+    isEvalSupported: false,
+  }).promise;
+
+  try {
+    const pages = Math.min(doc.numPages, PDF_MAX_PAGES);
+    const parts: string[] = [];
+    let total = 0;
+    for (let i = 1; i <= pages; i += 1) {
+      const page = await doc.getPage(i);
+      const content = await page.getTextContent();
+      const line = content.items
+        .map((item) => ("str" in item ? item.str : ""))
+        .join(" ")
+        .replace(/[ \t]{2,}/g, " ")
+        .trim();
+      page.cleanup();
+      if (line) parts.push(`【第 ${i} 页】\n${line}`);
+      total += line.length;
+      if (total > PDF_MAX_CHARS) break;
+    }
+    return parts.join("\n\n").slice(0, PDF_MAX_CHARS).trim();
+  } finally {
+    await doc.destroy().catch(() => undefined);
+  }
 }
 
 /** 纯文本：优先 UTF-8，失败退回 GBK（Excel/记事本导出的中文常见） */
@@ -149,10 +165,10 @@ export function plainText(buf: Buffer): string {
 
 export type ExtractedKind = "text" | "docx" | "pptx" | "pdf" | "image" | "unknown";
 
-export function extractDocument(
+export async function extractDocument(
   filename: string,
   buf: Buffer,
-): { kind: ExtractedKind; text: string } {
+): Promise<{ kind: ExtractedKind; text: string }> {
   const ext = filename.toLowerCase().match(/\.([a-z0-9]+)$/)?.[1] ?? "";
   switch (ext) {
     case "md":
@@ -164,7 +180,7 @@ export function extractDocument(
     case "pptx":
       return { kind: "pptx", text: pptxText(buf) };
     case "pdf":
-      return { kind: "pdf", text: pdfText(buf) };
+      return { kind: "pdf", text: await pdfText(buf) };
     case "png":
     case "jpg":
     case "jpeg":

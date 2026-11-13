@@ -36,6 +36,30 @@ function miniZip(name: string, content: string): Buffer {
   return Buffer.concat([body, cd, eocd]);
 }
 
+
+/** 拼一个结构合法（带 xref）的最小 PDF，pdf.js 只认这种 */
+function minimalPdf(text: string): Buffer {
+  const stream = `BT /F1 12 Tf 20 700 Td (${text}) Tj ET`;
+  const objs = [
+    "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
+    "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+    "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 600 800] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>\nendobj\n",
+    `4 0 obj\n<< /Length ${stream.length} >>\nstream\n${stream}\nendstream\nendobj\n`,
+    "5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n",
+  ];
+  let out = "%PDF-1.4\n";
+  const offsets: number[] = [];
+  for (const o of objs) {
+    offsets.push(out.length);
+    out += o;
+  }
+  const xref = out.length;
+  out += `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n`;
+  for (const off of offsets) out += `${String(off).padStart(10, "0")} 00000 n \n`;
+  out += `trailer\n<< /Size ${objs.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+  return Buffer.from(out, "latin1");
+}
+
 test("readZip 能解出 deflate 压缩的条目", () => {
   const zip = miniZip("word/document.xml", "<w:p><w:r><w:t>你好</w:t></w:r></w:p>");
   const files = readZip(zip);
@@ -49,19 +73,14 @@ test("plainText 优先 UTF-8，坏字节回退不抛错", () => {
   assert.ok(plainText(gbk).length > 0);
 });
 
-test("pdfText 能从无压缩的内容流里抓到文字", () => {
-  const content = "BT /F1 12 Tf 20 100 Td (Sample PDF text content for extraction test.) Tj ET";
-  const pdf = Buffer.from(
-    `%PDF-1.4\n4 0 obj<</Length ${content.length}>>stream\n${content}\nendstream endobj\ntrailer<</Root 1 0 R>>\n`,
-    "latin1",
-  );
-  const text = pdfText(pdf);
+test("pdfText 能从 PDF 里抽出文字（pdf.js）", async () => {
+  const text = await pdfText(minimalPdf("Sample PDF text content for extraction test."));
   assert.match(text, /Sample PDF text content/);
 });
 
-test("extractDocument 按扩展名分派，未知类型返回 unknown", () => {
-  assert.equal(extractDocument("a.md", Buffer.from("# hi")).kind, "text");
-  assert.equal(extractDocument("a.png", Buffer.from("x")).kind, "image");
-  assert.equal(extractDocument("a.zip", Buffer.from("x")).kind, "unknown");
-  assert.equal(extractDocument("a.xlsx", Buffer.from("x")).kind, "unknown");
+test("extractDocument 按扩展名分派，未知类型返回 unknown", async () => {
+  assert.equal((await extractDocument("a.md", Buffer.from("# hi"))).kind, "text");
+  assert.equal((await extractDocument("a.png", Buffer.from("x"))).kind, "image");
+  assert.equal((await extractDocument("a.zip", Buffer.from("x"))).kind, "unknown");
+  assert.equal((await extractDocument("a.xlsx", Buffer.from("x"))).kind, "unknown");
 });

@@ -185,7 +185,7 @@ p5.post("/study/materials/file", async (c) => {
   }
   if (buf.length > 25 * 1024 * 1024) return c.json({ error: "too_large" }, 413);
 
-  const { kind, text } = extractDocument(r.data.filename, buf);
+  const { kind, text } = await extractDocument(r.data.filename, buf);
   if (kind === "unknown") return c.json({ error: "unsupported_type" }, 400);
 
   const db = getDb();
@@ -210,20 +210,26 @@ p5.post("/study/materials/file", async (c) => {
     return c.json(db.prepare(`SELECT ${MATERIAL_COLS} FROM material WHERE id = ?`).get(id), 201);
   }
 
-  if (!text.trim()) {
+  const body = text.slice(0, 200_000);
+  if (!body.trim()) {
     return c.json({ error: kind === "pdf" ? "pdf_no_text" : "empty_content" }, 422);
+  }
+  // 乱码检测：控制字符/替换字符占比过高，说明是没有 ToUnicode 的 PDF 或二进制被当成文本
+  const bad = (body.match(/[\uFFFD\u0000-\u0008\u000B\u000C\u000E-\u001F]/g) ?? []).length;
+  if (bad / Math.max(1, body.length) > 0.05) {
+    return c.json({ error: "garbled_text" }, 422);
   }
 
   db.prepare(
     `INSERT INTO material (id, subject_id, title, kind, source, content, status)
      VALUES (?, ?, ?, ?, ?, ?, 'raw')`,
-  ).run(id, r.data.subjectId, title, kind === "text" ? "text" : "file", r.data.filename, text);
+  ).run(id, r.data.subjectId, title, kind === "text" ? "text" : "file", r.data.filename, body);
 
   return c.json(
     {
       ...(db.prepare(`SELECT ${MATERIAL_COLS} FROM material WHERE id = ?`).get(id) as object),
       extracted: kind,
-      chars: text.length,
+      chars: body.length,
     },
     201,
   );
