@@ -44,6 +44,8 @@ jobs:
         run: pnpm --filter @life/web build
 
       - name: Bundle server + web for desktop
+        # windows-latest 默认 shell 是 pwsh，这里显式用 bash（runner 自带 Git Bash）
+        shell: bash
         run: |
           set -o pipefail
           {
@@ -59,6 +61,7 @@ jobs:
       # 失败时把输出写进运行摘要，这样不用登录也能看到原因
       - name: Bundle log (summary)
         if: always()
+        shell: bash
         run: |
           {
             echo "### bundle 输出"
@@ -66,8 +69,6 @@ jobs:
             tail -60 /tmp/bundle.log 2>/dev/null || echo "(没有输出)"
             echo '```'
             echo "pnpm 版本: $(pnpm -v) / node: $(node -v)"
-            echo "workspace 包:"
-            pnpm ls -r --depth -1 --json 2>/dev/null | head -40 || true
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Install packaging toolchain (electron + builder)
