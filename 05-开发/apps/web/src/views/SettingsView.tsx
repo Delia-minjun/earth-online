@@ -246,7 +246,6 @@ export function SettingsView() {
   return (
     <div className="space-y-3.5">
       <Card title={t("settings.ai")} action={info?.configured ? t("settings.configured") : t("settings.notConfigured")}>
-        <p className="text-[10.5px] leading-relaxed text-ink-3">{t("settings.aiHint")}</p>
 
         {/* 服务商预设 */}
         <div className="mt-2.5 flex flex-wrap items-center gap-1.5">

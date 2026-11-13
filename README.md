@@ -367,6 +367,9 @@ git push origin v0.1.9
     (`feat` / `fix` / `style` / `docs` / `chore` / `ci` / `test` / `refactor`), body in English too.
     - Code comments, UI copy, docs and chat replies stay Chinese — only commit messages change.
     - 中文提交只保留在历史里，不重写；从这条约定落地起，新提交一律英文。
+13. **界面里不要随手加说明性文字。** 不要再往卡片、按钮旁边写"这是干什么的"这类解释句。
+    - 默认不写；觉得确实必要（否则用户会误解或操作失败）时，**先问用户同意**再写。
+    - 报错、空状态、危险操作的确认文案属于功能必需，不受此限。
 
 ## 需求速览
 
