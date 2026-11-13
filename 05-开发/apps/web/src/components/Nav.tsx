@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { PoemLine } from "./PoemLine";
 
 export type ViewKey =
   | "week"
@@ -98,9 +99,7 @@ export function Sidebar({
         />
         <span className="text-[15px] font-semibold text-ink">{t("app.title")}</span>
       </button>
-      <p className="mt-1.5 px-1 text-[9px] uppercase tracking-[0.18em] text-ink-3">
-        {t("app.badge")}
-      </p>
+      <PoemLine />
 
       <nav className="mt-7 space-y-1">
         {order.map((key, index) => {

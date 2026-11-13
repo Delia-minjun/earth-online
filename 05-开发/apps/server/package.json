@@ -7,7 +7,7 @@
     "dev": "node --watch src/index.ts",
     "start": "node src/index.ts",
     "migrate": "node src/migrate-cli.ts",
-    "test": "node --test test/weeks.test.ts test/api.test.ts test/p2.test.ts",
+    "test": "node --test test/weeks.test.ts test/api.test.ts test/p2.test.ts test/p3.test.ts test/focus.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

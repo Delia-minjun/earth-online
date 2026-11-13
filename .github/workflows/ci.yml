@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "05-开发/**"
+      - ".github/workflows/ci.yml"
+  pull_request:
+    paths:
+      - "05-开发/**"
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: 05-开发
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: 05-开发/pnpm-lock.yaml
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck (server + web)
+        run: pnpm typecheck
+
+      - name: Tests
+        run: pnpm --filter @life/server test
+
+      - name: Build web
+        run: pnpm build
