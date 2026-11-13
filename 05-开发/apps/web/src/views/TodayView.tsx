@@ -391,28 +391,28 @@ export function TodayView() {
         <WorkoutCard date={day.date} />
 
         <MealsCard date={day.date} />
-      </div>
 
-      <Mini
-        title={t("today.notes")}
-        action={
-          noteState === "saving"
-            ? t("common.saving")
-            : noteState === "saved"
-              ? t("common.saved")
-              : noteState === "error"
-                ? t("common.saveFailed")
-                : null
-        }
-      >
-        <textarea
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          rows={4}
-          placeholder={t("today.notePlaceholder")}
-          className="w-full resize-none bg-transparent text-[11.5px] leading-relaxed text-ink-2 outline-none placeholder:text-[#c8c4bc]"
-        />
-      </Mini>
+        <Mini
+          title={t("today.notes")}
+          action={
+            noteState === "saving"
+              ? t("common.saving")
+              : noteState === "saved"
+                ? t("common.saved")
+                : noteState === "error"
+                  ? t("common.saveFailed")
+                  : null
+          }
+        >
+          <textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            rows={4}
+            placeholder={t("today.notePlaceholder")}
+            className="w-full resize-none bg-transparent text-[11.5px] leading-relaxed text-ink-2 outline-none placeholder:text-[#c8c4bc]"
+          />
+        </Mini>
+      </div>
 
       {habitOpen ? (
         <div
