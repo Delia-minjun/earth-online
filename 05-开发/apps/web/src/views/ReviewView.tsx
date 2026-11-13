@@ -171,17 +171,21 @@ export function ReviewView() {
   const [weekData, setWeekData] = useState<ApiWeek | null>(null);
   const [meta, setMeta] = useState<ApiMeta | null>(null);
   const [budget, setBudget] = useState<ApiBudget | null>(null);
-  const [form, setForm] = useState<Review>(EMPTY);
+  const [draft, setDraft] = useState<{ weekId: string; value: Review } | null>(null);
   const [state, setState] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
   const target = useMemo(() => shiftWeeks(mondayOfThisWeek(), offset), [offset]);
   const { isoYear, isoWeek } = useMemo(() => isoWeekOf(target), [target]);
   const weekId = `${isoYear}-W${String(isoWeek).padStart(2, "0")}`;
+  const ready = draft?.weekId === weekId;
+  const form = ready ? draft.value : EMPTY;
   const sunday = new Date(target.getFullYear(), target.getMonth(), target.getDate() + 6);
   const rangeLabel = `${target.getMonth() + 1}/${target.getDate()} — ${sunday.getMonth() + 1}/${sunday.getDate()}`;
 
   const savedRef = useRef(JSON.stringify(EMPTY));
-  const loadedRef = useRef<string | null>(null);
+  const saveQueue = useRef<Promise<unknown>>(Promise.resolve());
+  const submittedRef = useRef<string | null>(null);
+  const flushRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     let alive = true;
@@ -209,11 +213,13 @@ export function ReviewView() {
   }, []);
 
   useEffect(() => {
-    if (loadedRef.current === weekId) return;
-    loadedRef.current = weekId;
-    api
-      .review(weekId)
+    let alive = true;
+    setDraft(null);
+    setState("idle");
+    // 等待已发出的保存完成，快速切回同一周时不会读到旧版本。
+    saveQueue.current.then(() => api.review(weekId))
       .then((r) => {
+        if (!alive) return;
         const next: Review = {
           keep: r.keep ?? "",
           improve: r.improve ?? "",
@@ -221,29 +227,53 @@ export function ReviewView() {
           start: r.start ?? "",
         };
         savedRef.current = JSON.stringify(next);
-        setForm(next);
+        submittedRef.current = null;
+        setDraft({ weekId, value: next });
         setState("idle");
       })
-      .catch(() => setState("error"));
+      .catch(() => alive && setState("error"));
+    return () => { alive = false; };
+  }, [weekId]);
+
+  useEffect(() => () => {
+    // 切周或卸载时，把尚未到防抖期限的输入保存到原周。
+    flushRef.current();
+    flushRef.current = () => {};
   }, [weekId]);
 
   useEffect(() => {
-    if (loadedRef.current !== weekId) return;
+    flushRef.current = () => {};
+    if (!draft || draft.weekId !== weekId) return;
+    const form = draft.value;
     const snapshot = JSON.stringify(form);
-    if (snapshot === savedRef.current) return;
+    if (snapshot === savedRef.current &&
+        (submittedRef.current === null || submittedRef.current === snapshot)) return;
 
     setState("saving");
-    const timer = window.setTimeout(() => {
-      api
-        .saveReview(weekId, form)
+    let alive = true;
+    let submitted = false;
+    const submit = () => {
+      if (submitted) return;
+      submitted = true;
+      submittedRef.current = snapshot;
+      const pending = saveQueue.current.then(() => api.saveReview(weekId, form));
+      // 串行写入，旧请求不会在新请求后落库；失败不会堵住后续保存。
+      saveQueue.current = pending.catch(() => undefined);
+      pending
         .then(() => {
+          if (!alive) return;
           savedRef.current = snapshot;
           setState("saved");
         })
-        .catch(() => setState("error"));
-    }, 700);
-    return () => window.clearTimeout(timer);
-  }, [form, weekId]);
+        .catch(() => alive && setState("error"));
+    };
+    flushRef.current = submit;
+    const timer = window.setTimeout(submit, 700);
+    return () => {
+      alive = false;
+      window.clearTimeout(timer);
+    };
+  }, [draft, weekId]);
 
   const stats = useMemo(() => {
     const blocks = weekData?.blocks ?? [];
@@ -407,7 +437,13 @@ export function ReviewView() {
             </header>
             <textarea
               value={form[q.key]}
-              onChange={(e) => setForm((f) => ({ ...f, [q.key]: e.target.value }))}
+              disabled={!ready}
+              onChange={(e) => {
+                const value = e.target.value;
+                setDraft((d) => d?.weekId === weekId
+                  ? { weekId, value: { ...d.value, [q.key]: value } }
+                  : d);
+              }}
               rows={4}
               placeholder={t(q.hint)}
               className="mt-2 min-h-[88px] w-full resize-y bg-transparent text-[12px] leading-relaxed text-ink-2 outline-none placeholder:text-[#c8c4bc]"

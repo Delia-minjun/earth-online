@@ -227,7 +227,9 @@
   "block": {
     "title": "New schedule block",
     "add": "Add a block to this day",
-    "notePlaceholder": "Note (optional)"
+    "notePlaceholder": "Note (optional)",
+    "editTitle": "Edit block",
+    "editHint": "Click to edit this block"
   },
   "budget": {
     "title": "Monthly budget",

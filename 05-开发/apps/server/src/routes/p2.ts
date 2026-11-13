@@ -184,7 +184,16 @@ p2.get("/money/categories", (c) => {
       .prepare("SELECT COUNT(*) AS n FROM time_block WHERE category_id = ? AND deleted_at IS NULL")
       .get(id) as { n: number };
     if ((used?.n ?? 0) > 0) return c.json({ error: "in use" }, 409);
-    db.prepare("DELETE FROM category WHERE id = ?").run(id);
+    // 软删除的时间块仍受外键约束；仅解除这些历史记录的分类关联。
+    db.exec("BEGIN");
+    try {
+      db.prepare("UPDATE time_block SET category_id = NULL WHERE category_id = ? AND deleted_at IS NOT NULL").run(id);
+      db.prepare("DELETE FROM category WHERE id = ?").run(id);
+      db.exec("COMMIT");
+    } catch (error) {
+      db.exec("ROLLBACK");
+      throw error;
+    }
     return c.json({ ok: true });
   });
 

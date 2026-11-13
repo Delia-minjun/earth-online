@@ -1,8 +1,8 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { getDb } from "../db.ts";
-import { today } from "../lib/dates.ts";
-import { earn, getRules } from "../lib/coins.ts";
+import { shiftDate, today } from "../lib/dates.ts";
+import { earn, bumpArea, getRules } from "../lib/coins.ts";
 
 export const p4 = new Hono();
 
@@ -72,7 +72,7 @@ p4.post("/focus/start", async (c) => {
 /**
  * 结束会话：需要前端点「完成」确认（防挂机）。
  * - 实际时长按时间戳算，不信前端传的秒数（前端只用来对时）
- * - 专注会话自动写一条时间块（来源 focus）
+ * - 专注会话按天拆分时间块（来源 focus），block_id 指向第一条
  * - 每满 25 分钟发 focus25 币，一次会话只发一次
  */
 p4.post("/focus/:id/finish", async (c) => {
@@ -100,38 +100,60 @@ p4.post("/focus/:id/finish", async (c) => {
   let blockId: string | null = null;
   let coins = 0;
 
-  if (s.kind === "focus" && actualSec >= 60) {
-    const start = new Date(s.started_at);
-    const startMin = start.getHours() * 60 + start.getMinutes();
-    const endMin = Math.min(24 * 60, startMin + Math.round(actualSec / 60));
-    const task = s.task_id
-      ? (db.prepare("SELECT title FROM task WHERE id = ?").get(s.task_id) as { title: string } | undefined)
-      : undefined;
-    const title = task?.title ?? "专注";
+  // 时间块、发币与会话状态一起提交，失败重试不会留下半条记录。
+  db.exec("BEGIN");
+  try {
+    if (s.kind === "focus" && actualSec >= 60) {
+      const start = new Date(s.started_at);
+      let startMin = start.getHours() * 60 + start.getMinutes();
+      const task = s.task_id
+        ? (db.prepare("SELECT title FROM task WHERE id = ?").get(s.task_id) as { title: string } | undefined)
+        : undefined;
+      const title = task?.title ?? "专注";
 
-    blockId = uid();
-    db.prepare(
-      `INSERT INTO time_block (id, date, start_min, end_min, title, category_id, source)
-       VALUES (?, ?, ?, ?, ?, ?, 'focus')`,
-    ).run(blockId, s.date, startMin, endMin, title, "cat-study");
+      const category = db.prepare("SELECT id FROM category WHERE id = 'cat-study'").get() as
+        | { id: string }
+        | undefined;
+      const insertBlock = db.prepare(
+        `INSERT INTO time_block (id, date, start_min, end_min, title, category_id, source)
+         VALUES (?, ?, ?, ?, ?, ?, 'focus')`,
+      );
+      let remaining = Math.round(actualSec / 60);
+      let date = s.date;
+      while (remaining > 0) {
+        const minutes = Math.min(1440 - startMin, remaining);
+        const nextId = uid();
+        blockId ??= nextId;
+        insertBlock.run(nextId, date, startMin, startMin + minutes, title, category?.id ?? null);
+        remaining -= minutes;
+        date = shiftDate(date, 1);
+        startMin = 0;
+      }
 
-    const rules = getRules();
-    const chunks = Math.floor(actualSec / (25 * 60));
-    if (chunks > 0) {
-      const res = earn({
-        amount: chunks * rules.focus25,
-        kind: "focus",
-        refId: id,
-        note: title,
-        date: s.date,
-      });
-      if (res.ok) coins = res.amount;
+      const rules = getRules();
+      const chunks = Math.floor(actualSec / (25 * 60));
+      // 专注算「学业事业」：无论够不够 25 分钟，进度条都加一点
+      bumpArea("area-study", 0.08);
+      if (chunks > 0) {
+        const res = earn({
+          amount: chunks * rules.focus25,
+          kind: "focus",
+          refId: id,
+          note: title,
+          date: s.date,
+        });
+        if (res.ok) coins = res.amount;
+      }
     }
-  }
 
-  db.prepare(
-    `UPDATE focus_session SET status = 'done', ended_at = ?, actual_sec = ?, block_id = ? WHERE id = ?`,
-  ).run(endedAt.toISOString(), actualSec, blockId, id);
+    db.prepare(
+      `UPDATE focus_session SET status = 'done', ended_at = ?, actual_sec = ?, block_id = ? WHERE id = ?`,
+    ).run(endedAt.toISOString(), actualSec, blockId, id);
+    db.exec("COMMIT");
+  } catch (error) {
+    db.exec("ROLLBACK");
+    throw error;
+  }
 
   return c.json({
     ...(db.prepare(`SELECT ${SESSION_COLS} FROM focus_session WHERE id = ?`).get(id) as object),

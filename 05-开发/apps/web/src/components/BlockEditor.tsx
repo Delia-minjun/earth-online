@@ -17,6 +17,7 @@ export function BlockEditor({
   date,
   blocks,
   courses,
+  editing,
   onClose,
   onSaved,
 }: {
@@ -24,6 +25,8 @@ export function BlockEditor({
   date: string;
   blocks: ApiWeekBlock[];
   courses: ApiCourse[];
+  /** 传了就是「改日程」，不传是「新建」 */
+  editing?: ApiWeekBlock | null;
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -39,10 +42,20 @@ export function BlockEditor({
 
   useEffect(() => {
     if (!open) return;
-    setTitle("");
-    setNote("");
     setError(null);
     setBusy(false);
+    if (editing) {
+      setTitle(editing.title);
+      setNote(editing.note ?? "");
+      setStartMin(editing.start_min);
+      setEndMin(editing.end_min);
+      if (editing.category_id) setCategoryId(editing.category_id);
+    } else {
+      setTitle("");
+      setNote("");
+      setStartMin(480);
+      setEndMin(540);
+    }
     api
       .meta()
       .then((m) => {
@@ -50,9 +63,12 @@ export function BlockEditor({
         setCategoryId((prev) => prev || (m.categories[0]?.id ?? ""));
       })
       .catch(() => undefined);
-  }, [open]);
+  }, [open, editing]);
 
-  const dayBlocks = useMemo(() => blocks.filter((b) => b.date === date), [blocks, date]);
+  const dayBlocks = useMemo(
+    () => blocks.filter((b) => b.date === date && b.id !== editing?.id),
+    [blocks, date, editing],
+  );
   const dayCourses = useMemo(
     () => courses.filter((c) => c.weekday === weekdayOf(date)),
     [courses, date],
@@ -81,14 +97,24 @@ export function BlockEditor({
     setBusy(true);
     setError(null);
     try {
-      await api.addBlock({
-        date,
-        startMin,
-        endMin,
-        title: name,
-        categoryId: categoryId || undefined,
-        note: note.trim() || undefined,
-      });
+      if (editing) {
+        await api.updateBlock(editing.id, {
+          startMin,
+          endMin,
+          title: name,
+          categoryId: categoryId || null,
+          note: note.trim() || null,
+        });
+      } else {
+        await api.addBlock({
+          date,
+          startMin,
+          endMin,
+          title: name,
+          categoryId: categoryId || undefined,
+          note: note.trim() || undefined,
+        });
+      }
       onSaved();
       onClose();
     } catch (e) {
@@ -110,7 +136,9 @@ export function BlockEditor({
       >
         <header className="flex items-center justify-between">
           <div>
-            <h2 className="text-[13px] font-semibold text-ink">{t("block.title")}</h2>
+            <h2 className="text-[13px] font-semibold text-ink">
+              {editing ? t("block.editTitle") : t("block.title")}
+            </h2>
             <p className="mt-0.5 text-[10px] tabular-nums text-ink-3">{date}</p>
           </div>
           <button

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, COURSE_COLOR, hhmm, isoWeekOf, mondayOfThisWeek, shiftWeeks, type ApiWeek } from "../api";
+import { api, COURSE_COLOR, hhmm, isoWeekOf, mondayOfThisWeek, shiftWeeks, type ApiWeek, type ApiWeekBlock } from "../api";
 import { BlockEditor } from "../components/BlockEditor";
 import { TimelineRail } from "../components/TimelineRail";
 import { DayTasksPanel } from "../components/DayTasksPanel";
@@ -21,6 +21,8 @@ type Item = {
   end: number;
   color: string;
   location?: string | null;
+  categoryId?: string | null;
+  note?: string | null;
 };
 
 /** 月历：点某天跳到那一周 */
@@ -180,6 +182,7 @@ export function WeekView({
   };
 
   const [blockDate, setBlockDate] = useState<string | null>(null);
+  const [editingBlock, setEditingBlock] = useState<ApiWeekBlock | null>(null);
   const [selDate, setSelDate] = useState<string>(() => ymd(new Date()));
 
   const wd = i18n.language === "zh-CN" ? WD_ZH : WD_EN;
@@ -253,11 +256,15 @@ export function WeekView({
       ) : null}
 
       <BlockEditor
-        open={blockDate !== null}
-        date={blockDate ?? ""}
+        open={blockDate !== null || editingBlock !== null}
+        date={editingBlock?.date ?? blockDate ?? ""}
         blocks={data?.blocks ?? []}
         courses={data?.courses ?? []}
-        onClose={() => setBlockDate(null)}
+        editing={editingBlock}
+        onClose={() => {
+          setBlockDate(null);
+          setEditingBlock(null);
+        }}
         onSaved={() => void load()}
       />
 
@@ -285,6 +292,8 @@ export function WeekView({
               start: b.start_min,
               end: b.end_min,
               color: b.category_color ?? "#d8d4cc",
+              categoryId: b.category_id,
+              note: b.note,
             }));
           const items = [...courses, ...blocks].sort((a, b) => a.start - b.start);
           const empty = items.length === 0;
@@ -313,7 +322,40 @@ export function WeekView({
                 {items.map((it) => (
                   <div
                     key={`${it.kind}-${it.id}`}
-                    className="group/item flex items-center gap-1.5 rounded-lg border border-line-2 bg-surface px-2 py-1"
+                    role={it.kind === "block" ? "button" : undefined}
+                    tabIndex={it.kind === "block" ? 0 : undefined}
+                    onClick={(e) => {
+                      if (it.kind !== "block") return;
+                      e.stopPropagation();
+                      setEditingBlock({
+                        id: it.id,
+                        date: d.date,
+                        start_min: it.start,
+                        end_min: it.end,
+                        title: it.title,
+                        category_id: it.categoryId ?? null,
+                        category_color: it.color,
+                        note: it.note ?? null,
+                      });
+                    }}
+                    onKeyDown={(e) => {
+                      if (it.kind === "block" && e.key === "Enter") {
+                        setEditingBlock({
+                          id: it.id,
+                          date: d.date,
+                          start_min: it.start,
+                          end_min: it.end,
+                          title: it.title,
+                          category_id: it.categoryId ?? null,
+                          category_color: it.color,
+                          note: it.note ?? null,
+                        });
+                      }
+                    }}
+                    title={it.kind === "block" ? t("block.editHint") : undefined}
+                    className={`group/item flex items-center gap-1.5 rounded-lg border border-line-2 bg-surface px-2 py-1 ${
+                      it.kind === "block" ? "cursor-pointer hover:border-accent" : ""
+                    }`}
                   >
                     <span
                       className="h-4 w-[2px] shrink-0 rounded-full"

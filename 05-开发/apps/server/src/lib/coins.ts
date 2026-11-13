@@ -130,6 +130,14 @@ function daysBetween(from: string, to: string): number {
   return Math.max(0, Math.round((b - a) / 86_400_000));
 }
 
+function decayedValue(cur: ProgressRow | undefined, date: string, rules: CoinRules): number {
+  const value = cur?.value ?? 0.5;
+  const days = cur?.updated_on ? daysBetween(cur.updated_on, date) : 0;
+  return days > 0
+    ? Math.max(rules.decayFloor ?? FLOOR_DEFAULT, value * Math.pow(1 - rules.decayPerDay, days))
+    : value;
+}
+
 /**
  * 惰性结算：从上次结算日到今天，每过一天按 decayPerDay 相对衰减，永不低于下限。
  * 只动进度条，不碰币与任何记录。
@@ -137,7 +145,6 @@ function daysBetween(from: string, to: string): number {
 export function settleAreas(): { area_id: string; value: number }[] {
   const db = getDb();
   const rules = getRules();
-  const floor = rules.decayFloor ?? FLOOR_DEFAULT;
   const d = today();
 
   const areas = db.prepare("SELECT id FROM area WHERE archived = 0 ORDER BY sort").all() as {
@@ -150,13 +157,7 @@ export function settleAreas(): { area_id: string; value: number }[] {
       .prepare("SELECT value, updated_on FROM area_progress WHERE area_id = ?")
       .get(area.id) as ProgressRow | undefined;
 
-    let value = cur?.value ?? 0.5;
-    const from = cur?.updated_on;
-
-    if (from && from !== d) {
-      const days = daysBetween(from, d);
-      if (days > 0) value = Math.max(floor, value * Math.pow(1 - rules.decayPerDay, days));
-    }
+    const value = decayedValue(cur, d, rules);
 
     db.prepare(
       `INSERT INTO area_progress (area_id, value, updated_on) VALUES (?, ?, ?)
@@ -173,11 +174,12 @@ export function bumpArea(areaId: string | null | undefined, delta = 0.1): void {
   if (!areaId) return;
   const db = getDb();
   const cur = db
-    .prepare("SELECT value FROM area_progress WHERE area_id = ?")
-    .get(areaId) as { value: number } | undefined;
-  const next = Math.min(1, (cur?.value ?? 0.5) + delta);
+    .prepare("SELECT value, updated_on FROM area_progress WHERE area_id = ?")
+    .get(areaId) as ProgressRow | undefined;
+  const d = today();
+  const next = Math.min(1, decayedValue(cur, d, getRules()) + delta);
   db.prepare(
     `INSERT INTO area_progress (area_id, value, updated_on) VALUES (?, ?, ?)
      ON CONFLICT(area_id) DO UPDATE SET value = excluded.value, updated_on = excluded.updated_on`,
-  ).run(areaId, next, today());
+  ).run(areaId, next, d);
 }

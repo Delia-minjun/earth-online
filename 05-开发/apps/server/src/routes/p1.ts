@@ -245,7 +245,18 @@ api.patch("/tasks/:id", async (c) => {
       refId: id,
       note: row?.title ?? null,
     });
-    bumpArea(row?.area_id, 0.1);
+    // 不依赖发币结果：上限/关闭发币时也只允许增长一次。
+    db.exec("BEGIN");
+    try {
+      const claimed = db.prepare(
+        "UPDATE task SET progress_awarded = 1 WHERE id = ? AND progress_awarded = 0",
+      ).run(id);
+      if (claimed.changes > 0) bumpArea(row?.area_id, 0.1);
+      db.exec("COMMIT");
+    } catch (error) {
+      db.exec("ROLLBACK");
+      throw error;
+    }
   }
 
   return c.json(db.prepare("SELECT * FROM task WHERE id = ?").get(id));
@@ -342,6 +353,93 @@ api.delete("/blocks/:id", (c) => {
   return c.json({ ok: true });
 });
 
+/** 改日程：改时间、标题、类别、备注；冲突判断要排除自己 */
+api.patch("/blocks/:id", async (c) => {
+  const id = c.req.param("id");
+  const r = await readBody(
+    c,
+    z.object({
+      startMin: z.number().int().min(0).max(24 * 60).optional(),
+      endMin: z.number().int().min(0).max(24 * 60).optional(),
+      title: z.string().trim().min(1).max(120).optional(),
+      categoryId: z.string().nullable().optional(),
+      note: z.string().trim().max(300).nullable().optional(),
+    }),
+  );
+  if (!r.ok) return c.json({ error: r.error }, 400);
+
+  const db = getDb();
+  const cur = db
+    .prepare("SELECT * FROM time_block WHERE id = ? AND deleted_at IS NULL")
+    .get(id) as
+    | {
+        date: string;
+        start_min: number;
+        end_min: number;
+        title: string;
+        category_id: string | null;
+        note: string | null;
+      }
+    | undefined;
+  if (!cur) return c.json({ error: "not found" }, 404);
+
+  const startMin = r.data.startMin ?? cur.start_min;
+  const endMin = r.data.endMin ?? cur.end_min;
+  if (endMin <= startMin) return c.json({ error: "endMin must be > startMin" }, 400);
+
+  const timeChanged = startMin !== cur.start_min || endMin !== cur.end_min;
+  if (timeChanged) {
+    const clash = db
+      .prepare(
+        `SELECT title, start_min, end_min FROM time_block
+          WHERE date = ? AND id != ? AND deleted_at IS NULL AND ? < end_min AND ? > start_min
+          LIMIT 1`,
+      )
+      .get(cur.date, id, startMin, endMin) as
+      | { title: string; start_min: number; end_min: number }
+      | undefined;
+    if (clash) {
+      return c.json(
+        { error: "overlap", clash: { title: clash.title, startMin: clash.start_min, endMin: clash.end_min } },
+        409,
+      );
+    }
+
+    const blockWeek = teachingWeekOf(cur.date);
+    const courseClash = (
+      db
+        .prepare(
+          `SELECT name, start_min, end_min, week_type, week_start, week_end FROM course
+            WHERE archived = 0 AND weekday = ? AND ? < end_min AND ? > start_min`,
+        )
+        .all(weekdayOf(cur.date), startMin, endMin) as unknown as (WeekRule & {
+        name: string;
+        start_min: number;
+        end_min: number;
+      })[]
+    ).find((c) => activeIn(c, blockWeek));
+    if (courseClash) {
+      return c.json(
+        { error: "overlap", clash: { title: courseClash.name, startMin: courseClash.start_min, endMin: courseClash.end_min } },
+        409,
+      );
+    }
+  }
+
+  db.prepare(
+    `UPDATE time_block SET start_min = ?, end_min = ?, title = ?, category_id = ?, note = ? WHERE id = ?`,
+  ).run(
+    startMin,
+    endMin,
+    r.data.title ?? cur.title,
+    r.data.categoryId !== undefined ? r.data.categoryId : cur.category_id,
+    r.data.note !== undefined ? r.data.note : cur.note,
+    id,
+  );
+
+  return c.json(db.prepare("SELECT * FROM time_block WHERE id = ?").get(id));
+});
+
 /* ---------------- habits ---------------- */
 
 api.post("/habits", async (c) => {
@@ -377,6 +475,8 @@ api.post("/habits/:id/toggle", async (c) => {
   // 打卡发币；同一习惯同一天只发一次。连续 7 天额外奖励一次（同样去重）
   const rules = getRules();
   earn({ amount: rules.habit, kind: "habit", refId: `${id}:${date}`, note: null });
+  // 打卡属于「成长」：坚持本身就是成长，给进度条加一点
+  bumpArea("area-growth", 0.05);
 
   const streak = (
     db
@@ -1161,6 +1261,8 @@ api.put("/review/:weekId", async (c) => {
       refId: weekIdParam,
       note: weekIdParam,
     });
+    // 复盘属于「成长」
+    bumpArea("area-growth", 0.12);
   }
 
   return c.json(db.prepare("SELECT * FROM weekly_review WHERE week_id = ?").get(weekIdParam));

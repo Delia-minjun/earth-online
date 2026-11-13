@@ -228,7 +228,9 @@
   "block": {
     "title": "新建日程",
     "add": "给这天加一段",
-    "notePlaceholder": "备注（可选）"
+    "notePlaceholder": "备注（可选）",
+    "editTitle": "改日程",
+    "editHint": "点击修改这段日程"
   },
   "budget": {
     "title": "月度预算",

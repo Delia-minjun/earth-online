@@ -396,6 +396,16 @@ export const api = {
     note?: string;
   }) => request<ApiBlock>("/blocks", { method: "POST", body: JSON.stringify(input) }),
   deleteBlock: (id: string) => request<{ ok: true }>(`/blocks/${id}`, { method: "DELETE" }),
+  updateBlock: (
+    id: string,
+    patch: {
+      startMin?: number;
+      endMin?: number;
+      title?: string;
+      categoryId?: string | null;
+      note?: string | null;
+    },
+  ) => request<ApiBlock>(`/blocks/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
 
   toggleHabit: (id: string, date?: string) =>
     request<{ habitId: string; date: string; done: number }>(`/habits/${id}/toggle`, {
