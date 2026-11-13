@@ -223,11 +223,26 @@ export function SettingsView() {
 
       <CategoriesCard />
 
+      <Card title={t("settings.guide")}>
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-[10.5px] leading-relaxed text-ink-3">{t("settings.guideHint")}</p>
+          <button
+            type="button"
+            onClick={() => {
+              window.dispatchEvent(new Event("life:tour"));
+            }}
+            className="shrink-0 rounded-full border border-line bg-surface px-3 py-1.5 text-[10.5px] text-ink-2 transition-colors hover:border-accent hover:text-ink"
+          >
+            {t("settings.guideStart")}
+          </button>
+        </div>
+      </Card>
+
       <Card title={t("settings.about")}>
         <dl className="space-y-1.5 text-[11px]">
           <div className="flex justify-between">
             <dt className="text-ink-3">{t("settings.version")}</dt>
-            <dd className="text-ink-2">0.1.0 · P1</dd>
+            <dd className="text-ink-2">0.1.0 · P3</dd>
           </div>
           <div className="flex justify-between">
             <dt className="text-ink-3">{t("settings.storage")}</dt>
