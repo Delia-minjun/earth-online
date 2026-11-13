@@ -1,0 +1,13 @@
+{
+  "name": "desktop-tools",
+  "private": true,
+  "version": "0.0.0",
+  "description": "仅用于打包桌面版的工具链，不参与工作区依赖",
+  "devDependencies": {
+    "electron": "37.2.6",
+    "electron-builder": "25.1.8"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["electron", "electron-builder", "esbuild"]
+  }
+}

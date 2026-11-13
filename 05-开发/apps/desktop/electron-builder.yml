@@ -1,0 +1,50 @@
+appId: com.delia.earthonline
+productName: 地球 Online
+copyright: 个人自用
+
+directories:
+  output: release
+  buildResources: build
+
+# 只把主进程代码和必要文件打进 asar；服务端与前端放在 extraResources
+files:
+  - src/**/*
+  - package.json
+
+extraResources:
+  - from: dist/server.mjs
+    to: server.mjs
+  - from: dist/web
+    to: web
+  - from: dist/migrations
+    to: migrations
+  - from: build/icon.ico
+    to: icon.ico
+
+# 不依赖项目里的 electron（本机用 desktop-tools 里的副本打包）
+electronVersion: 37.2.6
+
+win:
+  # 本机没有签名证书，跳过签名与 exe 资源改写（避免 winCodeSign 解压时需要符号链接权限）
+  signAndEditExecutable: false
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: build/icon.ico
+  artifactName: EarthOnline-Setup-${version}.${ext}
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: 地球 Online
+  deleteAppDataOnUninstall: false
+
+publish:
+  provider: github
+  owner: Delia-minjun
+  repo: earth-online
+  releaseType: release

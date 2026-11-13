@@ -46,3 +46,11 @@ venv/
 # ---- 临时文件 ----
 *.tmp
 .tmp/
+
+# ---- 桌面版（Electron）----
+05-开发/apps/desktop/release/
+05-开发/apps/desktop/dist/
+05-开发/desktop-tools/node_modules/
+# 安装包资源（图标）要入库，build/ 是通用忽略规则，这里放开
+!05-开发/apps/desktop/build/
+!05-开发/apps/desktop/build/icon.ico

@@ -1,0 +1,13 @@
+{
+  "name": "@life/desktop",
+  "private": true,
+  "version": "0.1.0",
+  "description": "地球 Online 桌面版（Electron 壳，内含本地服务）",
+  "author": "Delia",
+  "main": "src/main.cjs",
+  "scripts": {
+    "prepare-bundle": "node scripts/build.mjs",
+    "pack:portable": "node scripts/build.mjs && node ../../desktop-tools/node_modules/electron-builder/out/cli/cli.js --win --dir --config electron-builder.yml --config.npmRebuild=false",
+    "pack:installer": "node scripts/build.mjs && node ../../desktop-tools/node_modules/electron-builder/out/cli/cli.js --win --config electron-builder.yml --config.npmRebuild=false"
+  }
+}

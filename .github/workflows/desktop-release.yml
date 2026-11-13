@@ -1,0 +1,71 @@
+name: Desktop release
+
+# 打 tag（v1.2.3）时自动构建 Windows 安装包并发布到 GitHub Releases
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "要发布的版本号（例如 0.2.0）"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: 05-开发
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: 05-开发/pnpm-lock.yaml
+
+      - name: Install workspace deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Build web
+        run: pnpm --filter @life/web build
+
+      - name: Bundle server + web for desktop
+        run: pnpm --filter @life/desktop prepare-bundle
+
+      - name: Install packaging toolchain (electron + builder)
+        working-directory: 05-开发/desktop-tools
+        run: |
+          pnpm install --config.node-linker=hoisted
+          node node_modules/electron/install.js
+
+      - name: Set version
+        shell: pwsh
+        run: |
+          $v = "${{ github.event.inputs.version }}"
+          if (-not $v) { $v = "${{ github.ref_name }}".TrimStart("v") }
+          (Get-Content apps/desktop/package.json -Raw) -replace '"version":\s*"[^"]*"', ('"version": "' + $v + '"') | Set-Content apps/desktop/package.json -NoNewline
+          "VERSION=$v" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Package and publish
+        working-directory: 05-开发/apps/desktop
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          node ../../desktop-tools/node_modules/electron-builder/out/cli/cli.js --win --publish always --config electron-builder.yml
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer
+          path: 05-开发/apps/desktop/release/*.exe

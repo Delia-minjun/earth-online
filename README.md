@@ -253,6 +253,60 @@ git fetch → 对比本地与 origin/main
 - **写新功能**：不可能自动——那得有人写代码并推送
 - 所以你的日常是：改完 → 双击 `同步.cmd` 推上去 → 另一台机器（或这台机器第二天凌晨）自己更新到最新
 
+## 桌面版（安装包 / 免安装版）
+
+命令行版本要求装 Node；桌面版把 Node、服务、前端全打进一个应用里，双击就能用。
+
+### 两种形态
+
+| 形态 | 怎么来 | 适合谁 |
+|---|---|---|
+| **免安装版** | 本地 `pack:portable` 生成 `release\win-unpacked\地球 Online.exe` | 自己用、快速验证 |
+| **安装包** | GitHub Actions 打 tag 自动构建 `EarthOnline-Setup-x.y.z.exe` | 发给别人 |
+
+### 本地打免安装版
+
+```bat
+cd 05-开发
+pnpm --filter @life/web build
+cd apps\desktop
+pnpm pack:portable
+```
+
+产物在 `05-开发\apps\desktop\release\win-unpacked\`，整个文件夹可以拷走，双击 `地球 Online.exe` 即用。
+
+> 本机不做安装包（NSIS 需要往临时目录写文件，DSH 沙箱里会失败）。安装包统一交给 CI 构建。
+
+### 发安装包（打 tag 触发）
+
+```bat
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+`.github/workflows/desktop-release.yml` 会自动：装依赖 → 构建前端 → 打包服务端 → 打 NSIS 安装包 → 上传到 GitHub Releases。
+
+### 自动更新怎么工作
+
+桌面版启动 6 秒后**静默检查** GitHub Releases：
+
+```
+有新版本 → 后台下载 → 下载完弹窗「立即重启 / 下次再说」
+         → 点立即重启：装好并重开，数据不动
+```
+
+用的是 `electron-updater` + `electron-builder` 的 `publish: github` 配置，
+所以只需要**打 tag 发 Release**，用户端什么都不用做。
+
+### 桌面版数据在哪
+
+`%APPDATA%\地球 Online\life.db`（Electron 的 userData 目录），和命令行版的 `05-开发\data\life.db` 是**两个独立库**。
+想迁移：把命令行版那个 `life.db` 复制过去改名即可（先关掉应用）。
+
+### 两者不要同时开
+
+都占 7788。桌面版启动时会先探测：如果 7788 已经有服务在跑（比如命令行版开着），它就直接连上去，不再起第二个。
+
 ## 开发约定（改代码前必读）
 
 1. **先定位根因，再动手。** 任何修改或 bug 修复，必须先说清楚「为什么会这样」——哪个文件、哪一行、在什么条件下触发、怎么复现。解释与复现对得上，才允许改代码。

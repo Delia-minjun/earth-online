@@ -1,9 +1,11 @@
-﻿import { readdirSync, readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { getDb } from "./db.ts";
 
-const MIGRATIONS_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "migrations");
+const MIGRATIONS_DIR =
+  process.env.LIFE_MIGRATIONS_DIR ??
+  join(dirname(fileURLToPath(import.meta.url)), "..", "migrations");
 
 /**
  * 极简迁移器：按文件名排序，记录已执行过的脚本。
