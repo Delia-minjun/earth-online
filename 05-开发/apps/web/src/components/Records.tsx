@@ -261,7 +261,7 @@ export function BodyCard({ date }: { date: string }) {
         {weighed.length ? (
           <WeightChart points={weighed} />
         ) : (
-          <p className="text-[10px] text-[#c8c4bc]">{t("body.noWeight")}</p>
+          <p className="text-[10px] text-[#c8c4bc]">{t("body.noWeightShort")}</p>
         )}
       </div>
     </Card>

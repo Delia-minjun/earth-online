@@ -97,8 +97,6 @@
     "ledgerAll": "See all",
     "todayIn": "Today +{{n}}",
     "noArea": "No area data yet",
-    "shopEmpty": "No rewards yet — add one with the ＋ above",
-    "ledgerEmpty": "No entries yet. Finishing tasks, check-ins and reviews post here automatically",
     "addTitle": "New reward",
     "editTitle": "Edit reward",
     "namePlaceholder": "Reward name (e.g. a bubble tea)",
@@ -111,7 +109,8 @@
     "kindFocus": "Focus session",
     "kindReview": "Weekly review",
     "kindRedeem": "Redeemed",
-    "kindBonus": "Bonus"
+    "kindBonus": "Bonus",
+    "ledgerEmptyShort": "No entries yet"
   },
   "task": {
     "priority0": "Normal",
@@ -149,7 +148,7 @@
     "weightPlaceholder": "Weight",
     "twoWeeks": "2-week",
     "last30": "Last 30 days",
-    "noWeight": "No weight logged yet — enter one above and the curve appears"
+    "noWeightShort": "No weight records yet"
   },
   "tour": {
     "skip": "Skip",
@@ -280,7 +279,6 @@
     "location": "Room",
     "count": "{{n}} classes",
     "empty": "No classes yet",
-    "emptyHint": "Add your weekly classes and planning will avoid them",
     "import": "Import screenshot",
     "importing": "Reading…",
     "importConfirm": "Import selected",
@@ -437,7 +435,6 @@
     "daysLeft": "{{n}} days left",
     "generated": "{{n}} cards created",
     "coins": "+{{n}} coins",
-    "noSubject": "No subjects yet — create one on the right",
     "pdfNoText": "No extractable text in this PDF (likely scanned). Screenshot it and upload the image instead",
     "unsupportedType": "Unsupported file type — use PDF / Word / PPT / Markdown / image",
     "emptyFile": "No text found in this file",
@@ -446,6 +443,7 @@
     "notePlaceholder": "Add a note",
     "uploading": "Reading file…",
     "saveAsMaterial": "Save this text as a material",
-    "pickFile": "Choose file"
+    "pickFile": "Choose file",
+    "noSubjectShort": "No subjects yet"
   }
 }

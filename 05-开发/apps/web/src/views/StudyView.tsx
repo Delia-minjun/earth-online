@@ -306,7 +306,7 @@ export function StudyView() {
             </button>
           ))}
           {subjects.length === 0 ? (
-            <span className="text-[10.5px] text-[#c8c4bc]">{t("study.noSubject")}</span>
+            <span className="text-[10.5px] text-[#c8c4bc]">{t("study.noSubjectShort")}</span>
           ) : null}
         </div>
 

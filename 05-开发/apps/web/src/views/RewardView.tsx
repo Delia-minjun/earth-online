@@ -210,9 +210,7 @@ export function RewardView() {
               );
             })}
           </div>
-        ) : (
-          <p className="text-[10.5px] text-[#c8c4bc]">{t("reward.shopEmpty")}</p>
-        )}
+        ) : null}
       </Card>
 
       <Card title={t("reward.ledger")}>
@@ -243,7 +241,7 @@ export function RewardView() {
             ))}
           </ul>
         ) : (
-          <p className="text-[10.5px] text-[#c8c4bc]">{t("reward.ledgerEmpty")}</p>
+          <p className="text-[10.5px] text-[#c8c4bc]">{t("reward.ledgerEmptyShort")}</p>
         )}
       </Card>
 

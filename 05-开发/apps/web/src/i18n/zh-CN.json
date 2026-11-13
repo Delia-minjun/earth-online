@@ -98,8 +98,6 @@
     "ledgerAll": "查看全部",
     "todayIn": "今日 +{{n}}",
     "noArea": "还没有领域数据",
-    "shopEmpty": "还没有奖赏，点右上角 ＋ 加一个",
-    "ledgerEmpty": "还没有流水。完成任务、打卡、复盘会自动记账",
     "addTitle": "新增奖赏",
     "editTitle": "修改奖赏",
     "namePlaceholder": "奖赏名称（如：一杯奶茶）",
@@ -112,7 +110,8 @@
     "kindFocus": "专注计时",
     "kindReview": "复盘",
     "kindRedeem": "兑换奖赏",
-    "kindBonus": "奖励"
+    "kindBonus": "奖励",
+    "ledgerEmptyShort": "还没有流水"
   },
   "task": {
     "priority0": "普通",
@@ -150,7 +149,7 @@
     "weightPlaceholder": "体重",
     "twoWeeks": "近两周",
     "last30": "近 30 天",
-    "noWeight": "还没有体重记录，在上面填一次就会出现曲线"
+    "noWeightShort": "还没有体重记录"
   },
   "tour": {
     "skip": "跳过",
@@ -281,7 +280,6 @@
     "location": "地点",
     "count": "{{n}} 节课",
     "empty": "还没有课程",
-    "emptyHint": "把每周固定的课加进来，排时间时会自动避开",
     "import": "导入截图",
     "importing": "识别中…",
     "importConfirm": "确认导入",
@@ -438,7 +436,6 @@
     "daysLeft": "还有 {{n}} 天",
     "generated": "生成了 {{n}} 张卡片",
     "coins": "复习奖励 +{{n}} 币",
-    "noSubject": "还没有科目，右边新建一个",
     "pdfNoText": "这份 PDF 里没有可提取的文字（多半是扫描件），请截图后用「上传文件」传图片走识别",
     "unsupportedType": "暂不支持这种文件，请上传 PDF / Word / PPT / Markdown / 图片",
     "emptyFile": "这个文件里没读到文字",
@@ -447,6 +444,7 @@
     "notePlaceholder": "添加备注",
     "uploading": "正在读取文件…",
     "saveAsMaterial": "只存这段文字为资料",
-    "pickFile": "选择文件"
+    "pickFile": "选择文件",
+    "noSubjectShort": "还没有科目"
   }
 }

@@ -568,7 +568,7 @@ export function CourseEditor({
             {courses.length > 0 ? t("course.noneThisWeek", { n: week }) : t("course.empty")}
           </p>
           <p className="mt-1.5 text-[10px] text-[#c8c4bc]">
-            {courses.length > 0 ? t("course.noneThisWeekHint") : t("course.emptyHint")}
+            {courses.length > 0 ? t("course.noneThisWeekHint") : null}
           </p>
         </div>
       ) : (
