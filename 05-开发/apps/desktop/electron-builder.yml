@@ -30,7 +30,7 @@ win:
       arch:
         - x64
   icon: build/icon.ico
-  artifactName: EarthOnline-Setup-${version}.${ext}
+  artifactName: EarthOnline-${version}-${arch}.${ext}
 
 nsis:
   oneClick: false

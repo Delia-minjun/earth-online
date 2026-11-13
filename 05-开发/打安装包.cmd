@@ -1,7 +1,7 @@
 @echo off
 setlocal
 chcp 936 >nul
-title 地球 Online 打安装包
+title 地球 Online 打包（免安装）
 set "DEV=%~dp0"
 cd /d "%DEV%"
 
@@ -34,9 +34,9 @@ echo [3/4] 打包服务端与资源
 pushd "%DEV%apps\desktop"
 "%NODE%" scripts\build.mjs || (popd & echo 资源打包失败 & pause & exit /b 1)
 
-echo [4/4] 生成安装包（NSIS）
-echo    注：本机没开「开发者模式」时跳过 exe 图标改写（否则需要符号链接权限）
-"%NODE%" "%DEV%desktop-tools\node_modules\electron-builder\out\cli\cli.js" --win --config electron-builder.yml --config.npmRebuild=false --config.win.signAndEditExecutable=false
+echo [4/4] 生成免安装压缩包
+echo    NSIS 安装包改由 GitHub Actions 构建；本机只打 zip，解开就能用
+"%NODE%" "%DEV%desktop-tools\node_modules\electron-builder\out\cli\cli.js" --win zip --config electron-builder.yml --config.npmRebuild=false --config.win.signAndEditExecutable=false
 set "CODE=%ERRORLEVEL%"
 popd
 
@@ -47,9 +47,9 @@ if not "%CODE%"=="0" (
   exit /b %CODE%
 )
 echo ============================================
-echo    好了，安装包在：
+echo    好了，压缩包在：
 echo    %DEV%apps\desktop\release\
 echo ============================================
-dir /b "%DEV%apps\desktop\release\*.exe" 2>nul
+dir /b "%DEV%apps\desktop\release\*.zip" 2>nul
 echo.
 pause
