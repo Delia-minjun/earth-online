@@ -35,7 +35,8 @@ pushd "%DEV%apps\desktop"
 "%NODE%" scripts\build.mjs || (popd & echo 资源打包失败 & pause & exit /b 1)
 
 echo [4/4] 生成安装包（NSIS）
-"%NODE%" "%DEV%desktop-tools\node_modules\electron-builder\out\cli\cli.js" --win --config electron-builder.yml --config.npmRebuild=false
+echo    注：本机没开「开发者模式」时跳过 exe 图标改写（否则需要符号链接权限）
+"%NODE%" "%DEV%desktop-tools\node_modules\electron-builder\out\cli\cli.js" --win --config electron-builder.yml --config.npmRebuild=false --config.win.signAndEditExecutable=false
 set "CODE=%ERRORLEVEL%"
 popd
 
