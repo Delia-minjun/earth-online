@@ -1,5 +1,6 @@
 {
   "name": "@life/desktop",
+  "productName": "地球 Online",
   "private": true,
   "version": "0.1.0",
   "description": "地球 Online 桌面版（Electron 壳，内含本地服务）",
