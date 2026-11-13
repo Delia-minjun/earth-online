@@ -255,7 +255,8 @@ export function StudyView() {
             ) : null}
           </button>
         ))}
-        <div className="flex items-center gap-1">
+        {/* 新科目：输入框和 ＋ 合成一个胶囊 */}
+        <div className="flex items-center gap-1 rounded-full border border-line bg-surface py-[3px] pl-2.5 pr-[3px] transition-colors focus-within:border-[#cfc9be]">
           <input
             value={newSubject}
             onChange={(e) => setNewSubject(e.target.value)}
@@ -263,13 +264,14 @@ export function StudyView() {
               if (e.key === "Enter") void addSubject();
             }}
             placeholder={t("study.newSubject")}
-            className="w-28 rounded-full border border-line bg-surface px-2.5 py-1 text-[10.5px] text-ink outline-none placeholder:text-[#c8c4bc]"
+            className="w-24 bg-transparent text-[10.5px] text-ink outline-none placeholder:text-[#c8c4bc]"
           />
           <button
             type="button"
             onClick={() => void addSubject()}
             disabled={busy || !newSubject.trim()}
-            className="grid h-[22px] w-[22px] shrink-0 place-items-center rounded-full border border-[#cfc9be] text-[12px] leading-none text-ink-2 transition-colors hover:border-accent hover:text-accent disabled:opacity-50"
+            aria-label={t("study.newSubject")}
+            className="grid h-[20px] w-[20px] shrink-0 place-items-center rounded-full bg-[#e3ded4] text-[12px] leading-none text-ink-2 transition-colors hover:bg-accent hover:text-white disabled:opacity-50"
           >
             ＋
           </button>
