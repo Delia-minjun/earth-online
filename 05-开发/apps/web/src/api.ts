@@ -200,6 +200,19 @@ export interface ApiRewardItem {
   sort: number;
 }
 
+export interface ApiFocusSession {
+  id: string;
+  date: string;
+  kind: "focus" | "break";
+  task_id: string | null;
+  started_at: string;
+  planned_min: number;
+  ended_at: string | null;
+  actual_sec: number | null;
+  status: "running" | "done" | "void";
+  block_id: string | null;
+}
+
 export interface ApiCalendarDay {
   blocks: number;
   minutes: number;
@@ -490,6 +503,16 @@ export const api = {
     request<{ ok: true }>(`/rewards/${id}`, { method: "DELETE" }),
   redeemReward: (id: string) =>
     request<{ ok: true; balance: number }>(`/rewards/${id}/redeem`, { method: "POST" }),
+
+  /* ---- 番茄钟 ---- */
+  focusActive: () => request<ApiFocusSession | null>("/focus/active"),
+  focusRecent: (date: string) => request<ApiFocusSession[]>(`/focus/recent?date=${date}`),
+  focusStart: (input: { kind?: "focus" | "break"; plannedMin: number; taskId?: string | null }) =>
+    request<ApiFocusSession>("/focus/start", { method: "POST", body: JSON.stringify(input) }),
+  focusFinish: (id: string) =>
+    request<ApiFocusSession & { coins: number }>(`/focus/${id}/finish`, { method: "POST" }),
+  focusVoid: (id: string) =>
+    request<{ ok: true }>(`/focus/${id}/void`, { method: "POST" }),
 
   calendar: (month: string) =>
     request<{ month: string; byDate: Record<string, ApiCalendarDay> }>(`/calendar/${month}`),

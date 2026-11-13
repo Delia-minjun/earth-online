@@ -8,7 +8,7 @@ where node >nul 2>nul
 if errorlevel 1 set "NODE=C:\Users\delia\.dsh\dsh-runtimes\dsh-primary-runtime\dependencies\node\bin\node.exe"
 
 pushd "%ROOT%apps\server"
-"%NODE%" --test test\weeks.test.ts test\api.test.ts test\p2.test.ts
+"%NODE%" --test test\weeks.test.ts test\api.test.ts test\p2.test.ts test\p3.test.ts test\focus.test.ts
 set "CODE=%ERRORLEVEL%"
 popd
 

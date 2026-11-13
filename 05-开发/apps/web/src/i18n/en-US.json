@@ -155,6 +155,21 @@
     "last30": "Last 30 days",
     "noWeight": "No weight logged yet — enter one above and the curve appears"
   },
+  "focus": {
+    "title": "Pomodoro",
+    "start": "Start focus",
+    "finish": "Finish",
+    "giveUp": "Discard",
+    "remaining": "left",
+    "overtime": "Overtime — finish to log it",
+    "countUp": "Stopwatch",
+    "countUpShort": "Count up",
+    "planned": "{{n}} min planned",
+    "noTask": "No task (unfiled focus)",
+    "finished": "Logged {{min}} min · +{{n}} coins",
+    "voided": "Discarded — nothing logged, no coins",
+    "doneTitle": "Focus finished"
+  },
   "workout": {
     "title": "Workout",
     "empty": "No workout logged today",

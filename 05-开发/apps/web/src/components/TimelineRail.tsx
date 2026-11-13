@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, COURSE_COLOR, hhmm, type ApiDay, type ApiMeta } from "../api";
+import { api, COURSE_COLOR, hhmm, type ApiDay, type ApiFocusSession, type ApiMeta } from "../api";
+import { FocusModal } from "./FocusModal";
 
 const SLOTS = Array.from({ length: 144 }, (_, i) => i * 10);
 const END_SLOTS = Array.from({ length: 144 }, (_, i) => (i + 1) * 10);
@@ -14,6 +15,8 @@ export function TimelineRail() {
   const [day, setDay] = useState<ApiDay | null>(null);
   const [meta, setMeta] = useState<ApiMeta | null>(null);
   const [blockOpen, setBlockOpen] = useState(false);
+  const [focusOpen, setFocusOpen] = useState(false);
+  const [focus, setFocus] = useState<ApiFocusSession | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({ startMin: 480, endMin: 540, title: "", categoryId: "" });
 
@@ -32,6 +35,10 @@ export function TimelineRail() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    void api.focusActive().then(setFocus).catch(() => undefined);
+  }, [focusOpen]);
 
   const hits = (start: number, end: number) => {
     if (!day) return false;
@@ -75,16 +82,40 @@ export function TimelineRail() {
   return (
     <aside className="min-[1150px]:col-start-3 min-[1150px]:row-span-3 min-[1150px]:row-start-1 min-[1150px]:sticky min-[1150px]:top-0 min-[1150px]:h-[calc(100vh-6rem)] min-[1150px]:self-start min-[1150px]:overflow-y-auto min-[1150px]:border-l min-[1150px]:border-line min-[1150px]:pl-5">
       <header className="flex items-center justify-between">
-        <h2 className="text-[12px] font-semibold text-ink">{t("today.timeline")}</h2>
-        <button
-          type="button"
-          onClick={() => setBlockOpen((v) => !v)}
-          className="text-[14px] leading-none text-[#c2beb6] transition-colors hover:text-accent"
-          aria-label={t("action.add")}
-        >
-          {blockOpen ? "−" : "＋"}
-        </button>
+        <h2 className="text-[12px] font-semibold text-ink">
+          {t("today.timeline")}
+          {focus ? <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-accent" /> : null}
+        </h2>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setFocusOpen(true)}
+            title={t("focus.title")}
+            className={`text-[12px] leading-none transition-colors ${
+              focus ? "text-accent" : "text-[#c2beb6] hover:text-accent"
+            }`}
+            aria-label={t("focus.title")}
+          >
+            ◷
+          </button>
+          <button
+            type="button"
+            onClick={() => setBlockOpen((v) => !v)}
+            className="text-[14px] leading-none text-[#c2beb6] transition-colors hover:text-accent"
+            aria-label={t("action.add")}
+          >
+            {blockOpen ? "−" : "＋"}
+          </button>
+        </div>
       </header>
+
+      <FocusModal
+        open={focusOpen}
+        onClose={() => {
+          setFocusOpen(false);
+          void load();
+        }}
+      />
 
       {error ? <p className="mt-2 text-[10px] text-warn">{error}</p> : null}
 

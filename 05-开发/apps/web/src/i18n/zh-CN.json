@@ -156,6 +156,21 @@
     "last30": "近 30 天",
     "noWeight": "还没有体重记录，在上面填一次就会出现曲线"
   },
+  "focus": {
+    "title": "番茄钟",
+    "start": "开始专注",
+    "finish": "完成",
+    "giveUp": "作废",
+    "remaining": "剩余",
+    "overtime": "已超时，点完成记录",
+    "countUp": "正计时",
+    "countUpShort": "正计时",
+    "planned": "计划 {{n}} 分钟",
+    "noTask": "不绑定任务（未分类专注）",
+    "finished": "已记录 {{min}} 分钟 · +{{n}} 币",
+    "voided": "已作废，不记录也不发币",
+    "doneTitle": "专注结束"
+  },
   "workout": {
     "title": "锻炼",
     "empty": "今天还没记录锻炼",
