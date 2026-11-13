@@ -126,17 +126,25 @@ function NameColorRow({
   onDelete: () => void;
 }) {
   const [draft, setDraft] = useState(name);
+  const { t } = useTranslation();
   useEffect(() => setDraft(name), [name]);
 
   return (
-    <li className="group flex items-center gap-1.5 py-1">
-      <input
-        type="color"
-        value={color}
-        onChange={(e) => onRecolor(e.target.value)}
-        className="h-5 w-5 shrink-0 cursor-pointer rounded border border-line bg-transparent p-0"
-        aria-label="color"
-      />
+    <li className="group inline-flex items-center gap-1 rounded-full border border-line bg-surface py-[2px] pl-[3px] pr-1">
+      {/* 色块本身就是颜色选择器 */}
+      <label
+        className="relative grid h-4 w-4 shrink-0 cursor-pointer place-items-center rounded-full ring-1 ring-inset ring-black/5"
+        style={{ background: color }}
+        title={t("categories.pickColor")}
+      >
+        <input
+          type="color"
+          value={color}
+          onChange={(e) => onRecolor(e.target.value)}
+          className="absolute inset-0 cursor-pointer opacity-0"
+          aria-label="color"
+        />
+      </label>
       <input
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
@@ -148,12 +156,13 @@ function NameColorRow({
         onKeyDown={(e) => {
           if (e.key === "Enter") e.currentTarget.blur();
         }}
-        className="min-w-0 flex-1 rounded-md bg-transparent px-1 py-0.5 text-[11.5px] text-ink outline-none hover:bg-surface-2 focus:bg-surface-2"
+        style={{ width: `${Math.max(3, draft.length + 0.5)}ch` }}
+        className="min-w-[2.5rem] bg-transparent px-0.5 text-[11.5px] text-ink outline-none"
       />
       <button
         type="button"
         onClick={onDelete}
-        className="shrink-0 text-[11px] text-[#a9a49b] opacity-100 transition-opacity hover:text-warn md:opacity-0 md:group-hover:opacity-100"
+        className="shrink-0 text-[11px] leading-none text-[#c0bbb2] transition-colors hover:text-warn md:opacity-0 md:group-hover:opacity-100"
         aria-label="delete"
       >
         ×
@@ -204,7 +213,7 @@ export function CategoriesCard() {
       <h3 className="mt-3 text-[10px] uppercase tracking-[0.12em] text-ink-3">
         {t("categories.blocks")}
       </h3>
-      <ul className="mt-1">
+      <ul className="mt-1.5 flex flex-wrap gap-1.5">
         {blocks.map((c) => (
           <NameColorRow
             key={c.id}
@@ -220,7 +229,7 @@ export function CategoriesCard() {
       <h3 className="mt-3 text-[10px] uppercase tracking-[0.12em] text-ink-3">
         {t("categories.money")}
       </h3>
-      <ul className="mt-1">
+      <ul className="mt-1.5 flex flex-wrap gap-1.5">
         {money.map((c) => (
           <NameColorRow
             key={c.id}

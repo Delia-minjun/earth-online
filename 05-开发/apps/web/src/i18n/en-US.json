@@ -242,11 +242,12 @@
   },
   "categories": {
     "title": "Categories",
-    "hint": "Rename and recolor both time-block and money categories here.",
+    "hint": "Add, rename or recolor categories",
     "blocks": "Time blocks",
     "money": "Money",
     "addPlaceholder": "New category, Enter to add (time blocks)",
-    "inUse": "This category is still used by time blocks — reassign them first"
+    "inUse": "This category is still used by time blocks — reassign them first",
+    "pickColor": "Click the swatch to change color"
   },
   "sub": {
     "week": "See this week by day; switch to Month for the whole month",
