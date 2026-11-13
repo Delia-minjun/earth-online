@@ -383,8 +383,9 @@ export function StudyView() {
                   className="cursor-pointer rounded-lg border border-dashed border-[#d5cfc4] bg-surface px-3 py-4 text-center transition-colors hover:border-accent hover:bg-accent-soft/20"
                 >
                   <p className="text-[11px] text-ink-2">
-                    {busy ? t("study.uploading") : t("study.pickFile")}
+                    {busy ? t("study.uploading") : t("study.dropHint")}
                   </p>
+                  <p className="mt-0.5 text-[9.5px] text-[#b9b4aa]">{t("study.dropTypes")}</p>
                 </div>
                 <input
                   ref={fileRef}

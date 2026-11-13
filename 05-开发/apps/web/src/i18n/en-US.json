@@ -444,6 +444,8 @@
     "uploading": "Reading file…",
     "saveAsMaterial": "Save this text as a material",
     "pickFile": "Choose file",
-    "noSubjectShort": "No subjects yet"
+    "noSubjectShort": "No subjects yet",
+    "dropHint": "Drop a file here, or click to choose",
+    "dropTypes": "PDF / Word / PPT / Markdown / images — multiple allowed"
   }
 }
