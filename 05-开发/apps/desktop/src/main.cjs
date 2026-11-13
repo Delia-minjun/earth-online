@@ -1,4 +1,4 @@
-const { app, BrowserWindow, dialog, shell, nativeImage } = require("electron");
+const { app, BrowserWindow, dialog, ipcMain, shell, nativeImage } = require("electron");
 const { spawn } = require("node:child_process");
 const fs = require("node:fs");
 const http = require("node:http");
@@ -11,8 +11,7 @@ const isDev = !app.isPackaged;
 // 显式设成显示名，目录稳定可读，以后改包名也不会丢数据。
 app.setName("地球 Online");
 
-let serverProc = null;
-let win = null;
+let serverProc = null;let win = null;
 let quitting = false;
 
 /** 打包后资源在 resources/ 下；开发时在 apps/desktop/dist 下 */
@@ -224,7 +223,11 @@ function createWindow() {
     autoHideMenuBar: true,
     fullscreen: preferFullscreen,
     icon: fs.existsSync(iconPath) ? nativeImage.createFromPath(iconPath) : undefined,
-    webPreferences: { contextIsolation: true, nodeIntegration: false },
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+      preload: path.join(__dirname, "preload.cjs"),
+    },
   });
 
   // 启动即最大化（铺满屏幕但保留标题栏，能拖能缩）
@@ -247,9 +250,41 @@ function createWindow() {
   });
 }
 
-/** 自动更新：打包后每次启动静默检查，下载完提示重启 */
+/* ---------------- 更新状态（可见 + 落盘） ---------------- */
+
+let autoUpdaterRef = null;
+
+let updateState = {
+  state: "idle", // idle | checking | available | downloading | downloaded | latest | error | unsupported
+  version: null,
+  percent: 0,
+  detail: "",
+  at: "",
+};
+
+function logUpdate(line) {
+  try {
+    const f = path.join(dataDir(), "update.log");
+    fs.appendFileSync(f, `${new Date().toISOString()} ${line}\n`, "utf8");
+  } catch {
+    /* 日志写不了不影响功能 */
+  }
+}
+
+function setUpdateState(patch) {
+  updateState = { ...updateState, ...patch, at: new Date().toISOString() };
+  logUpdate(`${updateState.state} ${updateState.version ?? ""} ${updateState.detail}`);
+  if (win && !win.isDestroyed()) {
+    win.webContents.send("desk:update", updateState);
+  }
+}
+
+/** 自动更新：启动后检查；状态随时可在设置页看到 */
 function setupUpdater() {
-  if (isDev) return;
+  if (isDev) {
+    setUpdateState({ state: "unsupported", detail: "开发模式不检查更新" });
+    return;
+  }
 
   // updater.cjs 是构建时打好的单文件（desktop 包没有 node_modules），
   // 直接 require("electron-updater") 会在安装后失败
@@ -257,16 +292,32 @@ function setupUpdater() {
   try {
     ({ autoUpdater } = require(path.join(resource("updater.cjs"))));
   } catch (err) {
-    dialog.showErrorBox(
-      "自动更新不可用",
-      `没能加载更新模块：${err?.message ?? err}\n应用可以正常使用，只是不会自动升级。`,
-    );
+    setUpdateState({ state: "error", detail: `加载更新模块失败：${err?.message ?? err}` });
     return;
   }
+
+  autoUpdaterRef = autoUpdater;
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.logger = {
+    info: (m) => logUpdate(`info ${m}`),
+    warn: (m) => logUpdate(`warn ${m}`),
+    error: (m) => logUpdate(`error ${m}`),
+    debug: () => {},
+  };
 
+  autoUpdater.on("checking-for-update", () => setUpdateState({ state: "checking", detail: "" }));
+  autoUpdater.on("update-available", (info) =>
+    setUpdateState({ state: "available", version: info?.version ?? null, percent: 0 }),
+  );
+  autoUpdater.on("update-not-available", () =>
+    setUpdateState({ state: "latest", version: app.getVersion(), detail: "已是最新版本" }),
+  );
+  autoUpdater.on("download-progress", (p) =>
+    setUpdateState({ state: "downloading", percent: Math.round(p?.percent ?? 0) }),
+  );
   autoUpdater.on("update-downloaded", async (info) => {
+    setUpdateState({ state: "downloaded", version: info?.version ?? null, percent: 100 });
     const res = await dialog.showMessageBox({
       type: "info",
       buttons: ["立即重启", "下次再说"],
@@ -281,23 +332,55 @@ function setupUpdater() {
       autoUpdater.quitAndInstall();
     }
   });
-
-  autoUpdater.on("error", () => {
-    /* 没网或没有发布源时静默失败，不打扰使用 */
-  });
+  autoUpdater.on("error", (err) =>
+    setUpdateState({ state: "error", detail: String(err?.message ?? err) }),
+  );
 
   setTimeout(() => {
-    autoUpdater.checkForUpdatesAndNotify().catch(() => {});
+    void runUpdateCheck();
   }, 6000);
 }
 
+/** 统一入口：自动检查与手动检查都走这里 */
+async function runUpdateCheck() {
+  if (!autoUpdaterRef) {
+    setUpdateState({ state: "unsupported", detail: "当前环境不支持自动更新" });
+    return updateState;
+  }
+  try {
+    setUpdateState({ state: "checking", detail: "" });
+    await autoUpdaterRef.checkForUpdates();
+  } catch (err) {
+    setUpdateState({ state: "error", detail: String(err?.message ?? err) });
+  }
+  return updateState;
+}
+
+/* ---------------- 与页面通信 ---------------- */
+
+function setupIpc() {
+  ipcMain.handle("desk:info", () => ({
+    version: app.getVersion(),
+    dataDir: dataDir(),
+    packaged: app.isPackaged,
+  }));
+  ipcMain.handle("desk:status", () => updateState);
+  ipcMain.handle("desk:check", () => runUpdateCheck());
+  ipcMain.handle("desk:open-data", async () => {
+    await shell.openPath(dataDir());
+    return true;
+  });
+}
+
 async function boot() {
+  setupIpc();
   migrateLegacyUserData();
   await ensureDatabase();
 
   // 如果 7788 已经有人在跑（命令行版本或另一个实例），直接用它，不再起第二个
   if (await healthOnce()) {
     createWindow();
+    setupUpdater();
     return;
   }
 
@@ -312,6 +395,7 @@ async function boot() {
     return;
   }
   createWindow();
+  setupUpdater();
 }
 
 const gotLock = app.requestSingleInstanceLock();

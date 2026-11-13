@@ -4,8 +4,99 @@ import { api, type AiConfigInfo } from "../api";
 import { Card } from "../components/Card";
 import { BudgetCard, CategoriesCard } from "../components/Dictionary";
 
-export function SettingsView() {
+/** 桌面版才注入的桥（preload.cjs） */
+type DeskState = {
+  state: string;
+  version: string | null;
+  percent: number;
+  detail: string;
+  at: string;
+};
+type DeskApi = {
+  info: () => Promise<{ version: string; dataDir: string; packaged: boolean }>;
+  status: () => Promise<DeskState>;
+  check: () => Promise<DeskState>;
+  openDataDir: () => Promise<boolean>;
+  onUpdate: (cb: (s: DeskState) => void) => () => void;
+};
+
+/** 只在桌面版显示：版本、更新检查（有可见反馈）、数据目录 */
+function DesktopCard() {
   const { t } = useTranslation();
+  const desk = (window as unknown as { desktop?: DeskApi }).desktop;
+  const [info, setInfo] = useState<{ version: string; dataDir: string; packaged: boolean } | null>(
+    null,
+  );
+  const [st, setSt] = useState<DeskState | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!desk) return;
+    void desk.info().then(setInfo).catch(() => undefined);
+    void desk.status().then(setSt).catch(() => undefined);
+    return desk.onUpdate(setSt);
+  }, [desk]);
+
+  if (!desk) return null;
+
+  const stateText = (() => {
+    switch (st?.state) {
+      case "checking":
+        return t("settings.updChecking");
+      case "available":
+        return t("settings.updAvailable", { v: st.version ?? "" });
+      case "downloading":
+        return t("settings.updDownloading", { n: st.percent });
+      case "downloaded":
+        return t("settings.updDownloaded", { v: st.version ?? "" });
+      case "latest":
+        return t("settings.updLatest");
+      case "error":
+        return t("settings.updError", { msg: st.detail });
+      case "unsupported":
+        return t("settings.updUnsupported");
+      default:
+        return st?.at ? t("settings.updIdle") : t("settings.updNever");
+    }
+  })();
+
+  return (
+    <Card title={t("settings.desktop")} action={info ? `v${info.version}` : null}>
+      <p className="text-[10.5px] leading-relaxed text-ink-3">{stateText}</p>
+
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          disabled={busy || st?.state === "checking" || st?.state === "downloading"}
+          onClick={async () => {
+            setBusy(true);
+            try {
+              setSt(await desk.check());
+            } finally {
+              setBusy(false);
+            }
+          }}
+          className="shrink-0 rounded-full bg-accent px-3 py-1.5 text-[10.5px] font-semibold text-white disabled:opacity-60"
+        >
+          {busy || st?.state === "checking" ? t("settings.updChecking") : t("settings.checkUpdate")}
+        </button>
+        <button
+          type="button"
+          onClick={() => void desk.openDataDir()}
+          className="shrink-0 rounded-full border border-line px-3 py-1.5 text-[10.5px] text-ink-2 transition-colors hover:border-accent hover:text-ink"
+        >
+          {t("settings.openDataDir")}
+        </button>
+      </div>
+
+      {info ? (
+        <p className="mt-2 break-all text-[9.5px] leading-relaxed text-[#bcb8b0]">{info.dataDir}</p>
+      ) : null}
+    </Card>
+  );
+}
+
+export function SettingsView() {  const { t } = useTranslation();
   const [info, setInfo] = useState<AiConfigInfo | null>(null);
   const [keyInput, setKeyInput] = useState("");
   const [model, setModel] = useState("kimi-latest");
@@ -288,6 +379,8 @@ export function SettingsView() {
           </button>
         </div>
       </Card>
+
+      <DesktopCard />
 
       <Card title={t("settings.about")}>
         <dl className="space-y-1.5 text-[11px]">
