@@ -14,6 +14,8 @@ files:
 extraResources:
   - from: dist/server.mjs
     to: server.mjs
+  - from: dist/updater.cjs
+    to: updater.cjs
   - from: dist/web
     to: web
   - from: dist/migrations

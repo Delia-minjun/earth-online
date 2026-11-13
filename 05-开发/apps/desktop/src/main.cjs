@@ -142,10 +142,17 @@ function createWindow() {
 /** 自动更新：打包后每次启动静默检查，下载完提示重启 */
 function setupUpdater() {
   if (isDev) return;
+
+  // updater.cjs 是构建时打好的单文件（desktop 包没有 node_modules），
+  // 直接 require("electron-updater") 会在安装后失败
   let autoUpdater;
   try {
-    ({ autoUpdater } = require("electron-updater"));
-  } catch {
+    ({ autoUpdater } = require(path.join(resource("updater.cjs"))));
+  } catch (err) {
+    dialog.showErrorBox(
+      "自动更新不可用",
+      `没能加载更新模块：${err?.message ?? err}\n应用可以正常使用，只是不会自动升级。`,
+    );
     return;
   }
   autoUpdater.autoDownload = true;

@@ -79,6 +79,24 @@ await esbuild.build({
   logLevel: "info",
 });
 
+// electron-updater 也要打进去：desktop 包没有 node_modules，
+// 不打包的话 require("electron-updater") 会失败，更新逻辑被静默跳过
+console.log("[desktop] 打包自动更新 → dist/updater.cjs");
+await esbuild.build({
+  stdin: {
+    contents: 'module.exports = require("electron-updater");',
+    resolveDir: dev,
+    loader: "js",
+  },
+  outfile: join(outDir, "updater.cjs"),
+  bundle: true,
+  platform: "node",
+  format: "cjs",
+  target: "node22",
+  external: ["electron", "node:*"],
+  logLevel: "info",
+});
+
 if (!existsSync(join(webDist, "index.html"))) {
   console.error("[desktop] 前端还没构建，先跑 pnpm --filter @life/web build");
   process.exit(1);
