@@ -283,8 +283,9 @@ export function StudyView() {
           <p className="text-[11px] leading-relaxed text-ink-3">{t("study.emptyHint")}</p>
         </Card>
       ) : (
-        <div className="grid items-start gap-3.5 lg:grid-cols-2">
-          {/* 左：资料 */}
+        // 每张卡各占一整行，互不影响高度
+        <div className="space-y-3.5">
+          {/* 资料 */}
           <Card
             title={`${active.name} · ${t("study.materials")}`}
             action={
