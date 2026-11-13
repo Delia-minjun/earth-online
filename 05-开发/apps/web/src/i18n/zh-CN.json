@@ -175,6 +175,9 @@
     "walletTitle": "钱包与商店",
     "walletText": "余额、六领域进度条、自己定的奖赏商店都在这里。先有币才能兑换，不会透支。"
   },
+  "update": {
+    "newVersionTip": "有新版本，点这里查看更新内容"
+  },
   "focus": {
     "title": "番茄钟",
     "short": "专注",
@@ -354,6 +357,7 @@
     "updAvailable": "发现新版本 {{v}}，正在下载",
     "updDownloading": "正在下载 {{n}}%",
     "updDownloaded": "新版本 {{v}} 已下载，重启后生效",
+    "updDownloadNow": "下载 {{v}}",
     "updWhatChanged": "本次更新内容",
     "updError": "检查失败：{{msg}}",
     "updUnsupported": "当前环境不支持自动更新",

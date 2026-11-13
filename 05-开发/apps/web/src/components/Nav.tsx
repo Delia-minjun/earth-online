@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { PoemLine } from "./PoemLine";
 
@@ -52,6 +52,23 @@ export function Sidebar({
   version?: string;
 }) {
   const { t } = useTranslation();
+
+  /** 桌面版有新版本时，版本号右上角显示红点 */
+  const [hasUpdate, setHasUpdate] = useState(false);
+  useEffect(() => {
+    const d = (
+      window as unknown as {
+        desktop?: {
+          status: () => Promise<{ state: string }>;
+          onUpdate: (cb: (s: { state: string }) => void) => () => void;
+        };
+      }
+    ).desktop;
+    if (!d) return;
+    const apply = (s: { state: string }) => setHasUpdate(s.state === "available");
+    void d.status().then(apply).catch(() => undefined);
+    return d.onUpdate(apply);
+  }, []);
 
   const [order, setOrder] = useState<ViewKey[]>(() => loadOrder());
   const orderRef = useRef<ViewKey[]>(order);
@@ -154,7 +171,23 @@ export function Sidebar({
               ? t("status.offline")
               : "…"}
         </span>
-        {version ? <span className="ml-auto tabular-nums">v{version}</span> : null}
+        {version ? (
+          <button
+            type="button"
+            onClick={() => {
+              const d = (window as unknown as { desktop?: { promptUpdate: () => void } }).desktop;
+              if (d) d.promptUpdate();
+            }}
+            title={hasUpdate ? t("update.newVersionTip") : `v${version}`}
+            className="relative ml-auto rounded-full px-1 tabular-nums transition-colors hover:text-accent"
+          >
+            v{version}
+            {/* 有新版本时右上角红点；点版本号会弹出更新说明 */}
+            {hasUpdate ? (
+              <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-[#c96a5a] ring-1 ring-surface-2" />
+            ) : null}
+          </button>
+        ) : null}
         <button
           type="button"
           onClick={() => window.dispatchEvent(new Event("life:tour"))}

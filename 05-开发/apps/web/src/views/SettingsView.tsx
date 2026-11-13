@@ -17,6 +17,7 @@ type DeskApi = {
   info: () => Promise<{ version: string; dataDir: string; packaged: boolean }>;
   status: () => Promise<DeskState>;
   check: () => Promise<DeskState>;
+  promptUpdate: () => Promise<DeskState>;
   openDataDir: () => Promise<boolean>;
   onUpdate: (cb: (s: DeskState) => void) => () => void;
 };
@@ -92,6 +93,15 @@ function DesktopCard() {
         >
           {busy || st?.state === "checking" ? t("settings.updChecking") : t("settings.checkUpdate")}
         </button>
+        {st?.state === "available" ? (
+          <button
+            type="button"
+            onClick={() => void desk.promptUpdate()}
+            className="shrink-0 rounded-full bg-[#c96a5a] px-3 py-1.5 text-[10.5px] font-semibold text-white transition-opacity hover:opacity-90"
+          >
+            {t("settings.updDownloadNow", { v: st.version ?? "" })}
+          </button>
+        ) : null}
         <button
           type="button"
           onClick={() => void desk.openDataDir()}

@@ -319,7 +319,8 @@ function setupUpdater() {
   }
 
   autoUpdaterRef = autoUpdater;
-  autoUpdater.autoDownload = true;
+  // 不自动下载：先弹窗说明"更新了什么"，用户点了才下
+  autoUpdater.autoDownload = false;
   autoUpdater.autoInstallOnAppQuit = true;
   autoUpdater.logger = {
     info: (m) => logUpdate(`info ${m}`),
@@ -329,9 +330,13 @@ function setupUpdater() {
   };
 
   autoUpdater.on("checking-for-update", () => setUpdateState({ state: "checking", detail: "" }));
-  autoUpdater.on("update-available", (info) =>
-    setUpdateState({ state: "available", version: info?.version ?? null, percent: 0 }),
-  );
+  autoUpdater.on("update-available", async (info) => {
+    const { notes, url } = await fetchReleaseNotes(info.version);
+    const trimmed = notes.length > 1200 ? `${notes.slice(0, 1200)}\n…` : notes;
+    pendingUpdate = { version: info.version, notes: trimmed, url };
+    setUpdateState({ state: "available", version: info.version, notes: trimmed, percent: 0 });
+    await promptUpdate();
+  });
   autoUpdater.on("update-not-available", () =>
     setUpdateState({ state: "latest", version: app.getVersion(), detail: "已是最新版本" }),
   );
@@ -389,6 +394,40 @@ async function runUpdateCheck() {
   return updateState;
 }
 
+/**
+ * 发现新版本时的确认弹窗：显示更新说明，用户同意后才下载。
+ * 点侧栏版本号也会再次调用它（pendingUpdate 仍在）。
+ */
+let pendingUpdate = null;
+let prompting = false;
+
+async function promptUpdate() {
+  if (prompting || !pendingUpdate || !autoUpdaterRef) return;
+  prompting = true;
+  try {
+    const { version, notes, url } = pendingUpdate;
+    const res = await dialog.showMessageBox({
+      type: "info",
+      buttons: ["下载并更新", "以后再说", "查看详情"],
+      defaultId: 0,
+      cancelId: 1,
+      noLink: true,
+      title: `发现新版本 ${version}`,
+      message: `发现新版本 ${version}（当前 ${app.getVersion()}）`,
+      detail: `${notes || "（这次没有写更新说明）"}\n\n下载约 85MB，装完重启生效，数据不受影响。`,
+    });
+
+    if (res.response === 0) {
+      setUpdateState({ state: "downloading", percent: 0 });
+      await autoUpdaterRef.downloadUpdate();
+    } else if (res.response === 2) {
+      shell.openExternal(url);
+    }
+  } finally {
+    prompting = false;
+  }
+}
+
 /* ---------------- 与页面通信 ---------------- */
 
 function setupIpc() {
@@ -399,6 +438,16 @@ function setupIpc() {
   }));
   ipcMain.handle("desk:status", () => updateState);
   ipcMain.handle("desk:check", () => runUpdateCheck());
+  ipcMain.handle("desk:prompt-update", async () => {
+    // 点侧栏版本号：有已知新版本就直接弹说明；否则先检查
+    if (pendingUpdate) {
+      await promptUpdate();
+    } else {
+      await runUpdateCheck();
+      if (pendingUpdate) await promptUpdate();
+    }
+    return updateState;
+  });
   ipcMain.handle("desk:open-data", async () => {
     await shell.openPath(dataDir());
     return true;
