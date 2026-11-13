@@ -112,6 +112,17 @@ export function BudgetCard() {
 
 /* ---------------- 类别字典 ---------------- */
 
+/** 估算显示宽度（ch 单位）：中日文字符约占两个 ch，否则中文会被截断 */
+function chWidth(s: string): number {
+  let w = 0;
+  for (const ch of s) {
+    w += /[\u1100-\u115f\u2e80-\ua4cf\uac00-\ud7a3\uf900-\ufaff\ufe30-\ufe4f\uff00-\uff60\uffe0-\uffe6]/.test(ch)
+      ? 2
+      : 1;
+  }
+  return w;
+}
+
 function NameColorRow({
   name,
   color,
@@ -156,7 +167,7 @@ function NameColorRow({
         onKeyDown={(e) => {
           if (e.key === "Enter") e.currentTarget.blur();
         }}
-        style={{ width: `${Math.max(3, draft.length + 0.5)}ch` }}
+        style={{ width: `${Math.max(4, chWidth(draft) + 1)}ch` }}
         className="min-w-[2.5rem] bg-transparent px-0.5 text-[11.5px] text-ink outline-none"
       />
       <button
