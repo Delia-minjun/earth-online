@@ -366,7 +366,6 @@
     "updUnsupported": "Auto-update is not available here",
     "openDataDir": "Open data folder",
     "guide": "Guided tour",
-    "guideHint": "It shows up by itself on first launch. To walk through it again, click the button.",
     "guideStart": "Replay tour",
     "about": "About",
     "version": "Version",

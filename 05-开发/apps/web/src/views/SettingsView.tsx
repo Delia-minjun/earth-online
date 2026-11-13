@@ -408,8 +408,7 @@ export function SettingsView() {
       <CategoriesCard />
 
       <Card title={t("settings.guide")}>
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-[10.5px] leading-relaxed text-ink-3">{t("settings.guideHint")}</p>
+        <div className="flex items-center justify-end gap-3">
           <button
             type="button"
             onClick={() => {

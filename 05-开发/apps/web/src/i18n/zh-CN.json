@@ -367,7 +367,6 @@
     "updUnsupported": "当前环境不支持自动更新",
     "openDataDir": "打开数据目录",
     "guide": "引导教程",
-    "guideHint": "第一次打开会自动弹一次。想再看一遍就点右边，会从首页开始逐步高亮各个板块。",
     "guideStart": "重新看一遍",
     "about": "关于",
     "version": "版本",
