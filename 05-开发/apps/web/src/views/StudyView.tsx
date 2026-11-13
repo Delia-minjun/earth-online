@@ -269,7 +269,7 @@ export function StudyView() {
             type="button"
             onClick={() => void addSubject()}
             disabled={busy || !newSubject.trim()}
-            className="rounded-full border border-line px-2 py-1 text-[10.5px] text-ink-3 hover:border-accent hover:text-accent disabled:opacity-50"
+            className="grid h-[22px] w-[22px] shrink-0 place-items-center rounded-full border border-[#cfc9be] text-[12px] leading-none text-ink-2 transition-colors hover:border-accent hover:text-accent disabled:opacity-50"
           >
             ＋
           </button>
