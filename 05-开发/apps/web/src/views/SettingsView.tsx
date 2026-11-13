@@ -14,6 +14,16 @@ export function SettingsView() {
   const [message, setMessage] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
   const [models, setModels] = useState<{ all: string[]; vision: string[] } | null>(null);
 
+  /** 常用服务商预设：点一下把 base + 模型填好，Key 仍要自己填 */
+  const PRESETS: { key: string; base: string; model: string; vision: boolean }[] = [
+    { key: "openai", base: "https://api.openai.com/v1", model: "gpt-4o", vision: true },
+    { key: "kimi", base: "https://api.moonshot.cn/v1", model: "moonshot-v1-8k-vision-preview", vision: true },
+    { key: "deepseek", base: "https://api.deepseek.com/v1", model: "deepseek-chat", vision: false },
+    { key: "ollama", base: "http://127.0.0.1:11434/v1", model: "llama3.2-vision", vision: true },
+  ];
+
+  const activePreset = PRESETS.find((p) => p.base === base)?.key ?? "custom";
+
   const load = async () => {
     const next = await api.aiSettings();
     setInfo(next);
@@ -102,6 +112,47 @@ export function SettingsView() {
     <div className="space-y-3.5">
       <Card title={t("settings.ai")} action={info?.configured ? t("settings.configured") : t("settings.notConfigured")}>
         <p className="text-[10.5px] leading-relaxed text-ink-3">{t("settings.aiHint")}</p>
+
+        {/* 服务商预设 */}
+        <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+          <span className="text-[10px] text-ink-3">{t("settings.preset")}</span>
+          {PRESETS.map((p) => (
+            <button
+              key={p.key}
+              type="button"
+              onClick={() => {
+                setBase(p.base);
+                setModel(p.model);
+                setMessage(null);
+              }}
+              title={p.vision ? t("settings.presetVision") : t("settings.presetText")}
+              className={`rounded-full px-2 py-[2px] text-[10px] transition-colors ${
+                activePreset === p.key
+                  ? "bg-accent text-white"
+                  : "border border-line bg-surface text-ink-3 hover:border-accent hover:text-accent"
+              }`}
+            >
+              {p.key === "openai"
+                ? "OpenAI"
+                : p.key === "kimi"
+                  ? "Kimi"
+                  : p.key === "deepseek"
+                    ? "DeepSeek"
+                    : "Ollama"}
+              {p.vision ? "" : " ·文本"}
+            </button>
+          ))}
+          <span
+            className={`rounded-full px-2 py-[2px] text-[10px] ${
+              activePreset === "custom"
+                ? "bg-accent text-white"
+                : "border border-line bg-surface text-ink-3"
+            }`}
+          >
+            {t("settings.presetCustom")}
+          </span>
+        </div>
+        <p className="mt-1 text-[9.5px] leading-relaxed text-[#bcb8b0]">{t("settings.presetHint")}</p>
 
         {info?.configured ? (
           <p className="mt-2 text-[11px] text-ink-2">

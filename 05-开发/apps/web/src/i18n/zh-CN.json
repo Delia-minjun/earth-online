@@ -322,6 +322,11 @@
   },
   "settings": {
     "ai": "模型 API",
+    "preset": "预设",
+    "presetCustom": "自定义",
+    "presetVision": "支持读图",
+    "presetText": "纯文本，不能识别截图",
+    "presetHint": "点预设自动填好地址与模型，Key 还要自己填。识别课表截图必须用支持读图的模型。",
     "aiHint": "兼容 OpenAI 接口的服务都能用，默认指向 DeepSeek。课表截图识别需要选能读图的模型（DeepSeek 的 V4-Flash-Vision 系列），deepseek-chat 这类纯文本模型读不了图。Key 只存在这台电脑上。",
     "fetchModels": "获取可用模型",
     "modelsFound": "找到 {{n}} 个模型，点一下填入。带 ◉ 的名字里有 vision 标记",

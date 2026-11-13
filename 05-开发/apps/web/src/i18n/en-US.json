@@ -321,6 +321,11 @@
   },
   "settings": {
     "ai": "Model API",
+    "preset": "Preset",
+    "presetCustom": "Custom",
+    "presetVision": "Reads images",
+    "presetText": "Text only — cannot read screenshots",
+    "presetHint": "Picking a preset fills in the base URL and model; you still enter the key. Reading timetable screenshots needs a vision model.",
     "aiHint": "Any OpenAI-compatible endpoint works; defaults to DeepSeek. Reading a timetable screenshot needs a vision model (DeepSeek's V4-Flash-Vision series) — plain text models like deepseek-chat cannot read images. The key stays on this machine.",
     "fetchModels": "Fetch models",
     "modelsFound": "Found {{n}} models — click to fill. ◉ = the name mentions vision",
