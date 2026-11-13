@@ -92,3 +92,32 @@ test("领域进度条：返回六条且都在 0..1", async () => {
     assert.ok(row.pct >= 0 && row.pct <= 1, `${row.name} 的数值应在 0..1`);
   }
 });
+
+test("完成任务自动发币，重复勾选不重复发", async () => {
+  const task = await call("/tasks", { method: "POST", body: JSON.stringify({ title: "[测试] 写作业" }) });
+  assert.equal(task.status, 201);
+
+  const before = (await call("/coins")).body.balance;
+  await call(`/tasks/${task.body.id}`, { method: "PATCH", body: JSON.stringify({ status: "done" }) });
+  const mid = (await call("/coins")).body.balance;
+  assert.equal(mid - before, 3, "完成一个任务发 3 币");
+
+  await call(`/tasks/${task.body.id}`, { method: "PATCH", body: JSON.stringify({ status: "todo" }) });
+  await call(`/tasks/${task.body.id}`, { method: "PATCH", body: JSON.stringify({ status: "done" }) });
+  const after = (await call("/coins")).body.balance;
+  assert.equal(after, mid, "取消再勾选不应重复发币");
+});
+
+test("习惯打卡发币", async () => {
+  const habit = await call("/habits", { method: "POST", body: JSON.stringify({ name: "[测试] 散步" }) });
+  assert.equal(habit.status, 201);
+
+  const before = (await call("/coins")).body.balance;
+  const done = await call(`/habits/${habit.body.id}/toggle`, {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
+  assert.equal(done.status, 200);
+  const after = (await call("/coins")).body.balance;
+  assert.equal(after - before, 2, "打卡发 2 币");
+});

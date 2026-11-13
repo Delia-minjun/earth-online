@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { getDb } from "../db.ts";
+import { bumpArea, earn, getRules } from "../lib/coins.ts";
 import { buildWeek, isoWeekOf, weekId } from "../week.ts";
 import { listModels, parseTimetableImage, resolveAiConfig, testAiConfig } from "../lib/ai.ts";
 import { activeIn, weeksOverlap, type WeekRule } from "../lib/weeks.ts";
@@ -232,6 +233,21 @@ api.patch("/tasks/:id", async (c) => {
   vals.push(id);
   db.prepare(`UPDATE task SET ${sets.join(", ")} WHERE id = ?`).run(...(vals as never[]));
 
+  // 完成任务自动发币：同一任务只发一次（ref_id 去重），取消再勾也不会重复发
+  if (r.data.status === "done") {
+    const row = db.prepare("SELECT title, area_id FROM task WHERE id = ?").get(id) as
+      | { title: string; area_id: string | null }
+      | undefined;
+    const rules = getRules();
+    earn({
+      amount: rules.taskPer30,
+      kind: "task",
+      refId: id,
+      note: row?.title ?? null,
+    });
+    bumpArea(row?.area_id, 0.1);
+  }
+
   return c.json(db.prepare("SELECT * FROM task WHERE id = ?").get(id));
 });
 
@@ -357,7 +373,29 @@ api.post("/habits/:id/toggle", async (c) => {
     return c.json({ habitId: id, date, done: 0 });
   }
   db.prepare("INSERT INTO habit_log (habit_id, date, done) VALUES (?, ?, 1)").run(id, date);
-  return c.json({ habitId: id, date, done: 1 });
+
+  // 打卡发币；同一习惯同一天只发一次。连续 7 天额外奖励一次（同样去重）
+  const rules = getRules();
+  earn({ amount: rules.habit, kind: "habit", refId: `${id}:${date}`, note: null });
+
+  const streak = (
+    db
+      .prepare(
+        `SELECT COUNT(*) AS n FROM habit_log
+          WHERE habit_id = ? AND date <= ? AND date >= date(?, '-6 days')`,
+      )
+      .get(id, date, date) as { n: number }
+  ).n;
+  if (streak >= 7) {
+    earn({
+      amount: rules.habitStreak7,
+      kind: "streak",
+      refId: `${id}:${date}:streak`,
+      note: null,
+    });
+  }
+
+  return c.json({ habitId: id, date, done: 1, streak });
 });
 
 /* ---------------- habit grid ---------------- */
