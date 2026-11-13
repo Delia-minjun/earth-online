@@ -177,6 +177,8 @@
   },
   "focus": {
     "title": "番茄钟",
+    "short": "专注",
+    "running": "专注中",
     "start": "开始专注",
     "finish": "完成",
     "giveUp": "作废",

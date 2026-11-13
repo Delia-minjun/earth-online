@@ -91,12 +91,28 @@ export function TimelineRail() {
             type="button"
             onClick={() => setFocusOpen(true)}
             title={t("focus.title")}
-            className={`text-[12px] leading-none transition-colors ${
-              focus ? "text-accent" : "text-[#c2beb6] hover:text-accent"
+            className={`flex shrink-0 items-center gap-1 rounded-full border px-2 py-[1px] text-[9.5px] leading-none transition-colors ${
+              focus
+                ? "border-accent bg-accent-soft text-accent"
+                : "border-line text-ink-3 hover:border-accent hover:text-accent"
             }`}
             aria-label={t("focus.title")}
           >
-            ◷
+            <svg
+              width="9"
+              height="9"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.4"
+              strokeLinecap="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="13.5" r="7.5" />
+              <path d="M12 10v3.5l2.5 2" />
+              <path d="M9.5 2.5h5" />
+            </svg>
+            {focus ? t("focus.running") : t("focus.short")}
           </button>
           <button
             type="button"
