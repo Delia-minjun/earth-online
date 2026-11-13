@@ -446,7 +446,7 @@
     "saveAsMaterial": "只存这段文字为资料",
     "pickFile": "选择文件",
     "noSubjectShort": "还没有科目",
-    "dropHint": "把课件拖进来，或点击选择文件",
+    "dropHint": "拖动或点击选择文件",
     "dropTypes": "支持 PDF / Word / PPT / Markdown / 图片，可多选"
   }
 }
