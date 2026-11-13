@@ -105,6 +105,22 @@ jobs:
           echo "安装包见下方 Assets。" >> notes.md
           gh release edit "${TAG}" --notes-file notes.md
 
+      # 只保留最近 3 个 Release（旧的一并删掉对应 tag）
+      - name: Keep only latest 3 releases
+        if: success()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release list --limit 100 --json tagName --jq '.[].tagName' > tags.txt
+          echo "当前 Release："
+          cat tags.txt
+          tail -n +4 tags.txt | while read -r t; do
+            [ -z "$t" ] && continue
+            echo "删除旧版本 $t"
+            gh release delete "$t" --yes --cleanup-tag || true
+          done
+
       - name: Upload installer artifact
         uses: actions/upload-artifact@v4
         with:
