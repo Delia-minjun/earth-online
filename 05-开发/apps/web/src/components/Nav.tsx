@@ -102,7 +102,7 @@ export function Sidebar({
   };
 
   return (
-    <aside className="hidden w-52 shrink-0 flex-col border-r border-line bg-surface-2 px-4 py-6 md:flex">
+    <aside className="hidden w-52 shrink-0 flex-col border-r border-line bg-surface-2 px-4 py-6 md:sticky md:top-0 md:flex md:h-screen md:overflow-y-auto">
       <button
         type="button"
         data-tour="logo"
