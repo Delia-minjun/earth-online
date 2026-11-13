@@ -1,6 +1,5 @@
 // 把服务端打成单文件 server.mjs，并把前端产物复制到 dist/web
 // 用法：node scripts/build.mjs
-import { build } from "esbuild";
 import { cpSync, mkdirSync, rmSync, copyFileSync, existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -12,11 +11,24 @@ const serverEntry = join(dev, "apps", "server", "src", "index.ts");
 const webDist = join(dev, "apps", "web", "dist");
 const outDir = join(desktop, "dist");
 
+console.log(`[desktop] cwd        ${process.cwd()}`);
+console.log(`[desktop] 服务端入口 ${serverEntry}`);
+console.log(`[desktop] 前端产物   ${webDist}`);
+
+let esbuild;
+try {
+  esbuild = await import("esbuild");
+} catch (err) {
+  console.error("[desktop] 找不到 esbuild。它应该在 05-开发/node_modules 里（根 devDependencies）。");
+  console.error("[desktop] 报错：", err?.message ?? err);
+  process.exit(1);
+}
+
 rmSync(outDir, { recursive: true, force: true });
 mkdirSync(outDir, { recursive: true });
 
 console.log("[desktop] 打包服务端 → dist/server.mjs");
-await build({
+await esbuild.build({
   entryPoints: [serverEntry],
   outfile: join(outDir, "server.mjs"),
   bundle: true,
@@ -33,10 +45,10 @@ await build({
 
 if (!existsSync(join(webDist, "index.html"))) {
   console.warn("[desktop] 前端还没构建，先跑 pnpm --filter @life/web build");
-} else {
-  console.log("[desktop] 复制前端 → dist/web");
-  cpSync(webDist, join(outDir, "web"), { recursive: true });
+  process.exit(1);
 }
+console.log("[desktop] 复制前端 → dist/web");
+cpSync(webDist, join(outDir, "web"), { recursive: true });
 
 // 迁移脚本是运行时读的 .sql，得原样带进安装包
 console.log("[desktop] 复制迁移 → dist/migrations");
@@ -44,7 +56,7 @@ cpSync(join(dev, "apps", "server", "migrations"), join(outDir, "migrations"), {
   recursive: true,
 });
 
-const icon = join(dev, "apps", "desktop", "build", "icon.ico");
+const icon = join(desktop, "build", "icon.ico");
 if (!existsSync(icon)) {
   const src = join(dev, "earth-online.ico");
   if (existsSync(src)) {

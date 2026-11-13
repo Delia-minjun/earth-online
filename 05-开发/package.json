@@ -15,6 +15,7 @@
     "typecheck": "pnpm -r typecheck"
   },
   "devDependencies": {
+    "esbuild": "^0.25.0",
     "typescript": "^5.6.0"
   }
 }
