@@ -412,32 +412,28 @@ export function StudyView() {
 
             <ul className="divide-y divide-line-2">
               {materials.map((m) => (
-                <li key={m.id} className="py-2 first:pt-0">
-                  <div className="flex items-center gap-2">
-                    <p className="min-w-0 flex-1 truncate text-[11.5px] text-ink">{m.title}</p>
-                  </div>
-                  <div className="mt-1 flex items-center gap-1.5 text-[10px] text-ink-3">
-                    <button
-                      type="button"
-                      onClick={() => void generate(m)}
-                      disabled={busy || m.status !== "verified"}
-                      className="rounded-full border border-line px-2 py-[1px] hover:border-accent hover:text-accent disabled:opacity-40"
-                      title={t("study.generateHint")}
-                    >
-                      {t("study.generate")}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        await api.deleteMaterial(m.id);
-                        if (active) await loadSubject(active.id);
-                        await loadAll();
-                      }}
-                      className="ml-auto hover:text-warn"
-                    >
-                      ×
-                    </button>
-                  </div>
+                <li key={m.id} className="group flex items-center gap-2 py-1.5 first:pt-0">
+                  <p className="min-w-0 flex-1 truncate text-[11.5px] text-ink">{m.title}</p>
+                  <button
+                    type="button"
+                    onClick={() => void generate(m)}
+                    disabled={busy}
+                    className="shrink-0 rounded-full border border-line px-2 py-[1px] text-[10px] text-ink-3 transition-colors hover:border-accent hover:text-accent disabled:opacity-40"
+                  >
+                    {t("study.generate")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await api.deleteMaterial(m.id);
+                      if (active) await loadSubject(active.id);
+                      await loadAll();
+                    }}
+                    className="shrink-0 text-[12px] leading-none text-[#c0bbb2] transition-colors hover:text-warn md:opacity-0 md:group-hover:opacity-100"
+                    aria-label="delete"
+                  >
+                    ×
+                  </button>
                 </li>
               ))}
               {materials.length === 0 && !openMaterial ? (
