@@ -1151,6 +1151,18 @@ api.put("/review/:weekId", async (c) => {
     r.data.stop ?? cur.stop ?? "",
     r.data.start ?? cur.start ?? "",
   );
+  // 写满四个象限才算一次复盘，给一次币（按周去重，改了再存不重复发）
+  const filled = [r.data.keep ?? cur.keep, r.data.improve ?? cur.improve, r.data.stop ?? cur.stop, r.data.start ?? cur.start]
+    .filter((v) => (v ?? "").trim().length > 0).length;
+  if (filled >= 4) {
+    earn({
+      amount: getRules().review,
+      kind: "review",
+      refId: weekIdParam,
+      note: weekIdParam,
+    });
+  }
+
   return c.json(db.prepare("SELECT * FROM weekly_review WHERE week_id = ?").get(weekIdParam));
 });
 
