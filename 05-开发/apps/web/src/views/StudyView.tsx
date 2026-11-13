@@ -30,8 +30,6 @@ export function StudyView() {
   const [openMaterial, setOpenMaterial] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
   // 校对
-  const [editing, setEditing] = useState<ApiMaterial | null>(null);
-  const [editText, setEditText] = useState("");
   // 复习
   const [idx, setIdx] = useState(0);
   const [flipped, setFlipped] = useState(false);
@@ -154,8 +152,7 @@ export function StudyView() {
         else if (created.ocrError) setError(created.ocrError);
         await loadSubject(active.id);
         await loadAll();
-        setEditing(created);
-        setEditText(created.content);
+
         return;
       }
 
@@ -188,8 +185,6 @@ export function StudyView() {
       }
       await loadSubject(active.id);
       await loadAll();
-      setEditing(created);
-      setEditText(created.content);
     } catch (e) {
       const msg = (e as Error).message;
       setError(
@@ -218,21 +213,6 @@ export function StudyView() {
     setBusy(true);
     try {
       for (const f of list) await uploadOne(f);
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const verify = async () => {
-    if (!editing) return;
-    setBusy(true);
-    try {
-      await api.updateMaterial(editing.id, { content: editText, status: "verified" });
-      setEditing(null);
-      if (active) await loadSubject(active.id);
-      await loadAll();
-    } catch (e) {
-      setError((e as Error).message);
     } finally {
       setBusy(false);
     }
@@ -435,27 +415,8 @@ export function StudyView() {
                 <li key={m.id} className="py-2 first:pt-0">
                   <div className="flex items-center gap-2">
                     <p className="min-w-0 flex-1 truncate text-[11.5px] text-ink">{m.title}</p>
-                    <span
-                      className={`shrink-0 rounded-full px-1.5 py-[1px] text-[9px] ${
-                        m.status === "verified"
-                          ? "bg-accent-soft text-accent"
-                          : "bg-warn-soft text-warn"
-                      }`}
-                    >
-                      {m.status === "verified" ? t("study.verified") : t("study.raw")}
-                    </span>
                   </div>
                   <div className="mt-1 flex items-center gap-1.5 text-[10px] text-ink-3">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditing(m);
-                        setEditText(m.content);
-                      }}
-                      className="rounded-full border border-line px-2 py-[1px] hover:border-accent hover:text-accent"
-                    >
-                      {m.status === "verified" ? t("study.view") : t("study.proofread")}
-                    </button>
                     <button
                       type="button"
                       onClick={() => void generate(m)}
@@ -580,50 +541,6 @@ export function StudyView() {
               </span>
             );
           })}
-        </div>
-      ) : null}
-
-      {/* 校对弹窗 */}
-      {editing ? (
-        <div
-          className="fixed inset-0 z-50 flex items-start justify-center bg-black/25 p-4 pt-16"
-          onClick={() => setEditing(null)}
-        >
-          <div
-            className="w-full max-w-lg rounded-2xl border border-line bg-surface p-4 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <header className="flex items-center justify-between">
-              <h2 className="text-[13px] font-semibold text-ink">{t("study.proofreadTitle")}</h2>
-              <button type="button" onClick={() => setEditing(null)} className="text-[13px] text-ink-3">
-                ✕
-              </button>
-            </header>
-            <p className="mt-1 text-[10px] text-ink-3">{editing.title}</p>
-            <textarea
-              value={editText}
-              onChange={(e) => setEditText(e.target.value)}
-              rows={14}
-              className="mt-2 w-full resize-none rounded-lg border border-line bg-surface-2 px-2.5 py-2 text-[11.5px] leading-relaxed text-ink outline-none"
-            />
-            <div className="mt-2 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setEditing(null)}
-                className="rounded-full border border-line px-3 py-1.5 text-[10.5px] text-ink-2"
-              >
-                {t("common.cancel")}
-              </button>
-              <button
-                type="button"
-                onClick={() => void verify()}
-                disabled={busy}
-                className="rounded-full bg-accent px-3 py-1.5 text-[10.5px] font-semibold text-white disabled:opacity-50"
-              >
-                {t("study.markVerified")}
-              </button>
-            </div>
-          </div>
         </div>
       ) : null}
 

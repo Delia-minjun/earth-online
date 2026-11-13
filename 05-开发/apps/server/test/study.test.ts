@@ -42,7 +42,7 @@ test("学习：建科目 → 加资料 → 校对 → 卡片 → 复习", async 
     }),
   });
   assert.equal(mat.status, 201);
-  assert.equal(mat.body.status, "raw", "新资料默认待校对");
+  assert.equal(mat.body.status, "verified", "新资料直接可出题，不再要求人工校对");
 
   const verified = await call(`/study/materials/${mat.body.id}`, {
     method: "PATCH",
@@ -82,19 +82,19 @@ test("学习：建科目 → 加资料 → 校对 → 卡片 → 复习", async 
   assert.equal(again.body.box, 1, "again 回到第一格");
 });
 
-test("学习：未校对资料不能出卡片（409）", async () => {
+test("学习：资料不需要校对也能直接出卡片（未配 key 时返回 NOKEY）", async () => {
   const subs = await call("/study/subjects");
   const subjectId = subs.body[0].id;
   const mat = await call("/study/materials", {
     method: "POST",
-    body: JSON.stringify({ subjectId, title: "[测试] 待校对", kind: "text", content: "内容" }),
+    body: JSON.stringify({ subjectId, title: "[测试] 直接出题", kind: "text", content: "内容" }),
   });
   const gen = await call(`/study/materials/${mat.body.id}/generate`, {
     method: "POST",
     body: JSON.stringify({ count: 5 }),
   });
-  assert.equal(gen.status, 409);
-  assert.equal(gen.body.error, "not_verified");
+  assert.equal(gen.status, 400);
+  assert.equal(gen.body.error, "NOKEY");
 });
 
 test("学习：没配 AI 时出卡片返回 NOKEY（400）而不是 500", async () => {
@@ -103,10 +103,6 @@ test("学习：没配 AI 时出卡片返回 NOKEY（400）而不是 500", async 
   const mat = await call("/study/materials", {
     method: "POST",
     body: JSON.stringify({ subjectId, title: "[测试] 已校对", kind: "text", content: "一些内容" }),
-  });
-  await call(`/study/materials/${mat.body.id}`, {
-    method: "PATCH",
-    body: JSON.stringify({ status: "verified" }),
   });
   const gen = await call(`/study/materials/${mat.body.id}/generate`, {
     method: "POST",

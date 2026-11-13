@@ -151,7 +151,7 @@ p5.post("/study/materials", async (c) => {
   const id = uid();
   db.prepare(
     `INSERT INTO material (id, subject_id, title, kind, source, content, status, page_from, page_to)
-     VALUES (?, ?, ?, ?, ?, ?, 'raw', NULL, NULL)`,
+     VALUES (?, ?, ?, ?, ?, ?, 'verified', NULL, NULL)`,
   ).run(id, r.data.subjectId, title, r.data.kind, r.data.source ?? null, content);
 
   return c.json(
@@ -205,7 +205,7 @@ p5.post("/study/materials/file", async (c) => {
     if (!content.trim()) return c.json({ error: error ?? "ocr_empty" }, 422);
     db.prepare(
       `INSERT INTO material (id, subject_id, title, kind, source, content, status)
-       VALUES (?, ?, ?, 'image', ?, ?, 'raw')`,
+       VALUES (?, ?, ?, 'image', ?, ?, 'verified')`,
     ).run(id, r.data.subjectId, title, r.data.filename, content);
     return c.json(db.prepare(`SELECT ${MATERIAL_COLS} FROM material WHERE id = ?`).get(id), 201);
   }
@@ -222,7 +222,7 @@ p5.post("/study/materials/file", async (c) => {
 
   db.prepare(
     `INSERT INTO material (id, subject_id, title, kind, source, content, status)
-     VALUES (?, ?, ?, ?, ?, ?, 'raw')`,
+     VALUES (?, ?, ?, ?, ?, ?, 'verified')`,
   ).run(id, r.data.subjectId, title, kind === "text" ? "text" : "file", r.data.filename, body);
 
   return c.json(
@@ -269,7 +269,7 @@ p5.post("/study/materials/ocr-pages", async (c) => {
   const id = uid();
   db.prepare(
     `INSERT INTO material (id, subject_id, title, kind, source, content, status)
-     VALUES (?, ?, ?, 'image', ?, ?, 'raw')`,
+     VALUES (?, ?, ?, 'image', ?, ?, 'verified')`,
   ).run(id, r.data.subjectId, r.data.title, `pdf-${r.data.pages.length}p`, body);
 
   return c.json(db.prepare(`SELECT ${MATERIAL_COLS} FROM material WHERE id = ?`).get(id), 201);
@@ -398,7 +398,6 @@ p5.post("/study/materials/:id/generate", async (c) => {
     | { id: string; subject_id: string; title: string; content: string; status: string; subject_name: string }
     | undefined;
   if (!m) return c.json({ error: "not found" }, 404);
-  if (m.status !== "verified") return c.json({ error: "not_verified" }, 409);
   if (!m.content.trim()) return c.json({ error: "empty_content" }, 409);
 
   let cards;
