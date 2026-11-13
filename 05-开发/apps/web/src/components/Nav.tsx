@@ -102,7 +102,7 @@ export function Sidebar({
   };
 
   return (
-    <aside className="hidden w-52 shrink-0 flex-col border-r border-line bg-surface-2 px-4 py-6 md:sticky md:top-0 md:flex md:h-screen md:overflow-y-auto">
+    <aside className="hidden w-52 shrink-0 flex-col border-r border-line bg-surface-2 px-4 py-6 md:sticky md:top-0 md:flex md:h-screen">
       <button
         type="button"
         data-tour="logo"
@@ -120,7 +120,7 @@ export function Sidebar({
       </button>
       <PoemLine />
 
-      <nav className="mt-7 space-y-1" data-tour="nav">
+      <nav className="mt-7 min-h-0 flex-1 space-y-1 overflow-y-auto" data-tour="nav">
         {order.map((key, index) => {
           const item = NAV_ITEMS.find((i) => i.key === key);
           const isActive = key === active;
@@ -159,7 +159,7 @@ export function Sidebar({
         })}
       </nav>
 
-      <div className="mt-auto flex items-center gap-1.5 px-1 pt-4 text-[9.5px] text-ink-3">
+      <div className="mt-auto flex shrink-0 items-center gap-1.5 px-1 pt-4 text-[9.5px] text-ink-3">
         <span
           className={`h-1.5 w-1.5 rounded-full ${
             status === "ok" ? "bg-accent" : status === "down" ? "bg-warn" : "bg-line"
