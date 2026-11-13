@@ -7,7 +7,7 @@
   "main": "src/main.cjs",
   "scripts": {
     "prepare-bundle": "node scripts/build.mjs",
-    "pack:portable": "node scripts/build.mjs && node ../../desktop-tools/node_modules/electron-builder/out/cli/cli.js --win --dir --config electron-builder.yml --config.npmRebuild=false",
+    "pack:portable": "node scripts/build.mjs && node ../../desktop-tools/node_modules/electron-builder/out/cli/cli.js --win --dir --config electron-builder.yml --config.npmRebuild=false --config.win.signAndEditExecutable=false",
     "pack:installer": "node scripts/build.mjs && node ../../desktop-tools/node_modules/electron-builder/out/cli/cli.js --win --config electron-builder.yml --config.npmRebuild=false"
   }
 }
