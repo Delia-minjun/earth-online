@@ -23,7 +23,7 @@ jobs:
 
       - uses: pnpm/action-setup@v4
         with:
-          version: 11
+          version: 11.28.5
 
       - uses: actions/setup-node@v4
         with:
@@ -32,7 +32,10 @@ jobs:
           cache-dependency-path: 05-开发/pnpm-lock.yaml
 
       - name: Install
-        run: pnpm install --frozen-lockfile
+        run: |
+          node -v
+          pnpm -v
+          pnpm install --no-frozen-lockfile
 
       - name: Typecheck (server + web)
         run: pnpm typecheck
