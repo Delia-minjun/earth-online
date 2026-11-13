@@ -14,12 +14,10 @@
     "showDone": "Include done",
     "areas": "Areas",
     "add": "＋ New project",
-    "areaHint": "Areas group projects; deleting only archives",
     "areaPlaceholder": "New area, press Enter",
     "namePlaceholder": "Project name, press Enter",
     "noArea": "Unfiled",
     "empty": "No projects yet",
-    "emptyHint": "Hit ＋ New project, e.g. “Thesis”",
     "counts": "{{open}} open · {{done}} done",
     "noTasks": "No tasks in this project",
     "taskPlaceholder": "Add a task, press Enter",
@@ -86,12 +84,10 @@
   },
   "reward": {
     "homeTitle": "Earth Online System",
-    "sub": "Earn coins from real work, spend them on rewards you define",
     "balance": "Balance",
     "unit": "coins",
     "weekIn": "This week +{{n}}",
     "weekOut": "This week −{{n}}",
-    "hint": "Finishing tasks, checking in and reviewing all earn coins. Coins are granted by the system only — never by hand, never overdrawn.",
     "areas": "Six areas",
     "decay": "−1% per day, floor 40%",
     "shop": "Reward shop",
@@ -235,7 +231,6 @@
   },
   "budget": {
     "title": "Monthly budget",
-    "hint": "Set a monthly total; expand for per-category caps. Overspending turns red on the Today page.",
     "monthly": "Per month",
     "perCategory": "Per category",
     "noCap": "none"
@@ -245,9 +240,9 @@
     "hint": "Add, rename or recolor categories",
     "blocks": "Time blocks",
     "money": "Money",
-    "addPlaceholder": "New category, Enter to add (time blocks)",
     "inUse": "This category is still used by time blocks — reassign them first",
-    "pickColor": "Click the swatch to change color"
+    "pickColor": "Click the swatch to change color",
+    "newPlaceholder": "New category"
   },
   "sub": {
     "week": "See this week by day; switch to Month for the whole month",
@@ -288,7 +283,6 @@
     "emptyHint": "Add your weekly classes and planning will avoid them",
     "import": "Import screenshot",
     "importing": "Reading…",
-    "importHint": "Check each row before importing",
     "importConfirm": "Import selected",
     "imported": "Imported {{n}}, skipped {{m}}",
     "selected": "{{n}} selected",
@@ -414,7 +408,6 @@
   },
   "study": {
     "title": "Study",
-    "emptyHint": "Create a subject, paste in slides or notes. Once proofread, it can generate flashcards scheduled 1/3/7/21/60 days out.",
     "newSubject": "New subject",
     "materials": "Materials",
     "materialTitle": "Title (e.g. Ch.3 Fourier transform)",
@@ -451,9 +444,8 @@
     "tooLarge": "File is over 25MB — split or compress it first",
     "courseMaterials": "Course materials",
     "notePlaceholder": "Add a note",
-    "dropHint": "Drop a file here, or click to choose",
-    "dropTypes": "PDF / Word / PPT / Markdown / images — multiple allowed",
     "uploading": "Reading file…",
-    "saveAsMaterial": "Save this text as a material"
+    "saveAsMaterial": "Save this text as a material",
+    "pickFile": "Choose file"
   }
 }

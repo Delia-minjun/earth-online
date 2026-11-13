@@ -341,7 +341,6 @@ export function CourseEditor({
 
       {candidates ? (
         <div className="space-y-2 rounded-2xl border border-accent-soft bg-surface p-3">
-          <p className="text-[11px] text-ink-2">{t("course.importHint")}</p>
           <ul className="max-h-80 space-y-1 overflow-y-auto">
             {candidates.map((c) => {
               const ok = isOk(c);

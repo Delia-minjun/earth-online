@@ -127,8 +127,7 @@ export function RewardView() {
               {t("reward.todayIn", { n: wallet?.todayIn ?? 0 })}
             </span>
           </div>
-          <p className="mt-4 text-[10.5px] leading-relaxed text-[#bcb8b0]">{t("reward.hint")}</p>
-        </Card>
+          </Card>
 
         <Card title={t("reward.areas")} action={t("reward.decay")}>
           <div className="grid grid-cols-2 gap-x-5 gap-y-3">

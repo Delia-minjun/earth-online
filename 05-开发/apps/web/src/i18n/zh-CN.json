@@ -14,12 +14,10 @@
     "showDone": "含已完成",
     "areas": "领域",
     "add": "＋ 新项目",
-    "areaHint": "领域用来分组；删除只是归档，已有项目不会消失",
     "areaPlaceholder": "新领域名，回车添加",
     "namePlaceholder": "项目名，回车保存",
     "noArea": "未归类",
     "empty": "还没有项目",
-    "emptyHint": "点右上角「＋ 新项目」建一个，比如「毕业设计」",
     "counts": "{{open}} 待办 · {{done}} 完成",
     "noTasks": "这个项目还没有任务",
     "taskPlaceholder": "加一条任务，回车保存",
@@ -87,12 +85,10 @@
   },
   "reward": {
     "homeTitle": "地球 Online 系统",
-    "sub": "做实事赚币，用币兑换自己定的奖励",
     "balance": "我的余额",
     "unit": "币",
     "weekIn": "本周 +{{n}}",
     "weekOut": "本周 −{{n}}",
-    "hint": "完成任务、打卡、复盘都会赚币。币只能由系统按规则发放，不能手动加，也不能透支。",
     "areas": "六领域进度",
     "decay": "每日 −1%，下限 40%",
     "shop": "奖赏商店",
@@ -236,7 +232,6 @@
   },
   "budget": {
     "title": "月度预算",
-    "hint": "填一个月度总额；想细管就展开分类上限。超支会在今日页的记账卡里变红。",
     "monthly": "每月",
     "perCategory": "分类上限",
     "noCap": "不限"
@@ -246,9 +241,9 @@
     "hint": "可新建、修改类名与颜色",
     "blocks": "时间块",
     "money": "记账",
-    "addPlaceholder": "新类别名，回车添加（加到时间块）",
     "inUse": "这个类别还有时间块在用，先改掉那些记录再删",
-    "pickColor": "点色块改颜色"
+    "pickColor": "点色块改颜色",
+    "newPlaceholder": "新类别"
   },
   "sub": {
     "week": "按周看这一周的安排，切到本月可以看整月",
@@ -289,7 +284,6 @@
     "emptyHint": "把每周固定的课加进来，排时间时会自动避开",
     "import": "导入截图",
     "importing": "识别中…",
-    "importHint": "识别结果，请逐条核对后再导入",
     "importConfirm": "确认导入",
     "imported": "已导入 {{n}} 节，跳过 {{m}} 节",
     "selected": "已选 {{n}} 条",
@@ -415,7 +409,6 @@
   },
   "study": {
     "title": "学习",
-    "emptyHint": "先建一个科目，再把课件/笔记贴进来。资料校对后就能生成背记卡片，按 1/3/7/21/60 天自动排复习。",
     "newSubject": "新科目",
     "materials": "资料",
     "materialTitle": "资料标题（如：第三章 傅里叶变换）",
@@ -452,9 +445,8 @@
     "tooLarge": "文件超过 25MB，请拆分或压缩后再传",
     "courseMaterials": "课程资料",
     "notePlaceholder": "添加备注",
-    "dropHint": "把课件拖进来，或点击选择文件",
-    "dropTypes": "支持 PDF / Word / PPT / Markdown / 图片，可多选",
     "uploading": "正在读取文件…",
-    "saveAsMaterial": "只存这段文字为资料"
+    "saveAsMaterial": "只存这段文字为资料",
+    "pickFile": "选择文件"
   }
 }

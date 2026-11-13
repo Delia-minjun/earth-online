@@ -61,7 +61,6 @@ export function BudgetCard() {
               : null
       }
     >
-      <p className="text-[10.5px] leading-relaxed text-ink-3">{t("budget.hint")}</p>
       <div className="mt-2 flex items-center gap-2">
         <label className="flex items-center gap-1 text-[11px] text-ink-2">
           {t("budget.monthly")}
@@ -261,7 +260,7 @@ export function CategoriesCard() {
           onKeyDown={(e) => {
             if (e.key === "Enter") void addBlock();
           }}
-          placeholder={t("categories.addPlaceholder")}
+          placeholder={t("categories.newPlaceholder")}
           className="min-w-0 flex-1 bg-transparent text-[11.5px] text-ink outline-none placeholder:text-[#c8c4bc]"
         />
       </div>
