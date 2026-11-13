@@ -44,7 +44,23 @@ jobs:
         run: pnpm --filter @life/web build
 
       - name: Bundle server + web for desktop
-        run: pnpm --filter @life/desktop prepare-bundle
+        run: |
+          set -o pipefail
+          pnpm --filter @life/desktop prepare-bundle 2>&1 | tee /tmp/bundle.log
+
+      # 失败时把输出写进运行摘要，这样不用登录也能看到原因
+      - name: Bundle log (summary)
+        if: always()
+        run: |
+          {
+            echo "### bundle 输出"
+            echo '```'
+            tail -60 /tmp/bundle.log 2>/dev/null || echo "(没有输出)"
+            echo '```'
+            echo "pnpm 版本: $(pnpm -v) / node: $(node -v)"
+            echo "workspace 包:"
+            pnpm ls -r --depth -1 --json 2>/dev/null | head -40 || true
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Install packaging toolchain (electron + builder)
         working-directory: 05-开发/desktop-tools
