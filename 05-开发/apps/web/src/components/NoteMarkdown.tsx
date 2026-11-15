@@ -70,7 +70,7 @@ export function NoteMarkdown({
             <button
               type="button"
               onClick={() => onRewrite(line.trim())}
-              className="shrink-0 text-[9.5px] text-[#c0bbb2] opacity-0 transition-opacity hover:text-accent group-hover:opacity-100"
+              className="shrink-0 rounded-full border border-line px-2 py-[1px] text-[9.5px] text-ink-3 transition-colors hover:border-accent hover:text-accent"
             >
               重写
             </button>
