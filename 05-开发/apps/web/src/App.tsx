@@ -129,7 +129,8 @@ export default function App() {
                 ) : null}
               </div>
 
-              {/* 日期 / 说明行：切换条在这一行的右端，与日期垂直居中 */}
+              {/* 日期 / 切换条：只有日程页需要这一行，其它页不占高度 */}
+              {isSchedule ? (
               <div className="mt-1 flex min-h-[24px] items-center justify-between gap-3">
                 <p className="min-w-0 truncate text-[11px] text-ink-3">
                   {isTodayMode
@@ -166,6 +167,7 @@ export default function App() {
                   </div>
                 ) : null}
               </div>
+              ) : null}
             </div>
 
             <div className="flex justify-start lg:col-start-3 lg:row-start-1 lg:justify-end lg:self-start">
