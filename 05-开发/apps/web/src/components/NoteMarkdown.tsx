@@ -48,7 +48,8 @@ export function NoteMarkdown({
   const lines = content.split("\n");
   const out: ReactNode[] = [];
 
-  lines.forEach((raw, idx) => {
+  for (let idx = 0; idx < lines.length; idx += 1) {
+    const raw = lines[idx]!;
     const line = raw.trimEnd();
     if (!line.trim()) {
       out.push(<div key={`gap-${idx}`} className="h-2" />);
@@ -85,29 +86,46 @@ export function NoteMarkdown({
           ) : null}
         </div>,
       );
-      return;
+      continue;
     }
 
     // 无序列表
     const bullet = line.match(/^([-*•])\s+(.*)$/);
     if (bullet) {
-      const body = bullet[2]!;
-      // 「是什么：xxx」这类短标签，拆成标签 + 内容两段，便于扫读
+      let body = bullet[2]!;
       const labeled = body.match(/^([^：:]{1,6})[：:]\s*(.+)$/);
+
+      // 同一标签的连续条目（多个「例子」/「关键点」）合并成一行，避免碎片化换行
+      if (labeled) {
+        const label = labeled[1]!;
+        let merged = labeled[2]!;
+        while (idx + 1 < lines.length) {
+          const next = lines[idx + 1]!.trim();
+          const nb = next.match(/^([-*•])\s+(.*)$/);
+          if (!nb) break;
+          const nlab = nb[2]!.match(/^([^：:]{1,6})[：:]\s*(.+)$/);
+          if (!nlab || nlab[1] !== label) break;
+          merged = `${merged.replace(/[。；;]\s*$/, "")}，${nlab[2]!.trim()}`;
+          idx += 1;
+        }
+        body = `${label}：${merged}`;
+      }
+
+      const finalLabeled = body.match(/^([^：:]{1,6})[：:]\s*(.+)$/);
       out.push(
         <div key={`ul-${idx}`} className="mt-1.5 flex gap-2.5 pl-0.5">
           <span className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-[#c6c0b6]" />
-          {labeled ? (
+          {finalLabeled ? (
             <p className="flex-1 leading-[1.85]">
-              <span className="mr-1.5 text-[10.5px] text-ink-3">{labeled[1]}</span>
-              {inline(labeled[2]!, `u${idx}`)}
+              <span className="mr-1.5 text-[10.5px] text-ink-3">{finalLabeled[1]}</span>
+              {inline(finalLabeled[2]!, `u${idx}`)}
             </p>
           ) : (
             <p className="flex-1 leading-[1.85]">{inline(body, `u${idx}`)}</p>
           )}
         </div>,
       );
-      return;
+      continue;
     }
 
     // 有序列表
@@ -119,7 +137,7 @@ export function NoteMarkdown({
           <p className="flex-1 leading-[1.75]">{inline(ordered[2]!, `o${idx}`)}</p>
         </div>,
       );
-      return;
+      continue;
     }
 
     // 引用
@@ -129,7 +147,7 @@ export function NoteMarkdown({
           {inline(line.replace(/^>\s?/, ""), `q${idx}`)}
         </p>,
       );
-      return;
+      continue;
     }
 
     out.push(
@@ -137,7 +155,7 @@ export function NoteMarkdown({
         {inline(line, `p${idx}`)}
       </p>,
     );
-  });
+  }
 
   return <div className="max-w-[68ch] text-[12.5px] leading-[1.9] text-ink-2">{out}</div>;
 }
