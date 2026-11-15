@@ -54,8 +54,8 @@ export function NoteMarkdown({ content }: { content: string }) {
         level === 1
           ? "mt-3 mb-1 text-[13.5px] font-semibold text-ink first:mt-0"
           : level === 2
-            ? "mt-3.5 mb-1.5 border-b border-line-2 pb-1 text-[12.5px] font-semibold text-ink"
-            : "mt-3 mb-1 text-[11.5px] font-semibold text-ink-2";
+            ? "mt-5 mb-2 border-b border-line-2 pb-1.5 text-[13px] font-semibold text-ink"
+            : "mt-3.5 mb-1 text-[12px] font-semibold text-ink-2";
       out.push(
         <p key={`h-${idx}`} className={cls}>
           {text}
@@ -67,10 +67,20 @@ export function NoteMarkdown({ content }: { content: string }) {
     // 无序列表
     const bullet = line.match(/^([-*•])\s+(.*)$/);
     if (bullet) {
+      const body = bullet[2]!;
+      // 「是什么：xxx」这类短标签，拆成标签 + 内容两段，便于扫读
+      const labeled = body.match(/^([^：:]{1,6})[：:]\s*(.+)$/);
       out.push(
-        <div key={`ul-${idx}`} className="mt-1 flex gap-2 pl-1">
-          <span className="mt-[5px] h-1 w-1 shrink-0 rounded-full bg-[#c6c0b6]" />
-          <p className="flex-1 leading-[1.75]">{inline(bullet[2]!, `u${idx}`)}</p>
+        <div key={`ul-${idx}`} className="mt-1.5 flex gap-2.5 pl-0.5">
+          <span className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-[#c6c0b6]" />
+          {labeled ? (
+            <p className="flex-1 leading-[1.85]">
+              <span className="mr-1.5 text-[10.5px] text-ink-3">{labeled[1]}</span>
+              {inline(labeled[2]!, `u${idx}`)}
+            </p>
+          ) : (
+            <p className="flex-1 leading-[1.85]">{inline(body, `u${idx}`)}</p>
+          )}
         </div>,
       );
       return;
@@ -105,5 +115,5 @@ export function NoteMarkdown({ content }: { content: string }) {
     );
   });
 
-  return <div className="text-[11px] text-ink-2">{out}</div>;
+  return <div className="max-w-[62ch] text-[12px] text-ink-2">{out}</div>;
 }
