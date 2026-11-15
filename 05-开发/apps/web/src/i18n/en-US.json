@@ -471,7 +471,6 @@
     "overdue": "{{n}} days over",
     "noAreaPick": "No area",
     "tasks": "Today's tasks",
-    "noTask": "No tasks today",
-    "overdueTag": "Overdue"
+    "noTask": "No tasks today"
   }
 }

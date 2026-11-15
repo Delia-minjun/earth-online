@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, type ApiTask } from "../api";
+import { DDL_TONE_CLASS, ddlTone } from "../ddl";
 import { Card } from "../components/Card";
 
 /** 首页的任务清单：勾完得币，币数来自当前规则 */
@@ -73,9 +74,18 @@ export function TodayTasksCard({
               >
                 {task.title}
               </span>
-              {task.overdue ? (
-                <span className="shrink-0 rounded-full bg-warn-soft px-1.5 py-[1px] text-[9px] text-warn">
-                  {t("growth.overdueTag")}
+              {task.due_date ? (
+                <span
+                  className={`shrink-0 rounded-full px-1.5 py-[1px] text-[9px] tabular-nums ${
+                    DDL_TONE_CLASS[ddlTone(task.due_date, task.status === "done")]
+                  }`}
+                  title={t("task.ddl")}
+                >
+                  DDL {task.due_date.slice(5)}
+                </span>
+              ) : task.overdue ? (
+                <span className="shrink-0 rounded-full bg-warn-soft px-1.5 py-[1px] text-[9px] tabular-nums text-warn">
+                  {t("task.overdue")} {task.scheduled_date?.slice(5)}
                 </span>
               ) : null}
               {!isDone ? (

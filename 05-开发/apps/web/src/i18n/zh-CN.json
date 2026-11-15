@@ -472,7 +472,6 @@
     "overdue": "已过 {{n}} 天",
     "noAreaPick": "不指定领域",
     "tasks": "今日任务",
-    "noTask": "今天还没有任务",
-    "overdueTag": "逾期"
+    "noTask": "今天还没有任务"
   }
 }
