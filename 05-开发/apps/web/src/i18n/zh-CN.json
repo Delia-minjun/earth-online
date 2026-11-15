@@ -485,6 +485,7 @@
     "tagOther": "其他",
     "redeemedOn": "{{d}} 兑换过",
     "undoEntry": "撤销这条记录",
-    "last7": "近 7 天净变化"
+    "last7": "近 7 天净变化",
+    "editReward": "修改奖赏"
   }
 }

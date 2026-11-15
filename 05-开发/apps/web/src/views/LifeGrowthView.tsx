@@ -324,16 +324,12 @@ export function LifeGrowthView() {
                           >
                             {meta.icon}
                           </span>
-                          <button
-                            type="button"
-                            onClick={() => startEdit(r)}
-                            className="min-w-0 flex-1 text-left"
-                          >
+                          <div className="min-w-0 flex-1">
                             <p className="truncate text-[11px] text-ink">{r.name}</p>
                             {r.money > 0 ? (
                               <p className="mt-0.5 truncate text-[9.5px] text-ink-3">¥{r.money}</p>
                             ) : null}
-                          </button>
+                          </div>
                           <button
                             type="button"
                             onClick={() => void toggleWish(r)}
@@ -343,6 +339,15 @@ export function LifeGrowthView() {
                             }`}
                           >
                             {r.wish ? "★" : "☆"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => startEdit(r)}
+                            aria-label={t("growth.editReward")}
+                            title={t("growth.editReward")}
+                            className="shrink-0 text-[11px] leading-none text-[#c0bbb2] transition-colors hover:text-accent"
+                          >
+                            ✎
                           </button>
                           <button
                             type="button"
