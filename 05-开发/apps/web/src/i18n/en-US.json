@@ -489,7 +489,8 @@
     "wrongBook": "Wrong book",
     "wrongEmpty": "No questions saved yet",
     "wrongCount": "{{n}} saved",
-    "removeFromWrong": "Remove"
+    "removeFromWrong": "Remove",
+    "addToChapter": "Add files to this chapter"
   },
   "growth": {
     "coins": "My coins",

@@ -57,6 +57,9 @@ export function StudyMaterials({
   /** 选择题的勾选：${practiceId}-${题号} → 选项序号 */
   const [choices, setChoices] = useState<Record<string, number>>({});
   const fileRef = useRef<HTMLInputElement>(null);
+  /** 章节内的 ＋ 上传：指定章节与类别 */
+  const chapterFileRef = useRef<HTMLInputElement>(null);
+  const [chapterTarget, setChapterTarget] = useState<string | null>(null);
   const [over, setOver] = useState(false);
 
   const groups = useMemo<ChapterGroup[]>(() => {
@@ -180,6 +183,20 @@ export function StudyMaterials({
 
   return (
     <Card title={t("study.courseMaterials")}>
+      <input
+        ref={chapterFileRef}
+        type="file"
+        multiple
+        accept=".pdf,.docx,.pptx,.md,.markdown,.txt,image/*"
+        className="hidden"
+        onChange={(e) => {
+          const files = e.target.files;
+          e.target.value = "";
+          if (!files?.length) return;
+          const chapter = chapterTarget ? chapterTarget : null;
+          void onUpload(files, role, chapter);
+        }}
+      />
       {toast ? (
         <p className="mb-2 rounded-lg bg-accent-soft px-2.5 py-1.5 text-[10.5px] text-accent">{toast}</p>
       ) : null}
@@ -264,6 +281,17 @@ export function StudyMaterials({
                   {cardBreakdown(g) ? ` · ${cardBreakdown(g)}` : ""}
                 </span>
                 <span className="ml-auto flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setChapterTarget(g.chapter ?? "");
+                      chapterFileRef.current?.click();
+                    }}
+                    title={t("study.addToChapter")}
+                    className="rounded-full border border-line px-[7px] py-[2px] text-[9.5px] text-ink-3 transition-colors hover:border-accent hover:text-accent"
+                  >
+                    ＋
+                  </button>
                   <button
                     type="button"
                     onClick={() => void genNote(g.chapter)}

@@ -490,7 +490,8 @@
     "wrongBook": "错题本",
     "wrongEmpty": "还没有收录错题",
     "wrongCount": "共 {{n}} 题",
-    "removeFromWrong": "移出"
+    "removeFromWrong": "移出",
+    "addToChapter": "把文件加到本章"
   },
   "growth": {
     "coins": "我的快乐币",
