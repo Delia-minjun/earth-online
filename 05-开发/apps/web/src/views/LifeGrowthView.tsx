@@ -176,7 +176,7 @@ export function LifeGrowthView() {
         </Card>
 
         {/* 六领域成长 */}
-        <Card title={t("growth.areas")}>
+        <Card>
           <div className="grid gap-x-5 gap-y-3 sm:grid-cols-2">
             {growth.map((a) => (
               <div key={a.id}>
