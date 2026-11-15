@@ -30,7 +30,8 @@ export function StudyMaterials({
 }) {
   const { t } = useTranslation();
   const [role, setRole] = useState<Role>("knowledge");
-  const [generating, setGenerating] = useState<string | null>(null);
+  /** 可能同时跑「知识卡」和「练习题」，所以是集合而不是单值 */
+  const [generating, setGenerating] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [over, setOver] = useState(false);
@@ -60,7 +61,7 @@ export function StudyMaterials({
 
   const generate = async (chapter: string | null, which: Role) => {
     const key = `${chapter ?? ""}:${which}`;
-    setGenerating(key);
+    setGenerating((list) => [...list, key]);
     setError(null);
     try {
       await api.generateSection(subjectId, which, chapter, 8);
@@ -75,7 +76,7 @@ export function StudyMaterials({
             : msg,
       );
     } finally {
-      setGenerating(null);
+      setGenerating((list) => list.filter((k) => k !== key));
     }
   };
 
@@ -170,18 +171,18 @@ export function StudyMaterials({
                   <button
                     type="button"
                     onClick={() => void generate(g.chapter, "knowledge")}
-                    disabled={busy || !hasKnowledge || generating === `${key}:knowledge`}
+                    disabled={busy || !hasKnowledge || generating.includes(`${key}:knowledge`)}
                     className="rounded-full border border-line px-2 py-[2px] text-[9.5px] text-ink-3 transition-colors hover:border-accent hover:text-accent disabled:opacity-40"
                   >
-                    {generating === `${key}:knowledge` ? t("study.generating") : t("study.genKnowledge")}
+                    {generating.includes(`${key}:knowledge`) ? t("study.generating") : t("study.genKnowledge")}
                   </button>
                   <button
                     type="button"
                     onClick={() => void generate(g.chapter, "questions")}
-                    disabled={busy || !hasQuestions || generating === `${key}:questions`}
+                    disabled={busy || !hasQuestions || generating.includes(`${key}:questions`)}
                     className="rounded-full border border-line px-2 py-[2px] text-[9.5px] text-ink-3 transition-colors hover:border-accent hover:text-accent disabled:opacity-40"
                   >
-                    {generating === `${key}:questions` ? t("study.generating") : t("study.genQuestions")}
+                    {generating.includes(`${key}:questions`) ? t("study.generating") : t("study.genQuestions")}
                   </button>
                 </span>
               </header>
