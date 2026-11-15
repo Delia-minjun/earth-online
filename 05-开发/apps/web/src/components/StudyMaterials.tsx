@@ -85,6 +85,9 @@ export function StudyMaterials({
     return parts.join(" · ");
   };
 
+  /** 题目下方的胶囊按钮统一尺寸，避免两个按钮高低不齐 */
+  const PILL = "inline-flex h-[22px] items-center rounded-full border px-2.5 text-[10px] leading-none transition-colors";
+
   const chapterLabel = (chapter: string | null) =>
     chapter
       ? /^l/i.test(chapter)
@@ -426,7 +429,7 @@ export function StudyMaterials({
                                     </ul>
                                   ) : null}
 
-                                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
                                   <button
                                     type="button"
                                     onClick={() =>
@@ -436,7 +439,7 @@ export function StudyMaterials({
                                           : [...list, ansKey],
                                       )
                                     }
-                                    className={`mt-2 rounded-full border px-2.5 py-[3px] text-[10px] transition-colors ${
+                                    className={`mt-2 ${PILL} ${
                                       open
                                         ? "border-accent bg-accent-soft text-accent"
                                         : "border-line text-ink-3 hover:border-accent hover:text-accent"
@@ -458,7 +461,7 @@ export function StudyMaterials({
                                             ref: item.ref,
                                           })
                                         }
-                                        className={`rounded-full border px-2 py-[2px] text-[9.5px] transition-colors ${
+                                        className={`${PILL} ${
                                           saved
                                             ? "border-line text-[#c8c4bc]"
                                             : "border-line text-ink-3 hover:border-warn hover:text-warn"
