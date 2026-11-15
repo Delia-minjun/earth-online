@@ -476,7 +476,10 @@
     "practiceReady": "Practice set updated",
     "hideAnswer": "Hide answer",
     "questionN": "Q{{n}}",
-    "answerLabel": "Answer & explanation"
+    "answerLabel": "Answer & explanation",
+    "questionCount": "{{n}} questions",
+    "expandAll": "Show all answers",
+    "collapseAll": "Hide all answers"
   },
   "growth": {
     "coins": "My coins",

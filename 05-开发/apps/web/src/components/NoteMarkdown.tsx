@@ -115,5 +115,5 @@ export function NoteMarkdown({ content }: { content: string }) {
     );
   });
 
-  return <div className="max-w-[62ch] text-[12px] text-ink-2">{out}</div>;
+  return <div className="max-w-[68ch] text-[12.5px] leading-[1.9] text-ink-2">{out}</div>;
 }

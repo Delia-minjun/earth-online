@@ -47,7 +47,8 @@ export function StudyMaterials({
   const [toast, setToast] = useState<string | null>(null);
   const [openNote, setOpenNote] = useState<string | null>(null);
   const [openPractice, setOpenPractice] = useState<string | null>(null);
-  const [openAnswer, setOpenAnswer] = useState<string | null>(null);
+  /** 允许多题同时展开，值为 `${practiceId}-${index}` */
+  const [openAnswers, setOpenAnswers] = useState<string[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
   const [over, setOver] = useState(false);
 
@@ -144,7 +145,7 @@ export function StudyMaterials({
       setToast(t("study.practiceReady") + ` · ${t("study.questionN", { n: res.count })}`);
       window.setTimeout(() => setToast(null), 3000);
       setOpenPractice(chapter ?? "");
-      setOpenAnswer(null);
+      setOpenAnswers([]);
       await onChanged();
     } catch (e) {
       const msg = (e as Error).message;
@@ -346,52 +347,84 @@ export function StudyMaterials({
                     </span>
                   </button>
                   {openPractice === key ? (
-                    <ol className="max-h-[70vh] space-y-2.5 overflow-y-auto border-t border-line-2 bg-surface px-3 py-3">
-                      {practice.items.map((item, qi) => {
-                        const ansKey = `${practice.id}-${qi}`;
-                        const open = openAnswer === ansKey;
-                        return (
-                          <li
-                            key={ansKey}
-                            className="rounded-xl border border-line-2 bg-surface-2 px-3 py-2.5"
-                          >
-                            <div className="flex gap-2.5">
-                              <span className="mt-[1px] grid h-5 w-5 shrink-0 place-items-center rounded-full bg-accent-soft text-[10px] font-semibold tabular-nums text-accent">
-                                {qi + 1}
-                              </span>
-                              <p className="max-w-[68ch] flex-1 text-[12px] leading-[1.85] text-ink-2">
-                                {item.q}
-                              </p>
-                            </div>
+                    <div className="border-t border-line-2 bg-surface">
+                      <div className="flex items-center justify-between gap-2 border-b border-line-2 px-3 py-1.5">
+                        <span className="text-[10px] tabular-nums text-ink-3">
+                          {t("study.questionCount", { n: practice.items.length })}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const keys = practice.items.map((_, i) => `${practice.id}-${i}`);
+                            const allOpen = keys.every((k) => openAnswers.includes(k));
+                            setOpenAnswers(allOpen ? [] : keys);
+                          }}
+                          className="text-[10px] text-ink-3 transition-colors hover:text-accent"
+                        >
+                          {practice.items.every((_, i) => openAnswers.includes(`${practice.id}-${i}`))
+                            ? t("study.collapseAll")
+                            : t("study.expandAll")}
+                        </button>
+                      </div>
 
-                            <div className="mt-1.5 pl-[30px]">
-                              <button
-                                type="button"
-                                onClick={() => setOpenAnswer(open ? null : ansKey)}
-                                className={`rounded-full border px-2 py-[2px] text-[9.5px] transition-colors ${
-                                  open
-                                    ? "border-accent text-accent"
-                                    : "border-line text-ink-3 hover:border-accent hover:text-accent"
-                                }`}
-                              >
-                                {open ? t("study.hideAnswer") : t("study.showAnswer")}
-                              </button>
+                      <ol className="max-h-[72vh] space-y-3 overflow-y-auto px-3.5 py-3">
+                        {practice.items.map((item, qi) => {
+                          const ansKey = `${practice.id}-${qi}`;
+                          const open = openAnswers.includes(ansKey);
+                          return (
+                            <li
+                              key={ansKey}
+                              className="rounded-xl border border-line-2 bg-surface-2 px-3.5 py-3"
+                            >
+                              <div className="flex gap-3">
+                                <span className="mt-[2px] grid h-5 w-5 shrink-0 place-items-center rounded-full bg-accent-soft text-[10px] font-semibold tabular-nums text-accent">
+                                  {qi + 1}
+                                </span>
+                                <div className="min-w-0 flex-1">
+                                  {item.ref ? (
+                                    <span className="mb-1 inline-block rounded-full bg-surface px-1.5 py-[1px] text-[9px] text-ink-3">
+                                      {item.ref}
+                                    </span>
+                                  ) : null}
+                                  <p className="max-w-[70ch] text-[12.5px] leading-[1.9] text-ink-2">
+                                    {item.q}
+                                  </p>
 
-                              {open ? (
-                                <div className="mt-2 max-w-[68ch] rounded-lg border border-line-2 bg-surface px-3 py-2">
-                                  <p className="text-[9.5px] uppercase tracking-[0.12em] text-ink-3">
-                                    {t("study.answerLabel")}
-                                  </p>
-                                  <p className="mt-1 whitespace-pre-wrap text-[11.5px] leading-[1.85] text-ink-2">
-                                    {item.a}
-                                  </p>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setOpenAnswers((list) =>
+                                        list.includes(ansKey)
+                                          ? list.filter((k) => k !== ansKey)
+                                          : [...list, ansKey],
+                                      )
+                                    }
+                                    className={`mt-2 rounded-full border px-2.5 py-[3px] text-[10px] transition-colors ${
+                                      open
+                                        ? "border-accent bg-accent-soft text-accent"
+                                        : "border-line text-ink-3 hover:border-accent hover:text-accent"
+                                    }`}
+                                  >
+                                    {open ? t("study.hideAnswer") : t("study.showAnswer")}
+                                  </button>
+
+                                  {open ? (
+                                    <div className="mt-2 max-w-[70ch] rounded-lg border border-line-2 bg-surface px-3 py-2.5">
+                                      <p className="text-[9.5px] uppercase tracking-[0.12em] text-ink-3">
+                                        {t("study.answerLabel")}
+                                      </p>
+                                      <p className="mt-1 whitespace-pre-wrap text-[12px] leading-[1.9] text-ink-2">
+                                        {item.a}
+                                      </p>
+                                    </div>
+                                  ) : null}
                                 </div>
-                              ) : null}
-                            </div>
-                          </li>
-                        );
-                      })}
-                    </ol>
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ol>
+                    </div>
                   ) : null}
                 </div>
               ) : null}
