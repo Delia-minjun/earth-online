@@ -458,6 +458,17 @@
     "rulesAreas": "Six areas",
     "rulesAreasBody": "Each area accumulates on its own\nLast 14 days = number of actions in that window",
     "rulesRewards": "Rewards",
-    "rulesRewardsBody": "Redeem only when the balance is enough; otherwise the gap is shown\nStar a reward to mark it as a wish; the next wish is the cheapest one above the balance\nA second click on the same reward within 3 seconds is ignored\nA reward with a real-money price also records an expense"
+    "rulesRewardsBody": "Redeem only when the balance is enough; otherwise the gap is shown\nStar a reward to mark it as a wish; the next wish is the cheapest one above the balance\nA second click on the same reward within 3 seconds is ignored\nA reward with a real-money price also records an expense",
+    "milestones": "Milestones",
+    "newMilestone": "New milestone",
+    "milestoneTitle": "What do you want to reach?",
+    "stepsPlaceholder": "Break it into checkable steps, one per line (optional)",
+    "addStep": "Add a step, press Enter",
+    "noMilestone": "No milestones yet",
+    "markDone": "Mark done",
+    "markUndone": "Mark not done",
+    "daysLeft": "{{n}} days left",
+    "overdue": "{{n}} days over",
+    "noAreaPick": "No area"
   }
 }

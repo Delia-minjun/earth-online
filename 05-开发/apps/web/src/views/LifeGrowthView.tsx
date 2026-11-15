@@ -7,6 +7,7 @@ import {
   type ApiWallet,
 } from "../api";
 import { Card } from "../components/Card";
+import { MilestonesCard } from "../components/MilestonesCard";
 
 type Draft = { name: string; price: string; money: string };
 const EMPTY: Draft = { name: "", price: "", money: "" };
@@ -215,6 +216,8 @@ export function LifeGrowthView() {
           </div>
         </Card>
       </div>
+
+      <MilestonesCard areas={growth} />
 
       {/* 奖赏商店 */}
       <Card

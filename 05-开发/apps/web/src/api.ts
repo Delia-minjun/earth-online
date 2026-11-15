@@ -190,6 +190,27 @@ export interface ApiAreaProgress {
   pct: number;
 }
 
+export interface ApiMilestoneStep {
+  id: string;
+  milestone_id: string;
+  title: string;
+  done_at: string | null;
+  sort: number;
+}
+
+export interface ApiMilestone {
+  id: string;
+  title: string;
+  area_id: string | null;
+  area_name: string | null;
+  area_color: string | null;
+  due_date: string | null;
+  note: string | null;
+  done_at: string | null;
+  sort: number;
+  steps: ApiMilestoneStep[];
+}
+
 export interface ApiAreaGrowth {
   id: string;
   name: string;
@@ -637,6 +658,29 @@ export const api = {
 
   saveJournal: (date: string, body: string) =>
     request<ApiJournal>(`/journal/${date}`, { method: "PUT", body: JSON.stringify({ body }) }),
+  /* ---- 里程碑 ---- */
+  milestones: () => request<ApiMilestone[]>("/milestones"),
+  addMilestone: (input: {
+    title: string;
+    areaId?: string;
+    dueDate?: string;
+    note?: string;
+    steps?: string[];
+  }) => request<ApiMilestone>("/milestones", { method: "POST", body: JSON.stringify(input) }),
+  updateMilestone: (
+    id: string,
+    patch: { title?: string; areaId?: string | null; dueDate?: string | null; note?: string | null; done?: boolean },
+  ) => request<ApiMilestone>(`/milestones/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
+  deleteMilestone: (id: string) => request<{ ok: true }>(`/milestones/${id}`, { method: "DELETE" }),
+  addStep: (milestoneId: string, title: string) =>
+    request<ApiMilestoneStep>(`/milestones/${milestoneId}/steps`, {
+      method: "POST",
+      body: JSON.stringify({ title }),
+    }),
+  updateStep: (id: string, patch: { done: boolean; title?: string }) =>
+    request<ApiMilestoneStep>(`/milestone-steps/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
+  deleteStep: (id: string) => request<{ ok: true }>(`/milestone-steps/${id}`, { method: "DELETE" }),
+
   /* ---- P5a 学习 ---- */
   subjects: () => request<ApiSubject[]>("/study/subjects"),
   addSubject: (input: { name: string; color?: string }) =>

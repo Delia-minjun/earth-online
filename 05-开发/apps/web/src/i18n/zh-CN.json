@@ -459,6 +459,17 @@
     "rulesAreas": "六领域",
     "rulesAreasBody": "六个领域各自独立累计，互不换算\n近14天 = 最近 14 天的行动次数",
     "rulesRewards": "奖赏与兑换",
-    "rulesRewardsBody": "余额足够才能兑换，不足时显示差额\n点 ☆ 标记心愿；“下一个心愿”取价格高于当前余额里最便宜的那个\n同一奖赏 3 秒内重复点击只兑换一次\n填了真实金额的奖赏，兑换时会在记账里同时记一笔支出"
+    "rulesRewardsBody": "余额足够才能兑换，不足时显示差额\n点 ☆ 标记心愿；“下一个心愿”取价格高于当前余额里最便宜的那个\n同一奖赏 3 秒内重复点击只兑换一次\n填了真实金额的奖赏，兑换时会在记账里同时记一笔支出",
+    "milestones": "里程碑",
+    "newMilestone": "新建里程碑",
+    "milestoneTitle": "想达成什么（如：两周内做出一个能用的工具）",
+    "stepsPlaceholder": "拆成可验证的小步，一行一个（可留空）",
+    "addStep": "加一小步，回车添加",
+    "noMilestone": "还没有里程碑",
+    "markDone": "标记完成",
+    "markUndone": "取消完成",
+    "daysLeft": "还有 {{n}} 天",
+    "overdue": "已过 {{n}} 天",
+    "noAreaPick": "不指定领域"
   }
 }
