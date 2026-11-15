@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import { api, type ApiTask } from "../api";
 import { DDL_TONE_CLASS, ddlTone } from "../ddl";
 import { Card } from "../components/Card";
-import { SectionHeader } from "./SectionHeader";
 
 /** 首页的任务清单：勾完得币，币数来自当前规则 */
 export function TodayTasksCard({
@@ -49,9 +48,7 @@ export function TodayTasksCard({
   const done = tasks.filter((x) => x.status === "done");
 
   return (
-    <section>
-      <SectionHeader title={t("growth.tasks")} />
-      <Card>
+    <Card title={t("growth.tasks")}>
       {error ? <p className="mb-2 text-[10px] text-warn">{error}</p> : null}
       <ul className="divide-y divide-line-2">
         {[...open, ...done].map((task) => {
@@ -103,7 +100,6 @@ export function TodayTasksCard({
           <li className="py-1.5 text-[10px] text-[#c8c4bc]">{t("growth.noTask")}</li>
         ) : null}
       </ul>
-      </Card>
-    </section>
+    </Card>
   );
 }

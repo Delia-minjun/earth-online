@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, type ApiAreaGrowth, type ApiMilestone } from "../api";
-import { SectionHeader } from "./SectionHeader";
+import { Card } from "../components/Card";
 
 type StepDraft = { id?: string; title: string; months: string; removed?: boolean };
 
@@ -112,22 +112,21 @@ export function MilestonesCard({ areas }: { areas: ApiAreaGrowth[] }) {
   };
 
   return (
-    <section className="space-y-2.5">
-      <SectionHeader
-        title={t("growth.milestones")}
-        action={
-          <button
-            type="button"
-            onClick={openCreate}
-            className="rounded-full border border-line px-2 py-[1px] text-[9px] text-ink-3 transition-colors hover:border-accent hover:text-accent"
-          >
-            ＋
-          </button>
-        }
-      />
-
+    <Card
+      title={t("growth.milestones")}
+      action={
+        <button
+          type="button"
+          onClick={openCreate}
+          className="rounded-full border border-line px-2 py-[1px] text-[9px] text-ink-3 transition-colors hover:border-accent hover:text-accent"
+        >
+          ＋
+        </button>
+      }
+    >
       {error ? <p className="text-[10px] text-warn">{error}</p> : null}
 
+      <div className="space-y-2">
       {items.map((m) => {
         const done = Boolean(m.done_at);
         const steps = m.steps ?? [];
@@ -136,7 +135,7 @@ export function MilestonesCard({ areas }: { areas: ApiAreaGrowth[] }) {
         return (
           <div
             key={m.id}
-            className="rounded-2xl border border-line bg-surface p-3 shadow-[0_6px_20px_-14px_rgba(88,82,72,0.5)]"
+            className="rounded-xl border border-line-2 bg-surface-2 p-2.5"
           >
             <div className="flex items-start gap-2">
               <button
@@ -260,6 +259,7 @@ export function MilestonesCard({ areas }: { areas: ApiAreaGrowth[] }) {
       {items.length === 0 ? (
         <p className="text-[10px] text-[#c8c4bc]">{t("growth.noMilestone")}</p>
       ) : null}
+      </div>
 
       {formOpen ? (
         <div
@@ -388,6 +388,6 @@ export function MilestonesCard({ areas }: { areas: ApiAreaGrowth[] }) {
           </div>
         </div>
       ) : null}
-    </section>
+    </Card>
   );
 }
