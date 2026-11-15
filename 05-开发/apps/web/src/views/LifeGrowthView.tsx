@@ -8,6 +8,7 @@ import {
 } from "../api";
 import { Card } from "../components/Card";
 import { MilestonesCard } from "../components/MilestonesCard";
+import { TodayTasksCard } from "../components/TodayTasksCard";
 
 type Draft = { name: string; price: string; money: string };
 const EMPTY: Draft = { name: "", price: "", money: "" };
@@ -216,6 +217,8 @@ export function LifeGrowthView() {
           </div>
         </Card>
       </div>
+
+      <TodayTasksCard coinPerTask={wallet?.rules?.taskPer30 ?? 0} onChanged={load} />
 
       <MilestonesCard areas={growth} />
 

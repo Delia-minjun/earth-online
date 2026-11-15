@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { getDb } from "../db.ts";
 import { DATE_RE } from "../lib/dates.ts";
-import { addXp } from "../lib/coins.ts";
+import { addXp, earn } from "../lib/coins.ts";
 
 export const p6 = new Hono();
 
@@ -20,6 +20,7 @@ const uid = () => crypto.randomUUID();
 
 interface MilestoneRow {
   id: string;
+  coins: number;
   title: string;
   area_id: string | null;
   due_date: string | null;
@@ -33,7 +34,7 @@ p6.get("/milestones", (c) => {
   const db = getDb();
   const rows = db
     .prepare(
-      `SELECT m.id, m.title, m.area_id, m.due_date, m.note, m.done_at, m.sort,
+      `SELECT m.id, m.title, m.area_id, m.due_date, m.note, m.done_at, m.sort, m.coins,
               a.name AS area_name, a.color AS area_color
          FROM milestone m LEFT JOIN area a ON a.id = m.area_id
         WHERE m.deleted_at IS NULL
@@ -62,6 +63,7 @@ const milestoneBody = z.object({
   dueDate: z.string().regex(DATE_RE).nullable().optional(),
   note: z.string().trim().max(200).nullable().optional(),
   steps: z.array(z.string().trim().min(1).max(80)).max(8).optional(),
+  coins: z.number().int().min(0).max(1000).optional(),
 });
 
 p6.post("/milestones", async (c) => {
@@ -72,8 +74,16 @@ p6.post("/milestones", async (c) => {
   const id = uid();
   const next = (db.prepare("SELECT COALESCE(MAX(sort), 0) + 1 AS n FROM milestone").get() as { n: number }).n;
   db.prepare(
-    `INSERT INTO milestone (id, title, area_id, due_date, note, sort) VALUES (?, ?, ?, ?, ?, ?)`,
-  ).run(id, r.data.title, r.data.areaId ?? null, r.data.dueDate ?? null, r.data.note ?? null, next);
+    `INSERT INTO milestone (id, title, area_id, due_date, note, sort, coins) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+  ).run(
+    id,
+    r.data.title,
+    r.data.areaId ?? null,
+    r.data.dueDate ?? null,
+    r.data.note ?? null,
+    next,
+    r.data.coins ?? 30,
+  );
 
   const ins = db.prepare("INSERT INTO milestone_step (id, milestone_id, title, sort) VALUES (?, ?, ?, ?)");
   (r.data.steps ?? []).forEach((t, i) => ins.run(uid(), id, t, i));
@@ -115,9 +125,12 @@ p6.patch("/milestones/:id", async (c) => {
     id,
   );
 
-  // 第一次标记完成时给主领域一笔经验（阶段目标比单次行动重）
-  if (!wasDone && nowDone && cur.area_id) {
-    addXp(cur.area_id, 60, "milestone", id);
+  // 第一次标记完成时：给主领域一笔经验 + 里程碑币（refId 去重，反复勾不重复发）
+  if (!wasDone && nowDone) {
+    if (cur.area_id) addXp(cur.area_id, 60, "milestone", id);
+    if (cur.coins > 0) {
+      earn({ amount: cur.coins, kind: "milestone", refId: id, note: cur.title });
+    }
   }
 
   return c.json(db.prepare("SELECT * FROM milestone WHERE id = ?").get(id));

@@ -469,6 +469,9 @@
     "markUndone": "Mark not done",
     "daysLeft": "{{n}} days left",
     "overdue": "{{n}} days over",
-    "noAreaPick": "No area"
+    "noAreaPick": "No area",
+    "tasks": "Today's tasks",
+    "noTask": "No tasks today",
+    "overdueTag": "Overdue"
   }
 }

@@ -138,6 +138,12 @@ export function MilestonesCard({ areas }: { areas: ApiAreaGrowth[] }) {
                   </p>
                 </button>
 
+                {!done && m.coins > 0 ? (
+                  <span className="shrink-0 rounded-full bg-accent-soft px-1.5 py-[1px] text-[9px] tabular-nums text-accent">
+                    +{m.coins}
+                  </span>
+                ) : null}
+
                 <button
                   type="button"
                   onClick={async () => {

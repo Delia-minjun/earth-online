@@ -201,6 +201,7 @@ export interface ApiMilestoneStep {
 export interface ApiMilestone {
   id: string;
   title: string;
+  coins: number;
   area_id: string | null;
   area_name: string | null;
   area_color: string | null;
@@ -666,6 +667,7 @@ export const api = {
     dueDate?: string;
     note?: string;
     steps?: string[];
+    coins?: number;
   }) => request<ApiMilestone>("/milestones", { method: "POST", body: JSON.stringify(input) }),
   updateMilestone: (
     id: string,
