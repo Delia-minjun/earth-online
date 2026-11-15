@@ -70,6 +70,17 @@ p3.get("/coins/entries", (c) => {
   return c.json(rows);
 });
 
+
+/** 撤销一条流水（误记/测试数据）；余额 = SUM(amount)，删掉即回退 */
+p3.delete("/coins/entries/:id", (c) => {
+  const id = c.req.param("id");
+  const db = getDb();
+  const row = db.prepare(`SELECT ${ENTRY_COLS} FROM coin_entry WHERE id = ?`).get(id);
+  if (!row) return c.json({ error: "not found" }, 404);
+  db.prepare("DELETE FROM coin_entry WHERE id = ?").run(id);
+  return c.json({ ok: true, balance: balance() });
+});
+
 p3.get("/coins/rules", (c) => c.json(getRules()));
 
 p3.put("/coins/rules", async (c) => {

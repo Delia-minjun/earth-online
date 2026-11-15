@@ -484,6 +484,7 @@
     "tagBond": "关系",
     "tagOut": "出门",
     "tagOther": "其他",
-    "redeemedOn": "{{d}} 兑换过"
+    "redeemedOn": "{{d}} 兑换过",
+    "undoEntry": "撤销这条记录"
   }
 }

@@ -528,6 +528,9 @@ export const api = {
   /* ---- P3 奖惩经济 ---- */
   wallet: (date?: string) =>
     request<ApiWallet>(`/coins${date ? `?date=${date}` : ""}`),
+  deleteCoinEntry: (id: string) =>
+    request<{ ok: true; balance: number }>(`/coins/entries/${id}`, { method: "DELETE" }),
+
   coinRules: () => request<CoinRules>("/coins/rules"),
   saveCoinRules: (patch: Partial<CoinRules>) =>
     request<CoinRules>("/coins/rules", { method: "PUT", body: JSON.stringify(patch) }),

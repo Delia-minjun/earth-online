@@ -483,6 +483,7 @@
     "tagBond": "Bond",
     "tagOut": "Out",
     "tagOther": "Other",
-    "redeemedOn": "redeemed {{d}}"
+    "redeemedOn": "redeemed {{d}}",
+    "undoEntry": "Undo this entry"
   }
 }

@@ -363,7 +363,7 @@ export function LifeGrowthView() {
       <Card title={t("reward.ledger")}>
         <ul className="divide-y divide-line-2">
           {ledger.map((e) => (
-            <li key={e.id} className="flex items-center gap-2 py-1.5 text-[10.5px]">
+            <li key={e.id} className="group flex items-center gap-2 py-1.5 text-[10.5px]">
               <span className="w-[86px] shrink-0 tabular-nums text-ink-3">
                 {e.date.slice(5)} {e.created_at.slice(11, 16)}
               </span>
@@ -382,6 +382,18 @@ export function LifeGrowthView() {
                 {e.amount >= 0 ? "+" : ""}
                 {e.amount}
               </span>
+              <button
+                type="button"
+                onClick={async () => {
+                  await api.deleteCoinEntry(e.id);
+                  await load();
+                }}
+                className="shrink-0 text-[11px] leading-none text-[#c0bbb2] transition-colors hover:text-warn md:opacity-0 md:group-hover:opacity-100"
+                aria-label={t("growth.undoEntry")}
+                title={t("growth.undoEntry")}
+              >
+                ×
+              </button>
             </li>
           ))}
         </ul>
