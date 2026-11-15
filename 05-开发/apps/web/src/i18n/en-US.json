@@ -7,7 +7,7 @@
     "habits": "Habits",
     "review": "Review",
     "study": "Study",
-    "reward": "Rewards",
+    "reward": "Life growth",
     "settings": "Settings"
   },
   "project": {
@@ -439,5 +439,19 @@
     "noSubjectShort": "No subjects yet",
     "dropHint": "Drag or click to pick a file",
     "dropTypes": "PDF / Word / PPT / Markdown / images — multiple allowed"
+  },
+  "growth": {
+    "coins": "My coins",
+    "areas": "Six areas",
+    "nextWish": "Next wish",
+    "recent": "Last 14 days · {{n}}",
+    "tabAll": "All",
+    "tabWish": "Wishes",
+    "tabRedeemed": "Redeemed · {{n}}",
+    "wish": "Wish",
+    "redeemedN": "redeemed {{n}}×",
+    "noMoney": "No extra cost",
+    "shortBy": "{{n}} to go",
+    "shopNone": "No rewards yet"
   }
 }

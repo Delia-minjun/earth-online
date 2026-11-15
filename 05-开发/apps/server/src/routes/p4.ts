@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { getDb } from "../db.ts";
 import { shiftDate, today } from "../lib/dates.ts";
-import { earn, bumpArea, getRules } from "../lib/coins.ts";
+import { addXp, earn, bumpArea, getRules } from "../lib/coins.ts";
 
 export const p4 = new Hono();
 
@@ -134,6 +134,7 @@ p4.post("/focus/:id/finish", async (c) => {
       const chunks = Math.floor(actualSec / (25 * 60));
       // 专注算「学业事业」：无论够不够 25 分钟，进度条都加一点
       bumpArea("area-study", 0.08);
+      addXp("area-study", 10, "focus", id);
       if (chunks > 0) {
         const res = earn({
           amount: chunks * rules.focus25,

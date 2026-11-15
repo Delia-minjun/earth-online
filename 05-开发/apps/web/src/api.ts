@@ -190,12 +190,25 @@ export interface ApiAreaProgress {
   pct: number;
 }
 
+export interface ApiAreaGrowth {
+  id: string;
+  name: string;
+  color: string | null;
+  xp: number;
+  level: number;
+  inLevel: number;
+  need: number;
+  recent14: number;
+}
+
 export interface ApiRewardItem {
   id: string;
   name: string;
   price: number;
   money: number;
   money_category_id: string | null;
+  wish?: boolean;
+  redeemed?: number;
   archived: number;
   sort: number;
 }
@@ -501,13 +514,14 @@ export const api = {
     method: "POST",
     body: JSON.stringify(input),
   }),
+  areasGrowth: () => request<ApiAreaGrowth[]>("/areas/growth"),
   areaProgress: () => request<ApiAreaProgress[]>("/areas/progress"),
   rewards: () => request<ApiRewardItem[]>("/rewards"),
-  addReward: (input: { name: string; price: number; money?: number; moneyCategoryId?: string }) =>
+  addReward: (input: { name: string; price: number; money?: number; moneyCategoryId?: string; wish?: boolean }) =>
     request<ApiRewardItem>("/rewards", { method: "POST", body: JSON.stringify(input) }),
   updateReward: (
     id: string,
-    patch: Partial<{ name: string; price: number; money: number; moneyCategoryId: string }>,
+    patch: Partial<{ name: string; price: number; money: number; moneyCategoryId: string; wish: boolean }>,
   ) => request<ApiRewardItem>(`/rewards/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
   deleteReward: (id: string) =>
     request<{ ok: true }>(`/rewards/${id}`, { method: "DELETE" }),

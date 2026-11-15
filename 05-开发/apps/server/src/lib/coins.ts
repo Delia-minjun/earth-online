@@ -183,3 +183,111 @@ export function bumpArea(areaId: string | null | undefined, delta = 0.1): void {
      ON CONFLICT(area_id) DO UPDATE SET value = excluded.value, updated_on = excluded.updated_on`,
   ).run(areaId, next, d);
 }
+
+/* ---------------- 领域 XP（长期成长，不衰减） ---------------- */
+
+/** 升到下一级需要的 XP：T(L) = 100 + 25 × (L - 1) */
+export function xpForLevel(level: number): number {
+  return 100 + 25 * (level - 1);
+}
+
+/** 由累计 XP 反推等级与本级进度 */
+export function levelOf(xp: number): { level: number; inLevel: number; need: number } {
+  let level = 1;
+  let rest = xp;
+  while (rest >= xpForLevel(level) && level < 200) {
+    rest -= xpForLevel(level);
+    level += 1;
+  }
+  return { level, inLevel: rest, need: xpForLevel(level) };
+}
+
+export interface XpResult {
+  areaId: string;
+  xp: number;
+  level: number;
+  inLevel: number;
+  need: number;
+  leveledUp: boolean;
+}
+
+/** 记一次领域经验；同一 refId 不重复计（防重试与双击） */
+export function addXp(
+  areaId: string,
+  amount: number,
+  kind: string,
+  refId?: string | null,
+): XpResult | null {
+  if (!areaId || amount <= 0) return null;
+  const db = getDb();
+
+  if (refId) {
+    const dup = db
+      .prepare(`SELECT 1 FROM area_xp_log WHERE ref_id = ? AND area_id = ? AND kind = ? LIMIT 1`)
+      .get(refId, areaId, kind);
+    if (dup) {
+      const cur = (db.prepare("SELECT xp FROM area_xp WHERE area_id = ?").get(areaId) as
+        | { xp: number }
+        | undefined) ?? { xp: 0 };
+      const l = levelOf(cur.xp);
+      return { areaId, xp: cur.xp, level: l.level, inLevel: l.inLevel, need: l.need, leveledUp: false };
+    }
+  }
+
+  const before = (db.prepare("SELECT xp FROM area_xp WHERE area_id = ?").get(areaId) as
+    | { xp: number }
+    | undefined) ?? { xp: 0 };
+  const beforeLevel = levelOf(before.xp).level;
+
+  db.prepare(
+    `INSERT INTO area_xp (area_id, xp, updated_at) VALUES (?, ?, datetime('now'))
+     ON CONFLICT(area_id) DO UPDATE SET xp = xp + excluded.xp, updated_at = datetime('now')`,
+  ).run(areaId, amount);
+  db.prepare(
+    `INSERT INTO area_xp_log (id, area_id, date, amount, kind, ref_id) VALUES (?, ?, ?, ?, ?, ?)`,
+  ).run(crypto.randomUUID(), areaId, today(), amount, kind, refId ?? null);
+
+  const after = (db.prepare("SELECT xp FROM area_xp WHERE area_id = ?").get(areaId) as { xp: number }).xp;
+  const l = levelOf(after);
+  return { areaId, xp: after, level: l.level, inLevel: l.inLevel, need: l.need, leveledUp: l.level > beforeLevel };
+}
+
+/** 六领域成长概览：等级、本级进度、近 14 天行动次数 */
+export function growth(): {
+  id: string;
+  name: string;
+  color: string | null;
+  xp: number;
+  level: number;
+  inLevel: number;
+  need: number;
+  recent14: number;
+}[] {
+  const db = getDb();
+  const areas = db
+    .prepare("SELECT id, name, color FROM area WHERE archived = 0 ORDER BY sort")
+    .all() as { id: string; name: string; color: string | null }[];
+
+  const since = shiftDays(today(), -13);
+  return areas.map((a) => {
+    const row = db.prepare("SELECT xp FROM area_xp WHERE area_id = ?").get(a.id) as
+      | { xp: number }
+      | undefined;
+    const xp = row?.xp ?? 0;
+    const l = levelOf(xp);
+    const n = (
+      db
+        .prepare(
+          `SELECT COUNT(*) AS n FROM area_xp_log WHERE area_id = ? AND date BETWEEN ? AND ?`,
+        )
+        .get(a.id, since, today()) as { n: number }
+    ).n;
+    return { ...a, xp, level: l.level, inLevel: l.inLevel, need: l.need, recent14: n };
+  });
+}
+
+function shiftDays(date: string, days: number): string {
+  const d = new Date(`${date}T00:00:00`);
+  d.setDate(d.getDate() + days);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}

@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { HealthInfo, WeekInfo } from "@life/shared";
 import { setLang, type Lang } from "./i18n";
 import { BottomNav, Sidebar, type ViewKey } from "./components/Nav";
-import { RewardView } from "./views/RewardView";
+import { LifeGrowthView } from "./views/LifeGrowthView";
 import { WeekView } from "./views/WeekView";
 import { ReviewView } from "./views/ReviewView";
 import { StudyView } from "./views/StudyView";
@@ -173,7 +173,7 @@ export default function App() {
           {isSchedule && <WeekView mode={dayMode} onModeChange={setDayMode} />}
           {view === "review" && <ReviewView />}
           {view === "study" && <StudyView />}
-          {isReward && <RewardView />}
+          {isReward && <LifeGrowthView />}
           {view === "settings" && <SettingsView />}
           {!isSchedule &&
             !isReward &&

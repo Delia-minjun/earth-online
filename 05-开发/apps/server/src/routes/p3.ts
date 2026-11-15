@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { getDb } from "../db.ts";
 import { DATE_RE, today } from "../lib/dates.ts";
-import { balance, bumpArea, earn, getRules, saveRules, settleAreas, spend } from "../lib/coins.ts";
+import { balance, bumpArea, earn, getRules, growth, saveRules, settleAreas, spend } from "../lib/coins.ts";
 
 export const p3 = new Hono();
 
@@ -106,13 +106,21 @@ p3.get("/areas/progress", (c) => {
   );
 });
 
+/** 六领域成长：等级 + 本级 XP 进度 + 近 14 天行动次数 */
+p3.get("/areas/growth", (c) => c.json(growth()));
+
 /* ---------------- 奖赏商店 ---------------- */
 
-const SHOP_COLS = "id, name, price, money, money_category_id, archived, sort";
+const SHOP_COLS = "id, name, price, money, money_category_id, archived, sort, wish";
 
 p3.get("/rewards", (c) => {
   const rows = getDb()
-    .prepare(`SELECT ${SHOP_COLS} FROM reward_item WHERE archived = 0 ORDER BY sort, name`)
+    .prepare(
+      `SELECT ${SHOP_COLS},
+              (SELECT COUNT(*) FROM coin_entry ce
+                WHERE ce.kind = 'redeem' AND ce.ref_id = reward_item.id) AS redeemed
+         FROM reward_item WHERE archived = 0 ORDER BY sort, name`,
+    )
     .all();
   return c.json(rows);
 });
@@ -122,6 +130,7 @@ const rewardBody = z.object({
   price: z.number().int().min(1).max(100000),
   money: z.number().int().min(0).max(100000).optional(),
   moneyCategoryId: z.string().optional(),
+  wish: z.boolean().optional(),
 });
 
 p3.post("/rewards", async (c) => {
@@ -132,8 +141,17 @@ p3.post("/rewards", async (c) => {
   const next =
     (db.prepare("SELECT COALESCE(MAX(sort), 0) + 1 AS n FROM reward_item").get() as { n: number }).n;
   db.prepare(
-    `INSERT INTO reward_item (id, name, price, money, money_category_id, sort) VALUES (?, ?, ?, ?, ?, ?)`,
-  ).run(id, r.data.name, r.data.price, r.data.money ?? 0, r.data.moneyCategoryId ?? null, next);
+    `INSERT INTO reward_item (id, name, price, money, money_category_id, sort, wish)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+  ).run(
+    id,
+    r.data.name,
+    r.data.price,
+    r.data.money ?? 0,
+    r.data.moneyCategoryId ?? null,
+    next,
+    r.data.wish ? 1 : 0,
+  );
   return c.json(db.prepare(`SELECT ${SHOP_COLS} FROM reward_item WHERE id = ?`).get(id), 201);
 });
 
@@ -144,17 +162,18 @@ p3.patch("/rewards/:id", async (c) => {
 
   const db = getDb();
   const cur = db.prepare(`SELECT ${SHOP_COLS} FROM reward_item WHERE id = ?`).get(id) as
-    | { name: string; price: number; money: number; money_category_id: string | null }
+    | { name: string; price: number; money: number; money_category_id: string | null; wish: number }
     | undefined;
   if (!cur) return c.json({ error: "not found" }, 404);
 
   db.prepare(
-    `UPDATE reward_item SET name = ?, price = ?, money = ?, money_category_id = ? WHERE id = ?`,
+    `UPDATE reward_item SET name = ?, price = ?, money = ?, money_category_id = ?, wish = ? WHERE id = ?`,
   ).run(
     r.data.name ?? cur.name,
     r.data.price ?? cur.price,
     r.data.money ?? cur.money,
     r.data.moneyCategoryId !== undefined ? r.data.moneyCategoryId : cur.money_category_id,
+    r.data.wish === undefined ? cur.wish : r.data.wish ? 1 : 0,
     id,
   );
   return c.json(db.prepare(`SELECT ${SHOP_COLS} FROM reward_item WHERE id = ?`).get(id));
