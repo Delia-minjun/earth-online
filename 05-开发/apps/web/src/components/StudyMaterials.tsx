@@ -387,11 +387,6 @@ export function StudyMaterials({
                                   {qi + 1}
                                 </span>
                                 <div className="min-w-0 flex-1">
-                                  {item.ref ? (
-                                    <span className="mb-1 inline-block rounded-full bg-surface px-1.5 py-[1px] text-[9px] text-ink-3">
-                                      {item.ref}
-                                    </span>
-                                  ) : null}
                                   <p className="max-w-[70ch] text-[12.5px] leading-[1.9] text-ink-2">
                                     {stem}
                                   </p>
