@@ -354,7 +354,11 @@ export function StudyView() {
           {/* 学习目标 */}
           <div className="flex flex-wrap items-center gap-2 rounded-xl border border-line bg-surface px-3 py-2">
             <span className="text-[10px] uppercase tracking-[0.12em] text-ink-3">{t("study.goalLabel")}</span>
-            <span className="min-w-0 flex-1 truncate text-[11px] text-ink-2">
+            <span
+              className={`min-w-0 flex-1 truncate text-[11px] ${
+                active.goal ? "text-ink-2" : "text-[#c8c4bc]"
+              }`}
+            >
               {active.goal || t("study.goalPlaceholder")}
             </span>
             <button

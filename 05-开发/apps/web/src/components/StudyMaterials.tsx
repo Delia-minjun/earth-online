@@ -30,7 +30,6 @@ export function StudyMaterials({
 }) {
   const { t } = useTranslation();
   const [role, setRole] = useState<Role>("knowledge");
-  const [chapterInput, setChapterInput] = useState("");
   const [generating, setGenerating] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -83,8 +82,8 @@ export function StudyMaterials({
   const upload = async (files: FileList | File[]) => {
     const list = Array.from(files);
     if (list.length === 0) return;
-    const typed = chapterInput.trim() || null;
-    await onUpload(list, role, typed ?? guessChapter(list[0]!.name));
+    // 章节从文件名猜：Ch3 / 第3章 / 03 Homework / L5
+    await onUpload(list, role, guessChapter(list[0]!.name));
   };
 
   return (
@@ -113,12 +112,6 @@ export function StudyMaterials({
               </button>
             ))}
           </span>
-          <input
-            value={chapterInput}
-            onChange={(e) => setChapterInput(e.target.value)}
-            placeholder={t("study.chapterPlaceholder")}
-            className="w-24 rounded-full border border-line bg-surface px-2.5 py-[3px] text-[10.5px] text-ink outline-none placeholder:text-[#c8c4bc]"
-          />
         </div>
 
         <div
