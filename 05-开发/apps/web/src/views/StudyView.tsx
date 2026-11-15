@@ -46,6 +46,8 @@ export function StudyView() {
   const [goalDraft, setGoalDraft] = useState("");
   const [goalSaving, setGoalSaving] = useState(false);
   const [ask, setAsk] = useState("");
+  /** 指令作用的章节；空 = 让 agent 自己判断 */
+  const [askChapter, setAskChapter] = useState("");
   const [asking, setAsking] = useState(false);
   const [askResult, setAskResult] = useState<string | null>(null);
   const [draftAnswer, setDraftAnswer] = useState("");
@@ -150,13 +152,19 @@ export function StudyView() {
     }
   };
 
+  const chapters = useMemo(() => {
+    const set = new Set<string>();
+    for (const m of materials) if (m.chapter) set.add(m.chapter);
+    return [...set].sort((a, b) => (a.match(/\d+/)?.[0] ?? "999").localeCompare(b.match(/\d+/)?.[0] ?? "999"));
+  }, [materials]);
+
   /** 把一句话要求发给 agent：它自己决定改讲解还是出题 */
   const sendInstruction = async () => {
     if (!active || !ask.trim() || asking) return;
     setAsking(true);
     setAskResult(null);
     try {
-      const res = await api.instructStudy(active.id, ask.trim(), null);
+      const res = await api.instructStudy(active.id, ask.trim(), askChapter || null);
       setAskResult(res.message);
       setAsk("");
       await loadSubject(active.id);
@@ -445,6 +453,18 @@ export function StudyView() {
           {/* 提要求：交给 agent 决定改讲解还是出题 */}
           <div className="rounded-xl border border-line bg-surface px-3 py-2">
             <div className="flex items-center gap-2">
+              <select
+                value={askChapter}
+                onChange={(e) => setAskChapter(e.target.value)}
+                className="shrink-0 rounded-full border border-line bg-surface-2 px-1.5 py-[2px] text-[10px] text-ink-2 outline-none"
+              >
+                <option value="">{t("study.askAnyChapter")}</option>
+                {chapters.map((c) => (
+                  <option key={c} value={c}>
+                    {/^l/i.test(c) ? t("study.lectureN", { n: c.slice(1) }) : t("study.chapterN", { n: c })}
+                  </option>
+                ))}
+              </select>
               <input
                 value={ask}
                 onChange={(e) => setAsk(e.target.value)}
