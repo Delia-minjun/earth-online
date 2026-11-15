@@ -148,7 +148,7 @@ export function MilestonesCard({ areas }: { areas: ApiAreaGrowth[] }) {
                   await load();
                 }}
                 aria-label={done ? t("growth.markUndone") : t("growth.markDone")}
-                className={`mt-[3px] grid h-4 w-4 shrink-0 place-items-center rounded-full border text-[9px] leading-none transition-colors ${
+                className={`mt-[2px] grid h-4 w-4 shrink-0 place-items-center rounded-full border text-[9px] leading-none transition-colors ${
                   done
                     ? "border-accent bg-accent text-white"
                     : "border-[#cfc9be] text-transparent hover:border-accent"
@@ -158,7 +158,8 @@ export function MilestonesCard({ areas }: { areas: ApiAreaGrowth[] }) {
               </button>
 
               <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                {/* 标题行 */}
+                <div className="flex items-center gap-2">
                   <span
                     className={`truncate text-[11.5px] ${done ? "text-ink-3 line-through" : "text-ink"}`}
                   >
@@ -169,122 +170,126 @@ export function MilestonesCard({ areas }: { areas: ApiAreaGrowth[] }) {
                       +{m.coins}
                     </span>
                   ) : null}
-                  <span className="ml-auto flex shrink-0 items-center gap-1.5 text-[9.5px] text-ink-3">
-                    {m.area_id ? (
-                      <span className="flex items-center gap-1">
-                        <span
-                          className="h-1.5 w-1.5 rounded-full"
-                          style={{ background: m.area_color ?? "#9BA7B0" }}
-                        />
-                        {m.area_name}
-                      </span>
-                    ) : null}
-                    {m.months ? <span className="tabular-nums">{t("growth.monthsN", { n: m.months })}</span> : null}
-                    <span className="tabular-nums">{t("growth.dayN", { n: dayIndex(m.created_at) })}</span>
-                  </span>
-                </div>
-
-                {steps.length ? (
-                  <div className="mt-1.5 flex items-center gap-2">
-                    <div className="h-1 flex-1 overflow-hidden rounded-full bg-line-2">
-                      <div
-                        className="h-full rounded-full bg-accent"
-                        style={{ width: `${Math.round((doneSteps / steps.length) * 100)}%` }}
-                      />
-                    </div>
-                    <span className="shrink-0 text-[9px] tabular-nums text-ink-3">
-                      {t("growth.stepsProgress", { done: doneSteps, total: steps.length })}
-                    </span>
-                  </div>
-                ) : null}
-              </div>
-
-              <button
-                type="button"
-                onClick={() => openEdit(m)}
-                className="mt-[1px] shrink-0 text-[11px] leading-none text-[#c0bbb2] transition-colors hover:text-accent"
-                aria-label={t("growth.editMilestone")}
-                title={t("growth.editMilestone")}
-              >
-                ✎
-              </button>
-              <button
-                type="button"
-                onClick={async () => {
-                  await api.deleteMilestone(m.id);
-                  await load();
-                }}
-                className="mt-[1px] shrink-0 text-[11px] leading-none text-[#c0bbb2] transition-colors hover:text-warn"
-                aria-label="delete"
-              >
-                ×
-              </button>
-            </div>
-
-            {steps.length ? (
-              <ul className="mt-1.5 ml-[7px] space-y-1 border-l border-line-2 pl-3">
-                {steps.map((s) => (
-                  <li key={s.id} className="flex items-center gap-1.5">
+                  <span className="ml-auto flex shrink-0 items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => openEdit(m)}
+                      className="text-[11px] leading-none text-[#c0bbb2] transition-colors hover:text-accent"
+                      aria-label={t("growth.editMilestone")}
+                      title={t("growth.editMilestone")}
+                    >
+                      ✎
+                    </button>
                     <button
                       type="button"
                       onClick={async () => {
-                        await api.updateStep(s.id, { done: !s.done_at });
+                        await api.deleteMilestone(m.id);
                         await load();
                       }}
-                      className={`grid h-3.5 w-3.5 shrink-0 place-items-center rounded-full border text-[8px] leading-none ${
-                        s.done_at
-                          ? "border-accent bg-accent text-white"
-                          : "border-[#d5cfc4] text-transparent hover:border-accent"
-                      }`}
+                      className="text-[11px] leading-none text-[#c0bbb2] transition-colors hover:text-warn"
+                      aria-label="delete"
                     >
-                      ✓
+                      ×
                     </button>
-                    <span
-                      className={`min-w-0 truncate text-[10.5px] ${
-                        s.done_at ? "text-ink-3 line-through" : "text-ink-2"
-                      }`}
-                    >
-                      {s.title}
-                    </span>
-                    {s.months ? (
-                      <span className="shrink-0 text-[9px] tabular-nums text-ink-3">
-                        {t("growth.monthsN", { n: s.months })}
-                      </span>
-                    ) : null}
-                    <span className="shrink-0 text-[9px] tabular-nums text-[#c8c4bc]">
-                      {t("growth.dayN", { n: dayIndex(s.created_at) })}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            ) : null}
+                  </span>
+                </div>
 
-            <div className="mt-1.5 ml-[7px] border-l border-line-2 pl-3">
-              {addingId === m.id ? (
-                <input
-                  autoFocus
-                  value={inlineStep[m.id] ?? ""}
-                  onChange={(e) => setInlineStep((v) => ({ ...v, [m.id]: e.target.value }))}
-                  onKeyDown={async (e) => {
-                    if (e.key === "Enter" && (inlineStep[m.id] ?? "").trim()) {
-                      await api.addStep(m.id, (inlineStep[m.id] ?? "").trim());
-                      setInlineStep((v) => ({ ...v, [m.id]: "" }));
-                      await load();
-                    }
-                    if (e.key === "Escape") setAddingId(null);
-                  }}
-                  placeholder={t("growth.addStep")}
-                  className="w-full rounded-lg border border-line bg-surface-2 px-2 py-1 text-[10.5px] text-ink outline-none placeholder:text-[#c8c4bc]"
-                />
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setAddingId(m.id)}
-                  className="text-[10px] text-ink-3 transition-colors hover:text-accent"
-                >
-                  ＋ {t("growth.addStepShort")}
-                </button>
-              )}
+                {/* 元信息：领域 · 时长 · 第N天 · 完成数 */}
+                <p className="mt-[3px] flex flex-wrap items-center gap-x-1.5 text-[9.5px] text-ink-3">
+                  {m.area_id ? (
+                    <span className="flex items-center gap-1">
+                      <span
+                        className="h-1.5 w-1.5 rounded-full"
+                        style={{ background: m.area_color ?? "#9BA7B0" }}
+                      />
+                      {m.area_name}
+                    </span>
+                  ) : null}
+                  {m.months ? <span className="tabular-nums">{t("growth.monthsN", { n: m.months })}</span> : null}
+                  <span className="tabular-nums">{t("growth.dayN", { n: dayIndex(m.created_at) })}</span>
+                  {steps.length ? (
+                    <span className="tabular-nums">
+                      {t("growth.stepsProgress", { done: doneSteps, total: steps.length })}
+                    </span>
+                  ) : null}
+                </p>
+
+                {/* 小目标：固定缩进，树形前缀对齐 */}
+                {steps.length || addingId === m.id ? (
+                  <ul className="mt-1.5 space-y-1">
+                    {steps.map((s) => (
+                      <li key={s.id} className="flex items-center gap-1.5">
+                        <span className="w-3 shrink-0 text-center text-[10px] leading-none text-[#d5d0c7]">
+                          └
+                        </span>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            await api.updateStep(s.id, { done: !s.done_at });
+                            await load();
+                          }}
+                          className={`grid h-3.5 w-3.5 shrink-0 place-items-center rounded-full border text-[8px] leading-none ${
+                            s.done_at
+                              ? "border-accent bg-accent text-white"
+                              : "border-[#d5cfc4] text-transparent hover:border-accent"
+                          }`}
+                        >
+                          ✓
+                        </button>
+                        <span
+                          className={`min-w-0 truncate text-[10.5px] ${
+                            s.done_at ? "text-ink-3 line-through" : "text-ink-2"
+                          }`}
+                        >
+                          {s.title}
+                        </span>
+                        <span className="shrink-0 text-[9px] tabular-nums text-[#c8c4bc]">
+                          {t("growth.dayN", { n: dayIndex(s.created_at) })}
+                        </span>
+                        {s.months ? (
+                          <span className="shrink-0 text-[9px] tabular-nums text-[#c8c4bc]">
+                            {t("growth.monthsN", { n: s.months })}
+                          </span>
+                        ) : null}
+                      </li>
+                    ))}
+
+                    {addingId === m.id ? (
+                      <li className="flex items-center gap-1.5">
+                        <span className="w-3 shrink-0 text-center text-[10px] leading-none text-[#d5d0c7]">
+                          └
+                        </span>
+                        <input
+                          autoFocus
+                          value={inlineStep[m.id] ?? ""}
+                          onChange={(e) => setInlineStep((v) => ({ ...v, [m.id]: e.target.value }))}
+                          onKeyDown={async (e) => {
+                            if (e.key === "Enter" && (inlineStep[m.id] ?? "").trim()) {
+                              await api.addStep(m.id, (inlineStep[m.id] ?? "").trim());
+                              setInlineStep((v) => ({ ...v, [m.id]: "" }));
+                              await load();
+                            }
+                            if (e.key === "Escape") setAddingId(null);
+                          }}
+                          placeholder={t("growth.addStep")}
+                          className="min-w-0 flex-1 rounded-md border border-line bg-surface-2 px-2 py-[3px] text-[10.5px] text-ink outline-none placeholder:text-[#c8c4bc]"
+                        />
+                      </li>
+                    ) : null}
+                  </ul>
+                ) : null}
+
+                {addingId !== m.id ? (
+                  <button
+                    type="button"
+                    onClick={() => setAddingId(m.id)}
+                    className="mt-1 flex items-center gap-1.5 text-[10px] text-ink-3 transition-colors hover:text-accent"
+                  >
+                    <span className="w-3 shrink-0 text-center text-[10px] leading-none text-[#d5d0c7]">└</span>
+                    ＋ {t("growth.addStepShort")}
+                  </button>
+                ) : null}
+              </div>
             </div>
           </div>
         );
