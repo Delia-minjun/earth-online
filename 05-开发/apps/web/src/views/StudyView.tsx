@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   api,
+  type ApiCard,
   type ApiExam,
   type ApiMaterial,
   type ApiReviewCard,
@@ -18,6 +19,7 @@ export function StudyView() {
   const [subjects, setSubjects] = useState<ApiSubject[]>([]);
   const [activeId, setActiveId] = useState<string>("");
   const [materials, setMaterials] = useState<ApiMaterial[]>([]);
+  const [cards, setCards] = useState<ApiCard[]>([]);
   const [queue, setQueue] = useState<ApiReviewCard[]>([]);
   const [stats, setStats] = useState<ApiStudyStats | null>(null);
   const [exams, setExams] = useState<ApiExam[]>([]);
@@ -57,8 +59,13 @@ export function StudyView() {
       return;
     }
     try {
-      const [mats, q] = await Promise.all([api.materials(subjectId), api.reviewQueue(subjectId)]);
+      const [mats, q, cds] = await Promise.all([
+        api.materials(subjectId),
+        api.reviewQueue(subjectId),
+        api.cards(subjectId),
+      ]);
       setMaterials(mats);
+      setCards(cds);
       setQueue(q.cards);
       setIdx(0);
       setFlipped(false);
@@ -99,7 +106,7 @@ export function StudyView() {
   };
 
   /** 选文件 → 文本类直接抽字，图片走 OCR */
-  const uploadOne = async (file: File, role: "knowledge" | "questions") => {
+  const uploadOne = async (file: File, role: "knowledge" | "questions", chapter: string | null) => {
     if (!active) return;
     setBusy(true);
     setError(null);
@@ -121,6 +128,7 @@ export function StudyView() {
           imageBase64: b64,
           imageMime: file.type || "image/png",
           role,
+          chapter,
         });
         if (created.ocrError === "NOKEY") setError(t("study.noKey"));
         else if (created.ocrError === "VISION_UNSUPPORTED") setError(t("study.visionUnsupported"));
@@ -139,6 +147,7 @@ export function StudyView() {
           filename: file.name,
           base64: b64,
           role,
+          chapter,
         });
       } catch (e) {
         const msg = (e as Error).message;
@@ -150,6 +159,7 @@ export function StudyView() {
           subjectId: active.id,
           title: file.name.replace(/\.[^.]+$/, ""),
           role,
+          chapter,
           pages: pages.map((b) => ({ base64: b, mime: "image/jpeg" })),
         });
       }
@@ -176,13 +186,17 @@ export function StudyView() {
   };
 
   /** 批量上传：拖进来的、多选的都走这里 */
-  const uploadMany = async (files: FileList | File[], role: "knowledge" | "questions") => {
+  const uploadMany = async (
+    files: FileList | File[],
+    role: "knowledge" | "questions",
+    chapter: string | null,
+  ) => {
     if (!active) return;
     const list = Array.from(files);
     if (list.length === 0) return;
     setBusy(true);
     try {
-      for (const f of list) await uploadOne(f, role);
+      for (const f of list) await uploadOne(f, role, chapter);
     } finally {
       setBusy(false);
     }
@@ -306,19 +320,9 @@ export function StudyView() {
           <StudyMaterials
             subjectId={active.id}
             materials={materials}
+            cards={cards}
             busy={busy}
-            onUpload={(files, role) => uploadMany(files, role)}
-            onNote={async (text) => {
-              await api.addMaterial({
-                subjectId: active.id,
-                title: text.split("\n")[0]!.slice(0, 24) || t("study.notePlaceholder"),
-                kind: "text",
-                content: text,
-                role: "knowledge",
-              });
-              await loadSubject(active.id);
-              await loadAll();
-            }}
+            onUpload={(files, role, chapter) => uploadMany(files, role, chapter)}
             onChanged={async () => {
               if (active) await loadSubject(active.id);
               await loadAll();

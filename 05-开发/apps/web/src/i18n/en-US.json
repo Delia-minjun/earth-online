@@ -431,12 +431,20 @@
     "noSubjectShort": "No subjects yet",
     "dropHint": "Drag or click to pick a file",
     "dropTypes": "PDF / Word / PPT / Markdown / images — multiple allowed",
-    "knowledge": "Knowledge (slides / notes)",
-    "questions": "Question sets (quiz / homework)",
+    "knowledge": "Knowledge",
+    "questions": "Questions",
     "knowledgeEmpty": "No knowledge material yet",
     "questionsEmpty": "No question sets yet",
     "generating": "Generating…",
-    "generateNeedFile": "Upload something here first"
+    "generateNeedFile": "Upload something here first",
+    "chapterN": "Ch. {{n}}",
+    "lectureN": "Lecture {{n}}",
+    "noChapter": "No chapter",
+    "chapterPlaceholder": "Chapter (auto-detect if empty)",
+    "materialCount": "{{n}} files",
+    "cardCount": "{{n}} cards",
+    "genKnowledge": "Knowledge cards",
+    "genQuestions": "Practice questions"
   },
   "growth": {
     "coins": "My coins",

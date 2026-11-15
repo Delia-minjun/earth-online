@@ -734,6 +734,7 @@ export const api = {
     imageBase64?: string;
     imageMime?: string;
     role?: "knowledge" | "questions";
+  chapter?: string | null;
   }) => request<ApiMaterial>("/study/materials", { method: "POST", body: JSON.stringify(input) }),
   uploadMaterialFile: (input: {
     subjectId: string;
@@ -741,6 +742,7 @@ export const api = {
     base64: string;
     title?: string;
     role?: "knowledge" | "questions";
+  chapter?: string | null;
   }) =>
     request<ApiMaterial>("/study/materials/file", {
       method: "POST",
@@ -751,6 +753,7 @@ export const api = {
     subjectId: string;
     title: string;
     role?: "knowledge" | "questions";
+  chapter?: string | null;
     pages: { base64: string; mime: string }[];
   }) =>
     request<ApiMaterial>("/study/materials/ocr-pages", {
@@ -759,7 +762,12 @@ export const api = {
     }, 180_000),
   updateMaterial: (
     id: string,
-    patch: { title?: string; content?: string; status?: "raw" | "verified" },
+    patch: {
+      title?: string;
+      content?: string;
+      status?: "raw" | "verified";
+      chapter?: string | null;
+    },
   ) => request<ApiMaterial>(`/study/materials/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
   deleteMaterial: (id: string) =>
     request<{ ok: true }>(`/study/materials/${id}`, { method: "DELETE" }),
@@ -770,10 +778,15 @@ export const api = {
       120_000,
     ),
 
-  generateSection: (subjectId: string, role: "knowledge" | "questions", count = 8) =>
+  generateSection: (
+    subjectId: string,
+    role: "knowledge" | "questions",
+    chapter: string | null,
+    count = 8,
+  ) =>
     request<{ cards: { id: string; front: string; back: string; ref?: string }[] }>(
       "/study/generate",
-      { method: "POST", body: JSON.stringify({ subjectId, role, count }) },
+      { method: "POST", body: JSON.stringify({ subjectId, role, chapter, count }) },
       120_000,
     ),
 
@@ -856,6 +869,7 @@ export interface ApiMaterial {
   content: string;
   status: "raw" | "verified";
   role?: "knowledge" | "questions";
+  chapter?: string | null;
   page_from: number | null;
   page_to: number | null;
   created_at: string;
@@ -864,6 +878,7 @@ export interface ApiMaterial {
 
 export interface ApiCard {
   id: string;
+  chapter?: string | null;
   subject_id: string;
   material_id: string | null;
   front: string;
