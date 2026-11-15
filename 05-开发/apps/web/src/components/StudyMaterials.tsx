@@ -452,7 +452,7 @@ export function StudyMaterials({
                                           : [...list, ansKey],
                                       )
                                     }
-                                    className={`mt-2 ${PILL} ${
+                                    className={`${PILL} ${
                                       open
                                         ? "border-accent bg-accent-soft text-accent"
                                         : "border-line text-ink-3 hover:border-accent hover:text-accent"
