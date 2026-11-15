@@ -480,7 +480,17 @@
     "answerLabel": "答案与解析",
     "questionCount": "共 {{n}} 题",
     "expandAll": "展开全部答案",
-    "collapseAll": "收起全部答案"
+    "collapseAll": "收起全部答案",
+    "chapterNote": "本章讲解",
+    "practiceSet": "练习题",
+    "writeNote": "写讲解",
+    "makePractice": "出题",
+    "addToWrong": "收入错题本",
+    "inWrongBook": "已在错题本",
+    "wrongBook": "错题本",
+    "wrongEmpty": "还没有收录错题",
+    "wrongCount": "共 {{n}} 题",
+    "removeFromWrong": "移出"
   },
   "growth": {
     "coins": "我的快乐币",

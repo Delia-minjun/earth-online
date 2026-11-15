@@ -27,6 +27,8 @@ export function StudyMaterials({
   cards,
   notes,
   practices,
+  wrongItems,
+  onAddWrong,
   busy,
   onUpload,
   onChanged,
@@ -36,6 +38,8 @@ export function StudyMaterials({
   cards: ApiCard[];
   notes: ApiStudyNote[];
   practices: ApiPractice[];
+  wrongItems: { question: string; id: string }[];
+  onAddWrong: (item: { chapter: string | null; question: string; answer: string; ref: string | null }) => Promise<void>;
   busy: boolean;
   onUpload: (files: FileList | File[], role: Role, chapter: string | null) => Promise<void>;
   onChanged: () => Promise<void> | void;
@@ -50,6 +54,8 @@ export function StudyMaterials({
   const [openPractice, setOpenPractice] = useState<string | null>(null);
   /** 允许多题同时展开，值为 `${practiceId}-${index}` */
   const [openAnswers, setOpenAnswers] = useState<string[]>([]);
+  /** 选择题的勾选：${practiceId}-${题号} → 选项序号 */
+  const [choices, setChoices] = useState<Record<string, number>>({});
   const fileRef = useRef<HTMLInputElement>(null);
   const [over, setOver] = useState(false);
 
@@ -265,7 +271,7 @@ export function StudyMaterials({
                       ? t("study.noteGenerating")
                       : note
                         ? t("study.regenNote")
-                        : t("study.genNote")}
+                        : t("study.writeNote")}
                   </button>
                   <button
                     type="button"
@@ -277,7 +283,7 @@ export function StudyMaterials({
                       ? t("study.practiceGenerating")
                       : practice
                         ? t("study.regenPractice")
-                        : t("study.genPractice")}
+                        : t("study.practiceSet")}
                   </button>
                 </span>
               </header>
@@ -317,7 +323,7 @@ export function StudyMaterials({
                     onClick={() => setOpenNote(openNote === key ? null : key)}
                     className="flex w-full items-center justify-between px-2.5 py-1.5 text-[10px] text-ink-3 transition-colors hover:text-accent"
                   >
-                    <span className="font-semibold text-ink-2">{t("study.genNote")}</span>
+                    <span className="font-semibold text-ink-2">{t("study.chapterNote")}</span>
                     <span>{openNote === key ? t("study.noteClose") : t("study.noteOpen")}</span>
                   </button>
                   {openNote === key ? (
@@ -388,20 +394,39 @@ export function StudyMaterials({
                                   </p>
                                   {options.length ? (
                                     <ul className="mt-2 max-w-[70ch] space-y-1">
-                                      {options.map((opt, oi) => (
-                                        <li
-                                          key={`${ansKey}-o${oi}`}
-                                          className="flex gap-2 text-[12px] leading-[1.8] text-ink-2"
-                                        >
-                                          <span className="grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full border border-line text-[9.5px] font-semibold tabular-nums text-ink-3">
-                                            {String.fromCharCode(65 + oi)}
-                                          </span>
-                                          <span className="flex-1">{opt}</span>
-                                        </li>
-                                      ))}
+                                      {options.map((opt, oi) => {
+                                        const picked = choices[ansKey] === oi;
+                                        return (
+                                          <li key={`${ansKey}-o${oi}`}>
+                                            <button
+                                              type="button"
+                                              onClick={() =>
+                                                setChoices((m) => ({ ...m, [ansKey]: oi }))
+                                              }
+                                              className={`flex w-full items-center gap-2 rounded-lg border px-2 py-[5px] text-left text-[12px] leading-[1.7] transition-colors ${
+                                                picked
+                                                  ? "border-accent bg-accent-soft text-ink"
+                                                  : "border-line bg-surface text-ink-2 hover:border-accent"
+                                              }`}
+                                            >
+                                              <span
+                                                className={`grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full border text-[9.5px] font-semibold tabular-nums ${
+                                                  picked
+                                                    ? "border-accent bg-accent text-white"
+                                                    : "border-line text-ink-3"
+                                                }`}
+                                              >
+                                                {String.fromCharCode(65 + oi)}
+                                              </span>
+                                              <span className="flex-1">{opt}</span>
+                                            </button>
+                                          </li>
+                                        );
+                                      })}
                                     </ul>
                                   ) : null}
 
+                                  <div className="mt-2 flex flex-wrap items-center gap-2">
                                   <button
                                     type="button"
                                     onClick={() =>
@@ -419,6 +444,31 @@ export function StudyMaterials({
                                   >
                                     {open ? t("study.hideAnswer") : t("study.showAnswer")}
                                   </button>
+                                  {(() => {
+                                    const saved = wrongItems.some((w) => w.question === item.q);
+                                    return (
+                                      <button
+                                        type="button"
+                                        disabled={saved}
+                                        onClick={() =>
+                                          void onAddWrong({
+                                            chapter: g.chapter,
+                                            question: item.q,
+                                            answer: item.a,
+                                            ref: item.ref,
+                                          })
+                                        }
+                                        className={`rounded-full border px-2 py-[2px] text-[9.5px] transition-colors ${
+                                          saved
+                                            ? "border-line text-[#c8c4bc]"
+                                            : "border-line text-ink-3 hover:border-warn hover:text-warn"
+                                        }`}
+                                      >
+                                        {saved ? t("study.inWrongBook") : t("study.addToWrong")}
+                                      </button>
+                                    );
+                                  })()}
+                                  </div>
 
                                   {open ? (
                                     <div className="mt-2 max-w-[70ch] rounded-lg border border-line-2 bg-surface px-3 py-2.5">

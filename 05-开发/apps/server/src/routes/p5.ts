@@ -769,6 +769,60 @@ p5.post("/study/practice/generate", async (c) => {
   return c.json({ items, count: items.length }, 201);
 });
 
+
+/* ---------------- 错题本 ---------------- */
+
+const WRONG_COLS = "id, subject_id, chapter, question, answer, ref, created_at";
+
+p5.get("/study/wrong", (c) => {
+  const subjectId = c.req.query("subjectId");
+  const db = getDb();
+  const rows = subjectId
+    ? db
+        .prepare(`SELECT ${WRONG_COLS} FROM wrong_item WHERE subject_id = ? ORDER BY created_at DESC`)
+        .all(subjectId)
+    : db.prepare(`SELECT ${WRONG_COLS} FROM wrong_item ORDER BY created_at DESC LIMIT 200`).all();
+  return c.json(rows);
+});
+
+p5.post("/study/wrong", async (c) => {
+  const r = await readBody(
+    c,
+    z.object({
+      subjectId: z.string(),
+      chapter: z.string().trim().max(20).nullable().optional(),
+      question: z.string().trim().min(1).max(4000),
+      answer: z.string().trim().min(1).max(4000),
+      ref: z.string().max(120).nullable().optional(),
+    }),
+  );
+  if (!r.ok) return c.json({ error: r.error }, 400);
+
+  const db = getDb();
+  const dup = db
+    .prepare("SELECT id FROM wrong_item WHERE subject_id = ? AND question = ? LIMIT 1")
+    .get(r.data.subjectId, r.data.question) as { id: string } | undefined;
+  if (dup) return c.json({ error: "duplicate" }, 409);
+
+  const id = uid();
+  db.prepare(
+    "INSERT INTO wrong_item (id, subject_id, chapter, question, answer, ref) VALUES (?, ?, ?, ?, ?, ?)",
+  ).run(
+    id,
+    r.data.subjectId,
+    r.data.chapter ?? null,
+    r.data.question,
+    r.data.answer,
+    r.data.ref ?? null,
+  );
+  return c.json(db.prepare(`SELECT ${WRONG_COLS} FROM wrong_item WHERE id = ?`).get(id), 201);
+});
+
+p5.delete("/study/wrong/:id", (c) => {
+  getDb().prepare("DELETE FROM wrong_item WHERE id = ?").run(c.req.param("id"));
+  return c.json({ ok: true });
+});
+
 /* ---------------- 复习 ---------------- */
 
 /** 今日队列：到期（due_date <= 今天）的卡片，按逾期天数与 box 排 */

@@ -5,6 +5,7 @@ import {
   type ApiCard,
   type ApiExam,
   type ApiPractice,
+  type ApiWrongItem,
   type ApiStudyNote,
   type ApiMaterial,
   type ApiReviewCard,
@@ -26,6 +27,8 @@ export function StudyView() {
   const [cards, setCards] = useState<ApiCard[]>([]);
   const [notes, setNotes] = useState<ApiStudyNote[]>([]);
   const [practices, setPractices] = useState<ApiPractice[]>([]);
+  const [wrongItems, setWrongItems] = useState<ApiWrongItem[]>([]);
+  const [wrongOpen, setWrongOpen] = useState<string[]>([]);
   const [queue, setQueue] = useState<ApiReviewCard[]>([]);
   const [stats, setStats] = useState<ApiStudyStats | null>(null);
   const [exams, setExams] = useState<ApiExam[]>([]);
@@ -71,17 +74,19 @@ export function StudyView() {
       return;
     }
     try {
-      const [mats, q, cds, nts, prs] = await Promise.all([
+      const [mats, q, cds, nts, prs, wrs] = await Promise.all([
         api.materials(subjectId),
         api.reviewQueue(subjectId),
         api.cards(subjectId),
         api.studyNotes(subjectId),
         api.practices(subjectId),
+        api.wrongItems(subjectId),
       ]);
       setMaterials(mats);
       setCards(cds);
       setNotes(nts);
       setPractices(prs);
+      setWrongItems(wrs);
       setQueue(q.cards);
       setIdx(0);
       setFlipped(false);
@@ -416,6 +421,21 @@ export function StudyView() {
             cards={cards}
             notes={notes}
             practices={practices}
+            wrongItems={wrongItems.map((w) => ({ id: w.id, question: w.question }))}
+            onAddWrong={async (item) => {
+              try {
+                await api.addWrong({
+                  subjectId: active.id,
+                  chapter: item.chapter,
+                  question: item.question,
+                  answer: item.answer,
+                  ref: item.ref,
+                });
+              } catch {
+                /* 重复收录由服务端 409 挡掉，这里静默即可 */
+              }
+              await loadSubject(active.id);
+            }}
             busy={busy}
             onUpload={(files, role, chapter) => uploadMany(files, role, chapter)}
             onChanged={async () => {
@@ -426,6 +446,67 @@ export function StudyView() {
 
         </div>
       )}
+
+      {/* 错题本 */}
+      <Card
+        title={t("study.wrongBook")}
+        action={
+          wrongItems.length ? <span className="tabular-nums">{t("study.wrongCount", { n: wrongItems.length })}</span> : null
+        }
+      >
+        <ul className="divide-y divide-line-2">
+          {wrongItems.map((w) => {
+            const open = wrongOpen.includes(w.id);
+            return (
+              <li key={w.id} className="py-2 first:pt-0">
+                <div className="flex items-start gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[11.5px] leading-relaxed text-ink-2">{w.question}</p>
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[9.5px] text-ink-3">
+                      {w.chapter ? (
+                        <span className="rounded-full bg-surface-2 px-1.5 py-[1px]">
+                          {/^l/i.test(w.chapter)
+                            ? t("study.lectureN", { n: w.chapter.slice(1) })
+                            : t("study.chapterN", { n: w.chapter })}
+                        </span>
+                      ) : null}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setWrongOpen((list) =>
+                            list.includes(w.id) ? list.filter((k) => k !== w.id) : [...list, w.id],
+                          )
+                        }
+                        className="transition-colors hover:text-accent"
+                      >
+                        {open ? t("study.hideAnswer") : t("study.showAnswer")}
+                      </button>
+                    </div>
+                    {open ? (
+                      <p className="mt-1.5 whitespace-pre-wrap rounded-lg border border-line-2 bg-surface-2 px-2.5 py-2 text-[11px] leading-relaxed text-ink-2">
+                        {w.answer}
+                      </p>
+                    ) : null}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await api.deleteWrong(w.id);
+                      if (active) await loadSubject(active.id);
+                    }}
+                    className="shrink-0 text-[10px] text-[#c0bbb2] transition-colors hover:text-warn"
+                  >
+                    {t("study.removeFromWrong")}
+                  </button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+        {wrongItems.length === 0 ? (
+          <p className="text-[10px] text-[#c8c4bc]">{t("study.wrongEmpty")}</p>
+        ) : null}
+      </Card>
 
       {upcoming.length ? (
         // 考试做成一条横排的窄条，不再占一整个卡片高度

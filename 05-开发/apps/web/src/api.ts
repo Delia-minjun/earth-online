@@ -794,6 +794,17 @@ export const api = {
       180_000,
     ),
 
+  wrongItems: (subjectId?: string) =>
+    request<ApiWrongItem[]>(`/study/wrong${subjectId ? `?subjectId=${subjectId}` : ""}`),
+  addWrong: (input: {
+    subjectId: string;
+    chapter: string | null;
+    question: string;
+    answer: string;
+    ref?: string | null;
+  }) => request<ApiWrongItem>("/study/wrong", { method: "POST", body: JSON.stringify(input) }),
+  deleteWrong: (id: string) => request<{ ok: true }>(`/study/wrong/${id}`, { method: "DELETE" }),
+
   generateNote: (subjectId: string, chapter: string | null) =>
     request<ApiStudyNote>(
       "/study/notes/generate",
@@ -944,6 +955,16 @@ export interface ApiPracticeItem {
   q: string;
   a: string;
   ref: string | null;
+}
+
+export interface ApiWrongItem {
+  id: string;
+  subject_id: string;
+  chapter: string | null;
+  question: string;
+  answer: string;
+  ref: string | null;
+  created_at: string;
 }
 
 export interface ApiPractice {

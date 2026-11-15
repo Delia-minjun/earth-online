@@ -479,7 +479,17 @@
     "answerLabel": "Answer & explanation",
     "questionCount": "{{n}} questions",
     "expandAll": "Show all answers",
-    "collapseAll": "Hide all answers"
+    "collapseAll": "Hide all answers",
+    "chapterNote": "Chapter notes",
+    "practiceSet": "Exercises",
+    "writeNote": "Write notes",
+    "makePractice": "Make exercises",
+    "addToWrong": "Add to wrong book",
+    "inWrongBook": "In wrong book",
+    "wrongBook": "Wrong book",
+    "wrongEmpty": "No questions saved yet",
+    "wrongCount": "{{n}} saved",
+    "removeFromWrong": "Remove"
   },
   "growth": {
     "coins": "My coins",
