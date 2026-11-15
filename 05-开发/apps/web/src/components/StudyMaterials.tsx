@@ -323,12 +323,7 @@ export function StudyMaterials({
                     <div className="max-h-[62vh] overflow-y-auto border-t border-line-2 bg-surface px-4 py-3">
                       <NoteMarkdown content={note.content} />
                     </div>
-                  ) : (
-                    <p className="border-t border-line-2 px-3 py-1.5 text-[10px] text-[#c8c4bc]">
-                      {note.content.split("\n").find((l) => l.trim().startsWith("##"))?.replace(/^#+\s*/, "") ??
-                        t("study.genNote")}
-                    </p>
-                  )}
+                  ) : null}
                 </div>
               ) : null}
 
