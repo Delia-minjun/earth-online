@@ -17,17 +17,23 @@ async function readBody<T extends z.ZodTypeAny>(c: { req: { json: () => Promise<
 
 const uid = () => crypto.randomUUID();
 
-/** 没有现成内容时的兜底：关键词判断该生成什么 */
-function localPlan(request: string): { action: "note" | "practice" | "both"; chapter: string | null } {
-  const wantsPractice = /(题|练习|刷题|quiz|考试|做题|选择题|计算题)/i.test(request);
-  const wantsNote = /(讲解|知识点|讲义|易错|讲得|讲浅|讲深|补充|例子|总结|梳理)/i.test(request);
-  const chRaw =
+/** 从一句话里取章节号，取不到返回 null */
+function guessChapter(request: string): string | null {
+  const raw =
     request.match(/第\s*([0-9]+(?:\s*-\s*[0-9]+)?)\s*章/)?.[1] ??
     request.match(/\bch(?:apter)?\s*([0-9]+)/i)?.[1] ??
     null;
-  const chapter = chRaw ? chRaw.replace(/\s+/g, "-") : null;
-  const action = wantsNote && wantsPractice ? "both" : wantsPractice ? "practice" : "note";
-  return { action, chapter };
+  if (raw) return raw.replace(/\s+/g, "-");
+  const lec = request.match(/\bL\s*([0-9]+)/i)?.[1];
+  return lec ? `L${lec}` : null;
+}
+
+/** 关键词判断该改什么（内容不存在时的兜底） */
+function guessAction(request: string): "note" | "practice" | "both" {
+  const wantsPractice = /(题|练习|刷题|quiz|考试|做题|选择题|计算题)/i.test(request);
+  const wantsNote = /(讲解|知识点|讲义|易错|讲得|讲浅|讲深|补充|例子|总结|梳理)/i.test(request);
+  if (wantsNote && wantsPractice) return "both";
+  return wantsPractice ? "practice" : "note";
 }
 
 /** 把一节内容替换进整篇 Markdown（找不到就追加） */
@@ -48,7 +54,7 @@ p7.post("/study/instruct", async (c) => {
     z.object({
       subjectId: z.string(),
       request: z.string().trim().min(1).max(500),
-      /** 用户显式选的章节，优先于模型判断 */
+      /** 用户显式选的章节；null/缺省表示「自动判断」 */
       chapter: z.string().trim().max(20).nullable().optional(),
     }),
   );
@@ -60,29 +66,53 @@ p7.post("/study/instruct", async (c) => {
     | undefined;
   if (!subject) return c.json({ error: "not_found" }, 404);
 
-  const chapter = r.data.chapter ?? null;
+  const findNote = (chapter: string | null) =>
+    db
+      .prepare(
+        `SELECT id, content FROM study_note
+          WHERE subject_id = ? AND IFNULL(chapter, '') = IFNULL(?, '')`,
+      )
+      .get(r.data.subjectId, chapter) as { id: string; content: string } | undefined;
 
-  const note = db
+  const findPractice = (chapter: string | null) =>
+    db
+      .prepare(
+        `SELECT id, items FROM chapter_practice
+          WHERE subject_id = ? AND IFNULL(chapter, '') = IFNULL(?, '')`,
+      )
+      .get(r.data.subjectId, chapter) as { id: string; items: string } | undefined;
+
+  // 1) 定章：显式选择 > 文字里的「第N章」 > 唯一有内容的那一章 > 不分章
+  const candidates: (string | null)[] = [];
+  if (r.data.chapter) candidates.push(r.data.chapter);
+  const guessed = guessChapter(r.data.request);
+  if (guessed && !candidates.includes(guessed)) candidates.push(guessed);
+
+  const existing = db
     .prepare(
-      `SELECT id, content FROM study_note
-        WHERE subject_id = ? AND IFNULL(chapter, '') = IFNULL(?, '')`,
+      `SELECT DISTINCT chapter FROM (
+         SELECT chapter FROM study_note WHERE subject_id = ? AND chapter IS NOT NULL
+         UNION SELECT chapter FROM chapter_practice WHERE subject_id = ? AND chapter IS NOT NULL
+       )`,
     )
-    .get(r.data.subjectId, chapter) as { id: string; content: string } | undefined;
+    .all(r.data.subjectId, r.data.subjectId) as { chapter: string }[];
+  // 只有一章时不必猜，直接落到那一章
+  if (existing.length === 1 && !candidates.includes(existing[0]!.chapter)) {
+    candidates.push(existing[0]!.chapter);
+  }
+  candidates.push(null);
 
-  const practice = db
-    .prepare(
-      `SELECT id, items FROM chapter_practice
-        WHERE subject_id = ? AND IFNULL(chapter, '') = IFNULL(?, '')`,
-    )
-    .get(r.data.subjectId, chapter) as { id: string; items: string } | undefined;
+  const target = candidates.find((ch) => findNote(ch) || findPractice(ch)) ?? candidates[0] ?? null;
+  const note = findNote(target);
+  const practice = findPractice(target);
 
-  /* ---------- 情况一：已有内容，只打补丁 ---------- */
+  /* ---------- 情况一：这一章已有内容，只打补丁 ---------- */
   if (note || practice) {
     let patch;
     try {
       patch = await planPatch(
         subject.name,
-        chapter,
+        target,
         note?.content ?? "（本章还没有讲解）",
         practice?.items ?? "[]",
         r.data.request,
@@ -110,17 +140,15 @@ p7.post("/study/instruct", async (c) => {
         if (edit.append && edit.q && edit.a) {
           items.push({ q: edit.q, a: edit.a, ref: edit.ref ?? null });
           itemsChanged += 1;
-        } else if (typeof edit.index === "number" && edit.q && edit.a) {
-          if (items[edit.index]) {
-            items[edit.index] = { q: edit.q, a: edit.a, ref: edit.ref ?? null };
-            itemsChanged += 1;
-          }
+        } else if (typeof edit.index === "number" && edit.q && edit.a && items[edit.index]) {
+          items[edit.index] = { q: edit.q, a: edit.a, ref: edit.ref ?? null };
+          itemsChanged += 1;
         }
       }
     }
 
     if (noteChanged === 0 && itemsChanged === 0) {
-      return c.json({ action: "none", chapter, message: patch.message || "没有找到需要改的地方" });
+      return c.json({ action: "none", chapter: target, message: patch.message || "没有找到需要改的地方" });
     }
 
     if (noteChanged > 0) {
@@ -133,7 +161,7 @@ p7.post("/study/instruct", async (c) => {
         db.prepare("INSERT INTO study_note (id, subject_id, chapter, content) VALUES (?, ?, ?, ?)").run(
           uid(),
           r.data.subjectId,
-          chapter,
+          target,
           noteText,
         );
       }
@@ -147,40 +175,49 @@ p7.post("/study/instruct", async (c) => {
       } else {
         db.prepare(
           "INSERT INTO chapter_practice (id, subject_id, chapter, items) VALUES (?, ?, ?, ?)",
-        ).run(uid(), r.data.subjectId, chapter, JSON.stringify(items));
+        ).run(uid(), r.data.subjectId, target, JSON.stringify(items));
       }
     }
 
     const parts: string[] = [];
     if (noteChanged) parts.push(`讲解了 ${noteChanged} 处`);
     if (itemsChanged) parts.push(`题目改了 ${itemsChanged} 处`);
-    return c.json({ action: "patch", chapter, message: parts.join("；") });
+    return c.json({ action: "patch", chapter: target, message: parts.join("；") });
   }
 
-  /* ---------- 情况二：还没有内容，按意图生成 ---------- */
-  const quick = localPlan(r.data.request);
-  let plan: { action: "note" | "practice" | "both" | "none"; chapter: string | null; message: string } = {
-    ...quick,
-    chapter: quick.chapter ?? chapter,
-    message: "",
-  };
-  if (!quick.action) {
+  /* ---------- 情况二：这一章还没有内容，生成 ---------- */
+  let action = guessAction(r.data.request);
+  let planChapter = target;
+  if (!guessed && !r.data.chapter) {
+    // 完全没提章节、也没有任何内容可参照时，才让模型帮忙判断
     try {
-      plan = await planInstruction(subject.name, [], r.data.request);
+      const plan = await planInstruction(subject.name, existing.map((x) => x.chapter), r.data.request);
+      if (plan.action === "none") {
+        return c.json({ action: "none", message: plan.message || "不清楚要改什么，换个说法试试" });
+      }
+      action = plan.action;
+      planChapter = plan.chapter ?? planChapter;
     } catch (e) {
       const msg = (e as Error).message;
       if (msg === "NOKEY") return c.json({ error: "NOKEY" }, 400);
       return c.json({ error: `规划失败：${msg}` }, 502);
     }
   }
-  if (plan.action === "none") {
-    return c.json({ action: "none", message: plan.message || "这一章还没有内容，先上传资料" });
+
+  // 自动判断但没说章节、又有多章时，先问清楚，别瞎猜
+  if (!r.data.chapter && !guessed && existing.length > 1) {
+    return c.json({
+      action: "none",
+      chapter: null,
+      message: `要改哪一章？在上方选章节，或在话里写明「第 N 章」（现有 ${existing
+        .map((x) => x.chapter)
+        .join("、")}）`,
+    });
   }
 
-  const target = plan.chapter ?? chapter;
   const loadMats = (role: "knowledge" | "questions") =>
     (
-      target === null
+      planChapter === null
         ? db
             .prepare(
               `SELECT title, content FROM material
@@ -194,7 +231,7 @@ p7.post("/study/instruct", async (c) => {
                 WHERE subject_id = ? AND role = ? AND chapter = ?
                   AND deleted_at IS NULL AND content != '' ORDER BY created_at`,
             )
-            .all(r.data.subjectId, role, target)
+            .all(r.data.subjectId, role, planChapter)
     ) as { title: string; content: string }[];
 
   const join = (mats: { title: string; content: string }[]) =>
@@ -203,32 +240,48 @@ p7.post("/study/instruct", async (c) => {
   const done: string[] = [];
   try {
     const jobs: Promise<void>[] = [];
-    if (plan.action === "note" || plan.action === "both") {
+    if (action === "note" || action === "both") {
       const mats = loadMats("knowledge");
-      if (mats.length === 0) done.push("这一章还没有知识类资料");
+      if (mats.length === 0)
+        done.push(planChapter ? `第 ${planChapter} 章没有知识类资料` : "这一章还没有知识类资料");
       else {
         jobs.push(
           (async () => {
-            const content = await explainChapter(subject.name, target, join(mats), r.data.request);
-            db.prepare(
-              "INSERT INTO study_note (id, subject_id, chapter, content) VALUES (?, ?, ?, ?)",
-            ).run(uid(), r.data.subjectId, target, content);
+            const content = await explainChapter(subject.name, planChapter, join(mats), r.data.request);
+            const existed = findNote(planChapter);
+            if (existed) {
+              db.prepare(
+                "UPDATE study_note SET content = ?, updated_at = datetime('now') WHERE id = ?",
+              ).run(content, existed.id);
+            } else {
+              db.prepare(
+                "INSERT INTO study_note (id, subject_id, chapter, content) VALUES (?, ?, ?, ?)",
+              ).run(uid(), r.data.subjectId, planChapter, content);
+            }
             done.push("讲解已生成");
           })(),
         );
       }
     }
-    if (plan.action === "practice" || plan.action === "both") {
+    if (action === "practice" || action === "both") {
       const mats = loadMats("questions");
-      if (mats.length === 0) done.push("这一章还没有题目类资料");
+      if (mats.length === 0)
+        done.push(planChapter ? `第 ${planChapter} 章没有题目类资料` : "这一章还没有题目类资料");
       else {
         jobs.push(
           (async () => {
             const cards = await generateCards(join(mats), subject.name, 10, "questions", r.data.request);
             const items = cards.map((x) => ({ q: x.front, a: x.back, ref: x.ref ?? null }));
-            db.prepare(
-              "INSERT INTO chapter_practice (id, subject_id, chapter, items) VALUES (?, ?, ?, ?)",
-            ).run(uid(), r.data.subjectId, target, JSON.stringify(items));
+            const existed = findPractice(planChapter);
+            if (existed) {
+              db.prepare(
+                "UPDATE chapter_practice SET items = ?, updated_at = datetime('now') WHERE id = ?",
+              ).run(JSON.stringify(items), existed.id);
+            } else {
+              db.prepare(
+                "INSERT INTO chapter_practice (id, subject_id, chapter, items) VALUES (?, ?, ?, ?)",
+              ).run(uid(), r.data.subjectId, planChapter, JSON.stringify(items));
+            }
             done.push(`练习题已生成（${items.length} 题）`);
           })(),
         );
@@ -241,5 +294,5 @@ p7.post("/study/instruct", async (c) => {
     return c.json({ error: msg }, 502);
   }
 
-  return c.json({ action: plan.action, chapter: target, message: done.join("；") });
+  return c.json({ action, chapter: planChapter, message: done.join("；") });
 });
