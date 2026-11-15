@@ -94,6 +94,21 @@ p5.delete("/study/subjects/:id", (c) => {
   return c.json({ ok: true });
 });
 
+
+/** 从标题/文件名猜章节（与前端 lib/chapter.ts 同一套规则） */
+function guessChapter(text: string): string | null {
+  const name = text.replace(/\.[^.]+$/, "");
+  const cn = name.match(/第\s*([0-9]+(?:\s*[-–~]\s*[0-9]+)?)\s*[章讲课]/);
+  if (cn?.[1]) return cn[1].replace(/\s+/g, "").replace(/[–~]/g, "-");
+  const en = name.match(/\b(?:ch|chap|chapter)\s*([0-9]+(?:\s*([-–~])\s*[0-9]+)?)/i);
+  if (en?.[1]) return en[1].replace(/\s+/g, "").replace(/[–~]/g, "-");
+  const lec = name.match(/\b(?:l|lec|lecture)\s*([0-9]+)/i);
+  if (lec?.[1]) return `L${lec[1]}`;
+  const lead = name.match(/^\s*0*([0-9]{1,2})(?=[\s._\-–—])/);
+  if (lead?.[1]) return lead[1];
+  return null;
+}
+
 /* ---------------- 资料 ---------------- */
 
 const MATERIAL_COLS =
@@ -102,6 +117,16 @@ const MATERIAL_COLS =
 p5.get("/study/materials", (c) => {
   const subjectId = c.req.query("subjectId");
   const db = getDb();
+
+  // 历史资料补章节：只在能猜出来时写回，猜不到保持为空
+  const missing = db
+    .prepare(`SELECT id, title, source FROM material WHERE deleted_at IS NULL AND chapter IS NULL`)
+    .all() as { id: string; title: string; source: string | null }[];
+  const fix = db.prepare("UPDATE material SET chapter = ? WHERE id = ?");
+  for (const m of missing) {
+    const guess = guessChapter(m.source ?? m.title);
+    if (guess) fix.run(guess, m.id);
+  }
   const rows = subjectId
     ? db
         .prepare(

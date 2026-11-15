@@ -166,7 +166,9 @@ export function StudyMaterials({
           return (
             <section key={key} className="rounded-xl border border-line-2 p-2.5">
               <header className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                <h3 className="text-[11px] font-semibold text-ink">{chapterLabel(g.chapter)}</h3>
+                {g.chapter ? (
+                  <h3 className="text-[11px] font-semibold text-ink">{chapterLabel(g.chapter)}</h3>
+                ) : null}
                 <span className="text-[9.5px] text-ink-3">
                   {t("study.materialCount", { n: g.materials.length })}
                   {g.cards ? ` · ${t("study.cardCount", { n: g.cards })}` : ""}

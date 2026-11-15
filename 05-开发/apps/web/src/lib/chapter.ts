@@ -14,6 +14,10 @@ export function guessChapter(filename: string): string | null {
   const lec = name.match(/\b(?:l|lec|lecture)\s*([0-9]+)/i);
   if (lec?.[1]) return `L${lec[1]}`;
 
+  // 纯数字开头：03 Homework / 03. Quiz / 12 Lab（去掉前导 0）
+  const lead = name.match(/^\s*0*([0-9]{1,2})(?=[\s._\-–—])/);
+  if (lead?.[1]) return lead[1];
+
   return null;
 }
 
