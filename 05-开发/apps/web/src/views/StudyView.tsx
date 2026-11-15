@@ -9,6 +9,7 @@ import {
   type ApiSubject,
 } from "../api";
 import { Card } from "../components/Card";
+import { StudyMaterials } from "../components/StudyMaterials";
 import { renderPdfPages } from "../lib/pdfPages";
 
 /** 学习：科目 → 资料 → 卡片 → 间隔重复复习 */
@@ -26,9 +27,6 @@ export function StudyView() {
   // 新建科目
   const [newSubject, setNewSubject] = useState("");
   // 新建资料
-  const [matText, setMatText] = useState("");
-  const [openMaterial, setOpenMaterial] = useState(false);
-  const [noteOpen, setNoteOpen] = useState(false);
   // 校对
   // 复习
   const [idx, setIdx] = useState(0);
@@ -100,32 +98,8 @@ export function StudyView() {
     }
   };
 
-  const addMaterialText = async () => {
-    if (!active || !matText.trim()) return;
-    setBusy(true);
-    try {
-      // 没有标题输入框了：用首行当标题
-      const firstLine = matText.trim().split("\n")[0] ?? "";
-      const title = (firstLine.trim() || new Date().toISOString().slice(5, 16)).slice(0, 24);
-      await api.addMaterial({
-        subjectId: active.id,
-        title,
-        kind: "text",
-        content: matText.trim(),
-      });
-      setMatText("");
-      setOpenMaterial(false);
-      await loadSubject(active.id);
-      await loadAll();
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  };
-
   /** 选文件 → 文本类直接抽字，图片走 OCR */
-  const uploadOne = async (file: File) => {
+  const uploadOne = async (file: File, role: "knowledge" | "questions") => {
     if (!active) return;
     setBusy(true);
     setError(null);
@@ -146,6 +120,7 @@ export function StudyView() {
           source: file.name,
           imageBase64: b64,
           imageMime: file.type || "image/png",
+          role,
         });
         if (created.ocrError === "NOKEY") setError(t("study.noKey"));
         else if (created.ocrError === "VISION_UNSUPPORTED") setError(t("study.visionUnsupported"));
@@ -163,6 +138,7 @@ export function StudyView() {
           subjectId: active.id,
           filename: file.name,
           base64: b64,
+          role,
         });
       } catch (e) {
         const msg = (e as Error).message;
@@ -173,15 +149,9 @@ export function StudyView() {
         created = await api.ocrPages({
           subjectId: active.id,
           title: file.name.replace(/\.[^.]+$/, ""),
+          role,
           pages: pages.map((b) => ({ base64: b, mime: "image/jpeg" })),
         });
-      }
-      const note = matText.trim();
-      if (note) {
-        created = await api.updateMaterial(created.id, {
-          content: `${created.content}\n\n${note}`,
-        });
-        setMatText("");
       }
       await loadSubject(active.id);
       await loadAll();
@@ -206,13 +176,13 @@ export function StudyView() {
   };
 
   /** 批量上传：拖进来的、多选的都走这里 */
-  const uploadMany = async (files: FileList | File[]) => {
+  const uploadMany = async (files: FileList | File[], role: "knowledge" | "questions") => {
     if (!active) return;
     const list = Array.from(files);
     if (list.length === 0) return;
     setBusy(true);
     try {
-      for (const f of list) await uploadOne(f);
+      for (const f of list) await uploadOne(f, role);
     } finally {
       setBusy(false);
     }
@@ -332,115 +302,28 @@ export function StudyView() {
       {!active ? null : (
         // 每张卡各占一整行，互不影响高度
         <div className="space-y-3.5">
-          {/* 资料 */}
-          <Card
-            title={t("study.courseMaterials")}
-            action={
-              <button
-                type="button"
-                onClick={() => setOpenMaterial((v) => !v)}
-                className="rounded-full border border-line px-2 py-[1px] text-[9px] text-ink-3 hover:border-accent hover:text-accent"
-              >
-                ＋
-              </button>
-            }
-          >
-            {openMaterial ? (
-              <div className="mb-2 space-y-2 rounded-xl border border-line-2 bg-surface-2 p-2.5">
-                {/* 资料基本都是文件：上传做成主要入口，也支持拖拽 */}
-                <div
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => fileRef.current?.click()}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") fileRef.current?.click();
-                  }}
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    if (e.dataTransfer.files.length) void uploadMany(e.dataTransfer.files);
-                  }}
-                  className="cursor-pointer rounded-lg border border-dashed border-[#d5cfc4] bg-surface px-3 py-4 text-center transition-colors hover:border-accent hover:bg-accent-soft/20"
-                >
-                  <p className="text-[11px] text-ink-2">
-                    {busy ? t("study.uploading") : t("study.dropHint")}
-                  </p>
-                  <p className="mt-0.5 text-[9.5px] text-[#b9b4aa]">{t("study.dropTypes")}</p>
-                </div>
-                <input
-                  ref={fileRef}
-                  type="file"
-                  multiple
-                  accept=".pdf,.docx,.pptx,.md,.markdown,.txt,image/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    if (e.target.files?.length) void uploadMany(e.target.files);
-                    e.target.value = "";
-                  }}
-                />
-
-                {/* 备注是可选项，默认收起 */}
-                {noteOpen ? (
-                  <div className="space-y-1.5">
-                    <textarea
-                      value={matText}
-                      onChange={(e) => setMatText(e.target.value)}
-                      rows={2}
-                      placeholder={t("study.notePlaceholder")}
-                      className="w-full resize-none rounded-lg border border-line bg-surface px-2 py-1.5 text-[11px] leading-relaxed text-ink outline-none placeholder:text-[#c8c4bc]"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => void addMaterialText()}
-                      disabled={busy || !matText.trim()}
-                      className="rounded-lg bg-accent px-2.5 py-1.5 text-[10px] font-semibold text-white disabled:opacity-50"
-                    >
-                      {t("study.saveAsMaterial")}
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setNoteOpen(true)}
-                    className="text-[10px] text-ink-3 transition-colors hover:text-accent"
-                  >
-                    ＋ {t("study.notePlaceholder")}
-                  </button>
-                )}
-              </div>
-            ) : null}
-
-            <ul className="divide-y divide-line-2">
-              {materials.map((m) => (
-                <li key={m.id} className="group flex items-center gap-2 py-1.5 first:pt-0">
-                  <p className="min-w-0 flex-1 truncate text-[11.5px] text-ink">{m.title}</p>
-                  <button
-                    type="button"
-                    onClick={() => void generate(m)}
-                    disabled={busy}
-                    className="shrink-0 rounded-full border border-line px-2 py-[1px] text-[10px] text-ink-3 transition-colors hover:border-accent hover:text-accent disabled:opacity-40"
-                  >
-                    {t("study.generate")}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      await api.deleteMaterial(m.id);
-                      if (active) await loadSubject(active.id);
-                      await loadAll();
-                    }}
-                    className="shrink-0 text-[12px] leading-none text-[#c0bbb2] transition-colors hover:text-warn md:opacity-0 md:group-hover:opacity-100"
-                    aria-label="delete"
-                  >
-                    ×
-                  </button>
-                </li>
-              ))}
-              {materials.length === 0 && !openMaterial ? (
-                <li className="py-2 text-[10.5px] text-[#c8c4bc]">{t("study.noMaterial")}</li>
-              ) : null}
-            </ul>
-          </Card>
+          {/* 资料：知识内容与题目资料分开上传、分别出卡片 */}
+          <StudyMaterials
+            subjectId={active.id}
+            materials={materials}
+            busy={busy}
+            onUpload={(files, role) => uploadMany(files, role)}
+            onNote={async (text) => {
+              await api.addMaterial({
+                subjectId: active.id,
+                title: text.split("\n")[0]!.slice(0, 24) || t("study.notePlaceholder"),
+                kind: "text",
+                content: text,
+                role: "knowledge",
+              });
+              await loadSubject(active.id);
+              await loadAll();
+            }}
+            onChanged={async () => {
+              if (active) await loadSubject(active.id);
+              await loadAll();
+            }}
+          />
 
           {/* 右：复习 */}
           <Card

@@ -429,7 +429,13 @@
     "pickFile": "Choose file",
     "noSubjectShort": "No subjects yet",
     "dropHint": "Drag or click to pick a file",
-    "dropTypes": "PDF / Word / PPT / Markdown / images — multiple allowed"
+    "dropTypes": "PDF / Word / PPT / Markdown / images — multiple allowed",
+    "knowledge": "Knowledge (slides / notes)",
+    "questions": "Question sets (quiz / homework)",
+    "knowledgeEmpty": "No knowledge material yet",
+    "questionsEmpty": "No question sets yet",
+    "generating": "Generating…",
+    "generateNeedFile": "Upload something here first"
   },
   "growth": {
     "coins": "My coins",

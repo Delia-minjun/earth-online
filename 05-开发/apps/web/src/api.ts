@@ -656,12 +656,14 @@ export const api = {
     source?: string;
     imageBase64?: string;
     imageMime?: string;
+    role?: "knowledge" | "questions";
   }) => request<ApiMaterial>("/study/materials", { method: "POST", body: JSON.stringify(input) }),
   uploadMaterialFile: (input: {
     subjectId: string;
     filename: string;
     base64: string;
     title?: string;
+    role?: "knowledge" | "questions";
   }) =>
     request<ApiMaterial>("/study/materials/file", {
       method: "POST",
@@ -671,6 +673,7 @@ export const api = {
   ocrPages: (input: {
     subjectId: string;
     title: string;
+    role?: "knowledge" | "questions";
     pages: { base64: string; mime: string }[];
   }) =>
     request<ApiMaterial>("/study/materials/ocr-pages", {
@@ -687,6 +690,13 @@ export const api = {
     request<{ cards: { id: string; front: string; back: string; ref?: string }[] }>(
       `/study/materials/${materialId}/generate`,
       { method: "POST", body: JSON.stringify({ count }) },
+      120_000,
+    ),
+
+  generateSection: (subjectId: string, role: "knowledge" | "questions", count = 8) =>
+    request<{ cards: { id: string; front: string; back: string; ref?: string }[] }>(
+      "/study/generate",
+      { method: "POST", body: JSON.stringify({ subjectId, role, count }) },
       120_000,
     ),
 
@@ -768,6 +778,7 @@ export interface ApiMaterial {
   source: string | null;
   content: string;
   status: "raw" | "verified";
+  role?: "knowledge" | "questions";
   page_from: number | null;
   page_to: number | null;
   created_at: string;

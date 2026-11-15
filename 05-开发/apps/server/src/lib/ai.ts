@@ -240,19 +240,36 @@ export interface GeneratedCard {
   ref?: string;
 }
 
-const CARD_PROMPT = (subject: string, count: number, text: string) => `你是背书卡片生成器。基于下面这份「${subject}」的学习资料，生成 ${count} 张问答卡片，只输出 JSON：
+export type CardMode = "knowledge" | "questions";
 
-{"cards":[{"front":"问题（简短、可自测）","back":"答案（要点式，别超过 80 字）","ref":"出处提示，如 第3段 / 公式2"}]}
+const KNOWLEDGE_PROMPT = (subject: string, count: number, text: string) => `你是知识点卡片生成器。基于下面这份「${subject}」的资料，生成 ${count} 张「知识点总结 + 详解」卡片，只输出 JSON：
+
+{"cards":[{"front":"知识点（一句话概括，可自测）","back":"详解：定义、关键性质、适用条件、易错点，必要时给公式","ref":"出处，如 第3页 / 第2段"}]}
 
 规则：
-- 只根据资料内容出题，不要引入资料里没有的知识；资料没讲到的不要编
-- 一个问题只考一个点；答案要能独立看懂
-- 优先考概念、定义、公式、易混点，不要出「这段讲了什么」这种空泛题
-- 资料里可能有 OCR 噪声或乱码片段：跳过读不懂的部分，只对能确定含义的内容出题
+- 只根据资料内容，不要引入资料里没有的知识
+- 一张卡片聚焦一个知识点；详解要能独立看懂
+- 优先覆盖核心概念、公式、方法、易混点，不要出「这段讲了什么」这种空泛卡片
+- 资料有 OCR 噪声时跳过读不懂的部分
 - 中文出题；若资料是英文，问题与答案都用英文
 
 资料正文：
-""" 
+"""
+${text.slice(0, 12000)}
+"""`;
+
+const QUESTIONS_PROMPT = (subject: string, count: number, text: string) => `你是出题器。下面是一份「${subject}」的题目资料（quiz / 作业 / 往年题）。请参考它们的题型、难度与考点分布，出 ${count} 道新题，只输出 JSON：
+
+{"cards":[{"front":"题干（含选项，若有）","back":"答案 + 解析（说明为什么，必要时指出考点）","ref":"参考的题型·难度，如 选择题·中等"}]}
+
+规则：
+- 模仿资料里的题型与难度，但不要照抄原题，要出新题
+- 答案必须能确定；资料不足以判断时换一个题目
+- 覆盖资料中出现的题型（选择、填空、判断、简答、计算等）
+- 中文出题；若资料是英文，题目与答案都用英文
+
+题目资料：
+"""
 ${text.slice(0, 12000)}
 """`;
 
@@ -261,10 +278,12 @@ export async function generateCards(
   text: string,
   subject: string,
   count = 8,
+  mode: CardMode = "knowledge",
 ): Promise<GeneratedCard[]> {
   const cfg = resolveAiConfig();
   if (!cfg.apiKey) throw new Error("NOKEY");
-  const raw = await chatOnce(cfg, [{ role: "user", content: CARD_PROMPT(subject, count, text) }], 0.2);
+  const prompt = mode === "questions" ? QUESTIONS_PROMPT : KNOWLEDGE_PROMPT;
+  const raw = await chatOnce(cfg, [{ role: "user", content: prompt(subject, count, text) }], 0.2);
 
   const cleaned = raw.replace(/```json/gi, "").replace(/```/g, "").trim();
   const start = cleaned.indexOf("{");

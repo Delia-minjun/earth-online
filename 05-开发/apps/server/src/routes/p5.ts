@@ -97,7 +97,7 @@ p5.delete("/study/subjects/:id", (c) => {
 /* ---------------- 资料 ---------------- */
 
 const MATERIAL_COLS =
-  "id, subject_id, title, kind, source, content, status, page_from, page_to, created_at";
+  "id, subject_id, title, kind, source, content, status, page_from, page_to, created_at, role";
 
 p5.get("/study/materials", (c) => {
   const subjectId = c.req.query("subjectId");
@@ -124,6 +124,7 @@ const materialBody = z.object({
   /** 传了图片就做 OCR，结果写进 content，状态置为 raw（待校对） */
   imageBase64: z.string().optional(),
   imageMime: z.string().optional(),
+  role: z.enum(["knowledge", "questions"]).default("knowledge"),
 });
 
 p5.post("/study/materials", async (c) => {
@@ -153,6 +154,9 @@ p5.post("/study/materials", async (c) => {
     `INSERT INTO material (id, subject_id, title, kind, source, content, status, page_from, page_to)
      VALUES (?, ?, ?, ?, ?, ?, 'verified', NULL, NULL)`,
   ).run(id, r.data.subjectId, title, r.data.kind, r.data.source ?? null, content);
+  if (r.data.role === "questions") {
+    db.prepare("UPDATE material SET role = 'questions' WHERE id = ?").run(id);
+  }
 
   return c.json(
     {
@@ -173,6 +177,7 @@ p5.post("/study/materials/file", async (c) => {
       filename: z.string().min(1).max(200),
       base64: z.string().min(16),
       title: z.string().trim().max(120).optional(),
+      role: z.enum(["knowledge", "questions"]).default("knowledge"),
     }),
   );
   if (!r.ok) return c.json({ error: r.error }, 400);
@@ -207,6 +212,9 @@ p5.post("/study/materials/file", async (c) => {
       `INSERT INTO material (id, subject_id, title, kind, source, content, status)
        VALUES (?, ?, ?, 'image', ?, ?, 'verified')`,
     ).run(id, r.data.subjectId, title, r.data.filename, content);
+    if (r.data.role === "questions") {
+      db.prepare("UPDATE material SET role = 'questions' WHERE id = ?").run(id);
+    }
     return c.json(db.prepare(`SELECT ${MATERIAL_COLS} FROM material WHERE id = ?`).get(id), 201);
   }
 
@@ -224,6 +232,9 @@ p5.post("/study/materials/file", async (c) => {
     `INSERT INTO material (id, subject_id, title, kind, source, content, status)
      VALUES (?, ?, ?, ?, ?, ?, 'verified')`,
   ).run(id, r.data.subjectId, title, kind === "text" ? "text" : "file", r.data.filename, body);
+  if (r.data.role === "questions") {
+    db.prepare("UPDATE material SET role = 'questions' WHERE id = ?").run(id);
+  }
 
   return c.json(
     {
@@ -242,6 +253,7 @@ p5.post("/study/materials/ocr-pages", async (c) => {
     z.object({
       subjectId: z.string(),
       title: z.string().trim().min(1).max(120),
+      role: z.enum(["knowledge", "questions"]).default("knowledge"),
       pages: z
         .array(z.object({ base64: z.string().min(16), mime: z.string().default("image/jpeg") }))
         .min(1)
@@ -271,8 +283,67 @@ p5.post("/study/materials/ocr-pages", async (c) => {
     `INSERT INTO material (id, subject_id, title, kind, source, content, status)
      VALUES (?, ?, ?, 'image', ?, ?, 'verified')`,
   ).run(id, r.data.subjectId, r.data.title, `pdf-${r.data.pages.length}p`, body);
+  if (r.data.role === "questions") {
+    db.prepare("UPDATE material SET role = 'questions' WHERE id = ?").run(id);
+  }
 
   return c.json(db.prepare(`SELECT ${MATERIAL_COLS} FROM material WHERE id = ?`).get(id), 201);
+});
+
+
+/** 按类别出卡片：knowledge 生成知识点详解卡；questions 参考题型难度出新题 */
+p5.post("/study/generate", async (c) => {
+  const r = await readBody(
+    c,
+    z.object({
+      subjectId: z.string(),
+      role: z.enum(["knowledge", "questions"]),
+      count: z.number().int().min(3).max(30).default(8),
+    }),
+  );
+  if (!r.ok) return c.json({ error: r.error }, 400);
+
+  const db = getDb();
+  const subject = db.prepare("SELECT name FROM subject WHERE id = ?").get(r.data.subjectId) as
+    | { name: string }
+    | undefined;
+  if (!subject) return c.json({ error: "not_found" }, 404);
+
+  const mats = db
+    .prepare(
+      `SELECT title, content FROM material
+        WHERE subject_id = ? AND role = ? AND deleted_at IS NULL AND content != ''
+        ORDER BY created_at`,
+    )
+    .all(r.data.subjectId, r.data.role) as { title: string; content: string }[];
+
+  if (mats.length === 0) return c.json({ error: "no_material" }, 409);
+
+  const text = mats
+    .map((m) => `【${m.title}】\n${m.content}`)
+    .join("\n\n")
+    .slice(0, 40000);
+
+  let cards;
+  try {
+    cards = await generateCards(text, subject.name, r.data.count, r.data.role);
+  } catch (e) {
+    const msg = (e as Error).message;
+    if (msg === "NOKEY") return c.json({ error: "NOKEY" }, 400);
+    return c.json({ error: msg }, 502);
+  }
+  if (cards.length === 0) return c.json({ error: "no_cards" }, 502);
+
+  const ins = db.prepare(
+    `INSERT INTO card (id, subject_id, material_id, front, back, ref, box, due_date)
+     VALUES (?, ?, NULL, ?, ?, ?, 1, ?)`,
+  );
+  const made = cards.map((card) => {
+    const cid = uid();
+    ins.run(cid, r.data.subjectId, card.front, card.back, card.ref ?? null, today());
+    return { id: cid, front: card.front, back: card.back, ref: card.ref ?? null };
+  });
+  return c.json({ cards: made }, 201);
 });
 
 p5.patch("/study/materials/:id", async (c) => {

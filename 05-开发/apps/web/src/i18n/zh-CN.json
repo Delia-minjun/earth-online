@@ -430,7 +430,13 @@
     "pickFile": "选择文件",
     "noSubjectShort": "还没有科目",
     "dropHint": "拖动或点击选择文件",
-    "dropTypes": "支持 PDF / Word / PPT / Markdown / 图片，可多选"
+    "dropTypes": "支持 PDF / Word / PPT / Markdown / 图片，可多选",
+    "knowledge": "知识内容（课件 / 笔记）",
+    "questions": "题目资料（quiz / 作业）",
+    "knowledgeEmpty": "还没有知识内容",
+    "questionsEmpty": "还没有题目资料",
+    "generating": "生成中…",
+    "generateNeedFile": "这一类还没有上传资料"
   },
   "growth": {
     "coins": "我的快乐币",
