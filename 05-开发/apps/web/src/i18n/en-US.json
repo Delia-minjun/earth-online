@@ -486,6 +486,7 @@
     "redeemedOn": "redeemed {{d}}",
     "undoEntry": "Undo this entry",
     "last7": "Net change, last 7 days",
-    "editReward": "Edit reward"
+    "editReward": "Edit reward",
+    "stepsProgress": "{{done}}/{{total}} sub-goals"
   }
 }
