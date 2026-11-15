@@ -28,3 +28,13 @@ export function splitQuestion(text: string): { stem: string; options: string[] }
 
   return { stem, options };
 }
+
+
+/** 从"答案与解析"里取出正确选项字母：B) / B. / B、/ 答案：B / （B） */
+export function correctOptionLetter(answer: string): string | null {
+  const m = answer
+    .replace(/^\s*(答案|正确答案|Answer|Correct answer)\s*[:：]?\s*/i, "")
+    .trim()
+    .match(/^[（(]?([A-H])(?:[)）.、．:：\s,，]|$)/i);
+  return m?.[1]?.toUpperCase() ?? null;
+}

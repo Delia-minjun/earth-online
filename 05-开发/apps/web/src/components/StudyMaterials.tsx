@@ -9,7 +9,7 @@ import {
 } from "../api";
 import { Card } from "../components/Card";
 import { NoteMarkdown } from "./NoteMarkdown";
-import { splitQuestion } from "../lib/questionText";
+import { correctOptionLetter, splitQuestion } from "../lib/questionText";
 import { chapterSortKey, guessChapter } from "../lib/chapter";
 
 type Role = "knowledge" | "questions";
@@ -398,7 +398,20 @@ export function StudyMaterials({
                                   {options.length ? (
                                     <ul className="mt-2 max-w-[70ch] space-y-1">
                                       {options.map((opt, oi) => {
+                                        const letter = String.fromCharCode(65 + oi);
                                         const picked = choices[ansKey] === oi;
+                                        const answered = choices[ansKey] !== undefined;
+                                        const correct = correctOptionLetter(item.a) === letter;
+                                        // 选错的选项标红，正确选项（无论是否选中）标绿
+                                        const tone = !answered
+                                          ? picked
+                                            ? "border-accent bg-accent-soft text-ink"
+                                            : "border-line bg-surface text-ink-2 hover:border-accent"
+                                          : correct
+                                            ? "border-[#8fae86] bg-[#eaf1e6] text-ink"
+                                            : picked
+                                              ? "border-[#c98b83] bg-[#f8e7e4] text-ink"
+                                              : "border-line bg-surface text-ink-2";
                                         return (
                                           <li key={`${ansKey}-o${oi}`}>
                                             <button
@@ -406,20 +419,20 @@ export function StudyMaterials({
                                               onClick={() =>
                                                 setChoices((m) => ({ ...m, [ansKey]: oi }))
                                               }
-                                              className={`flex w-full items-center gap-2 rounded-lg border px-2 py-[5px] text-left text-[12px] leading-[1.7] transition-colors ${
-                                                picked
-                                                  ? "border-accent bg-accent-soft text-ink"
-                                                  : "border-line bg-surface text-ink-2 hover:border-accent"
-                                              }`}
+                                              className={`flex w-full items-center gap-2 rounded-lg border px-2 py-[5px] text-left text-[12px] leading-[1.7] transition-colors ${tone}`}
                                             >
                                               <span
                                                 className={`grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full border text-[9.5px] font-semibold tabular-nums ${
-                                                  picked
-                                                    ? "border-accent bg-accent text-white"
-                                                    : "border-line text-ink-3"
+                                                  answered && correct
+                                                    ? "border-[#8fae86] bg-[#8fae86] text-white"
+                                                    : answered && picked
+                                                      ? "border-[#c98b83] bg-[#c98b83] text-white"
+                                                      : picked
+                                                        ? "border-accent bg-accent text-white"
+                                                        : "border-line text-ink-3"
                                                 }`}
                                               >
-                                                {String.fromCharCode(65 + oi)}
+                                                {letter}
                                               </span>
                                               <span className="flex-1">{opt}</span>
                                             </button>
