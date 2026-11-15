@@ -10,10 +10,10 @@ export function MilestonesCard({ areas }: { areas: ApiAreaGrowth[] }) {
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [expanded, setExpanded] = useState<string | null>(null);
-  const [stepDraft, setStepDraft] = useState("");
+    const [stepDraft, setStepDraft] = useState("");
 
-  const [draft, setDraft] = useState({ title: "", areaId: "", months: "", steps: "" });
+  const [draft, setDraft] = useState({ title: "", areaId: "", months: "" });
+  const [stepDrafts, setStepDrafts] = useState<string[]>([""]);
 
   const load = useCallback(async () => {
     try {
@@ -33,18 +33,15 @@ export function MilestonesCard({ areas }: { areas: ApiAreaGrowth[] }) {
     if (!title) return;
     setBusy(true);
     try {
-      const steps = draft.steps
-        .split("\n")
-        .map((s) => s.trim())
-        .filter(Boolean)
-        .slice(0, 8);
+      const steps = stepDrafts.map((s) => s.trim()).filter(Boolean).slice(0, 8);
       await api.addMilestone({
         title,
         areaId: draft.areaId || undefined,
         months: draft.months ? Number(draft.months) : null,
         steps: steps.length ? steps : undefined,
       });
-      setDraft({ title: "", areaId: "", months: "", steps: "" });
+      setDraft({ title: "", areaId: "", months: "" });
+      setStepDrafts([""]);
       setOpen(false);
       await load();
     } catch (e) {
@@ -82,7 +79,6 @@ export function MilestonesCard({ areas }: { areas: ApiAreaGrowth[] }) {
           const steps = m.steps ?? [];
           const doneSteps = steps.filter((s) => s.done_at).length;
           const left = daysLeft(m.due_date);
-          const isOpen = expanded === m.id;
 
           return (
             <li key={m.id} className="py-2 first:pt-0">
@@ -103,11 +99,7 @@ export function MilestonesCard({ areas }: { areas: ApiAreaGrowth[] }) {
                   ✓
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => setExpanded(isOpen ? null : m.id)}
-                  className="min-w-0 flex-1 text-left"
-                >
+                <div className="min-w-0 flex-1">
                   <p
                     className={`truncate text-[11.5px] ${done ? "text-ink-3 line-through" : "text-ink"}`}
                   >
@@ -139,7 +131,7 @@ export function MilestonesCard({ areas }: { areas: ApiAreaGrowth[] }) {
                       </span>
                     ) : null}
                   </p>
-                </button>
+                </div>
 
                 {!done && m.coins > 0 ? (
                   <span className="shrink-0 rounded-full bg-accent-soft px-1.5 py-[1px] text-[9px] tabular-nums text-accent">
@@ -160,11 +152,11 @@ export function MilestonesCard({ areas }: { areas: ApiAreaGrowth[] }) {
                 </button>
               </div>
 
-              {isOpen ? (
-                <div className="mt-1.5 pl-6">
+              {steps.length || stepDraft ? (
+                <div className="mt-1.5 ml-[7px] border-l border-line-2 pl-3">
                   <ul className="space-y-1">
                     {steps.map((s) => (
-                      <li key={s.id} className="flex items-center gap-1.5">
+                      <li key={s.id} className="relative flex items-center gap-1.5">
                         <button
                           type="button"
                           onClick={async () => {
@@ -274,13 +266,40 @@ export function MilestonesCard({ areas }: { areas: ApiAreaGrowth[] }) {
                   ))}
                 </select>
               </div>
-              <textarea
-                value={draft.steps}
-                onChange={(e) => setDraft({ ...draft, steps: e.target.value })}
-                rows={3}
-                placeholder={t("growth.stepsPlaceholder")}
-                className="w-full resize-none rounded-lg border border-line bg-surface-2 px-2 py-1.5 text-[11px] leading-relaxed text-ink outline-none placeholder:text-[#c8c4bc]"
-              />
+
+              {/* 小目标：一行一个输入，可增删 */}
+              <div className="space-y-1">
+                {stepDrafts.map((val, i) => (
+                  <div key={i} className="flex items-center gap-1.5">
+                    <span className="shrink-0 text-[10px] text-[#c0bbb2]">└</span>
+                    <input
+                      value={val}
+                      onChange={(e) =>
+                        setStepDrafts((list) => list.map((v, k) => (k === i ? e.target.value : v)))
+                      }
+                      placeholder={t("growth.stepPlaceholder")}
+                      className="min-w-0 flex-1 rounded-lg border border-line bg-surface-2 px-2 py-1.5 text-[11px] text-ink outline-none placeholder:text-[#c8c4bc]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setStepDrafts((list) => list.filter((_, k) => k !== i))}
+                      className="shrink-0 text-[11px] leading-none text-[#c8c4bc] hover:text-warn"
+                      aria-label="remove"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+                {stepDrafts.length < 8 ? (
+                  <button
+                    type="button"
+                    onClick={() => setStepDrafts((list) => [...list, ""])}
+                    className="text-[10px] text-ink-3 transition-colors hover:text-accent"
+                  >
+                    ＋ {t("growth.addStep")}
+                  </button>
+                ) : null}
+              </div>
             </div>
 
             <div className="mt-3 flex justify-end gap-1.5">

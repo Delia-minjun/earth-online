@@ -462,7 +462,6 @@
     "milestones": "Milestones",
     "newMilestone": "New milestone",
     "milestoneTitle": "What do you want to reach?",
-    "stepsPlaceholder": "Break it into checkable steps, one per line (optional)",
     "addStep": "Add a step, press Enter",
     "noMilestone": "No milestones yet",
     "markDone": "Mark done",
@@ -473,6 +472,7 @@
     "tasks": "Today's tasks",
     "noTask": "No tasks today",
     "monthsN": "{{n}} months",
-    "noDuration": "No duration"
+    "noDuration": "No duration",
+    "stepPlaceholder": "Sub-goal (optional)"
   }
 }

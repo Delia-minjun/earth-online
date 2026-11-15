@@ -463,7 +463,6 @@
     "milestones": "里程碑",
     "newMilestone": "新建里程碑",
     "milestoneTitle": "想达成什么（如：两周内做出一个能用的工具）",
-    "stepsPlaceholder": "拆成可验证的小步，一行一个（可留空）",
     "addStep": "加一小步，回车添加",
     "noMilestone": "还没有里程碑",
     "markDone": "标记完成",
@@ -474,6 +473,7 @@
     "tasks": "今日任务",
     "noTask": "今天还没有任务",
     "monthsN": "{{n}} 个月",
-    "noDuration": "不设时长"
+    "noDuration": "不设时长",
+    "stepPlaceholder": "小目标（可留空）"
   }
 }
