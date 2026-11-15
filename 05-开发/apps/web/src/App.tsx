@@ -10,11 +10,13 @@ import { StudyView } from "./views/StudyView";
 import { SettingsView } from "./views/SettingsView";
 import { PlaceholderView } from "./views/PlaceholderView";
 import { Tour, resetTour, tourPending } from "./components/Tour";
+import { GrowthRulesModal } from "./components/GrowthRulesModal";
 
 export default function App() {
   const { t, i18n } = useTranslation();
   const [view, setView] = useState<ViewKey>("reward");
   const [dayMode, setDayMode] = useState<"today" | "week" | "month">("today");
+  const [rulesOpen, setRulesOpen] = useState(false);
   const [week, setWeek] = useState<WeekInfo | null>(null);
   const [health, setHealth] = useState<HealthInfo | null>(null);
   const [failed, setFailed] = useState(false);
@@ -111,9 +113,21 @@ export default function App() {
               <p className="text-[10px] uppercase tracking-[0.2em] text-ink-3">
                 {t("app.title")}
               </p>
-              <h1 className="mt-1.5 truncate text-[22px] font-semibold leading-tight text-ink">
-                {t(`nav.${view}`)}
-              </h1>
+              <div className="mt-1.5 flex items-center gap-2">
+                <h1 className="min-w-0 truncate text-[22px] font-semibold leading-tight text-ink">
+                  {t(`nav.${view}`)}
+                </h1>
+                {isReward ? (
+                  <button
+                    type="button"
+                    onClick={() => setRulesOpen(true)}
+                    aria-label={t("growth.rulesTitle")}
+                    className="grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full border border-line text-[10px] leading-none text-ink-3 transition-colors hover:border-accent hover:text-accent"
+                  >
+                    ?
+                  </button>
+                ) : null}
+              </div>
 
               {/* 日期 / 说明行：切换条在这一行的右端，与日期垂直居中 */}
               <div className="mt-1 flex min-h-[24px] items-center justify-between gap-3">
@@ -182,6 +196,8 @@ export default function App() {
             view !== "settings" && <PlaceholderView nameKey={`nav.${view}`} />}
         </main>
       </div>
+
+      <GrowthRulesModal open={rulesOpen} onClose={() => setRulesOpen(false)} />
 
       <BottomNav active={view} onChange={setView} />
 
