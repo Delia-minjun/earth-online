@@ -81,7 +81,7 @@ jobs:
         run: |
           node ../../desktop-tools/node_modules/electron-builder/out/cli/cli.js --win --publish always --config electron-builder.yml
 
-      # 用提交记录生成 Release 说明，客户端更新弹窗会显示这段
+      # 生成 Release 说明（客户端更新弹窗显示这段）：优先 RELEASE_NOTES.md 手写摘要，最多 5 条
       - name: Release notes from commits
         if: success()
         shell: bash
@@ -90,17 +90,32 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="${GITHUB_REF_NAME}"
-          PREV=$(git describe --tags --abbrev=0 "${TAG}^" 2>/dev/null || echo "")
-          if [ -n "$PREV" ]; then
-            RANGE="${PREV}..${TAG}"
-            echo "## 本次更新（${PREV} → ${TAG}）" > notes.md
+          echo "## 本次更新（${TAG}）" > notes.md
+          echo "" >> notes.md
+
+          # 优先用 RELEASE_NOTES.md 里手写的该版本小节（最多 5 条）
+          HAND=$(awk -v tag="${TAG}" '
+            $0 ~ "^##[[:space:]]+"tag"[[:space:]]*$" {inside=1; next}
+            inside && /^##[[:space:]]/ {exit}
+            inside {print}
+          ' RELEASE_NOTES.md | sed '/^[[:space:]]*$/d' | head -n 5)
+
+          if [ -n "$HAND" ]; then
+            echo "$HAND" >> notes.md
           else
-            RANGE="${TAG}"
-            echo "## 本次更新 ${TAG}" > notes.md
+            # 没有手写说明时，退回到提交标题，但只取前 5 条且合并同类
+            PREV=$(git describe --tags --abbrev=0 "${TAG}^" 2>/dev/null || echo "")
+            if [ -n "$PREV" ]; then
+              RANGE="${PREV}..${TAG}"
+            else
+              RANGE="${TAG}"
+            fi
+            git log ${RANGE} --no-merges --pretty=format:"%s" |
+              sed -E 's/^(feat|fix|style|perf|refactor|test|chore|docs)(\([^)]*\))?:[[:space:]]*//' |
+              head -n 5 |
+              sed 's/^/- /' >> notes.md
           fi
-          echo "" >> notes.md
-          git log ${RANGE} --no-merges --pretty=format:"- %s" >> notes.md
-          echo "" >> notes.md
+
           echo "" >> notes.md
           echo "安装包见下方 Assets。" >> notes.md
           gh release edit "${TAG}" --notes-file notes.md
