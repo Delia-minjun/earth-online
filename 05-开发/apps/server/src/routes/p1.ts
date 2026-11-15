@@ -254,7 +254,7 @@ api.patch("/tasks/:id", async (c) => {
       if (claimed.changes > 0) {
       bumpArea(row?.area_id, 0.1);
       // 标准档行动：20 XP；没有主领域时落到「成长」
-      addXp(row?.area_id ?? "area-growth", 20, "task", id);
+      addXp(row?.area_id ?? "area-study", 20, "task", id);
     }
       db.exec("COMMIT");
     } catch (error) {
@@ -481,7 +481,7 @@ api.post("/habits/:id/toggle", async (c) => {
   earn({ amount: rules.habit, kind: "habit", refId: `${id}:${date}`, note: null });
   // 打卡属于「成长」：坚持本身就是成长，给进度条加一点
   bumpArea("area-growth", 0.05);
-  addXp("area-growth", 5, "habit", `${id}:${date}`);
+  addXp("area-health", 5, "habit", `${id}:${date}`);
 
   const streak = (
     db
@@ -1268,7 +1268,7 @@ api.put("/review/:weekId", async (c) => {
     });
     // 复盘属于「成长」
     bumpArea("area-growth", 0.12);
-    addXp("area-growth", 20, "review", weekIdParam);
+    addXp("area-study", 20, "review", weekIdParam);
   }
 
   return c.json(db.prepare("SELECT * FROM weekly_review WHERE week_id = ?").get(weekIdParam));

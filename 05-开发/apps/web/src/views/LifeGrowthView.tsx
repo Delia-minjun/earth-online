@@ -242,7 +242,7 @@ export function LifeGrowthView() {
 
       {/* 六领域成长：整行三列 */}
       <Card>
-        <div className="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
           {growth.map((a) => (
             <div key={a.id}>
               <div className="flex items-baseline justify-between gap-2">

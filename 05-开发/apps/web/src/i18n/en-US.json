@@ -454,7 +454,7 @@
     "rulesCoins": "Coins",
     "rulesCoinsBody": "Finish a task +3 per 30 minutes\nHabit check-in +2, seven days in a row +10\nFocus +3 per 25 minutes\nWeekly review +10\nAt most +200 per day; no manual top-ups, no overdraft",
     "rulesXp": "Area XP",
-    "rulesXpBody": "Task +20, habit +5, focus +10, review +20\nLevelling costs 100 + 25×(current level−1) XP, rising each level\nCumulative thresholds: Lv.2 100, Lv.3 225, Lv.4 375, Lv.5 550\nAll six areas share the same curve, each starting at Lv.1 · 0 XP\nIn practice: five tasks reach Lv.2, then roughly one more task per level",
+    "rulesXpBody": "Task +20, habit +5, focus +10, review +20\nLevelling costs 100 + 25×(current level−1) XP, rising each level\nCumulative thresholds: Lv.2 100, Lv.3 225, Lv.4 375, Lv.5 550\nAll four areas share the same curve, each starting at Lv.1 · 0 XP\nAssignment: tasks follow their area, habits go to Body, focus and review to Study & work",
     "rulesAreas": "Six areas",
     "rulesAreasBody": "Each area accumulates on its own\nLast 14 days = number of actions in that window",
     "rulesRewards": "Rewards",
