@@ -1,6 +1,12 @@
 import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, type ApiCard, type ApiMaterial, type ApiStudyNote } from "../api";
+import {
+  api,
+  type ApiCard,
+  type ApiMaterial,
+  type ApiPractice,
+  type ApiStudyNote,
+} from "../api";
 import { Card } from "../components/Card";
 import { NoteMarkdown } from "./NoteMarkdown";
 import { chapterSortKey, guessChapter } from "../lib/chapter";
@@ -19,6 +25,7 @@ export function StudyMaterials({
   materials,
   cards,
   notes,
+  practices,
   busy,
   onUpload,
   onChanged,
@@ -27,6 +34,7 @@ export function StudyMaterials({
   materials: ApiMaterial[];
   cards: ApiCard[];
   notes: ApiStudyNote[];
+  practices: ApiPractice[];
   busy: boolean;
   onUpload: (files: FileList | File[], role: Role, chapter: string | null) => Promise<void>;
   onChanged: () => Promise<void> | void;
@@ -38,6 +46,8 @@ export function StudyMaterials({
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [openNote, setOpenNote] = useState<string | null>(null);
+  const [openPractice, setOpenPractice] = useState<string | null>(null);
+  const [openAnswer, setOpenAnswer] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [over, setOver] = useState(false);
 
@@ -118,6 +128,32 @@ export function StudyMaterials({
       const msg = (e as Error).message;
       setError(
         msg.includes("no_material") ? t("study.noteGenFailed") : msg.includes("NOKEY") ? t("study.noKey") : msg,
+      );
+    } finally {
+      setGenerating((list) => list.filter((k) => k !== key));
+    }
+  };
+
+  /** 生成整章练习：参考资料题型，出整套题 + 答案解析 */
+  const genPractice = async (chapter: string | null) => {
+    const key = `practice:${chapter ?? ""}`;
+    setGenerating((list) => [...list, key]);
+    setError(null);
+    try {
+      const res = await api.generatePractice(subjectId, chapter, 10);
+      setToast(t("study.practiceReady") + ` · ${t("study.questionN", { n: res.count })}`);
+      window.setTimeout(() => setToast(null), 3000);
+      setOpenPractice(chapter ?? "");
+      setOpenAnswer(null);
+      await onChanged();
+    } catch (e) {
+      const msg = (e as Error).message;
+      setError(
+        msg.includes("no_material")
+          ? t("study.practiceFailed")
+          : msg.includes("NOKEY")
+            ? t("study.noKey")
+            : msg,
       );
     } finally {
       setGenerating((list) => list.filter((k) => k !== key));
@@ -205,6 +241,7 @@ export function StudyMaterials({
           const hasQuestions = g.materials.some((m) => m.role === "questions");
           const key = `${g.chapter ?? ""}`;
           const note = notes.find((n) => (n.chapter ?? null) === g.chapter);
+          const practice = practices.find((p) => (p.chapter ?? null) === g.chapter);
           return (
             <section key={key} className="rounded-xl border border-line-2 p-2.5">
               <header className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -230,11 +267,15 @@ export function StudyMaterials({
                   </button>
                   <button
                     type="button"
-                    onClick={() => void generate(g.chapter, "questions")}
-                    disabled={busy || !hasQuestions || generating.includes(`${key}:questions`)}
+                    onClick={() => void genPractice(g.chapter)}
+                    disabled={busy || !hasQuestions || generating.includes(`practice:${key}`)}
                     className="rounded-full border border-line px-2 py-[2px] text-[9.5px] text-ink-3 transition-colors hover:border-accent hover:text-accent disabled:opacity-40"
                   >
-                    {generating.includes(`${key}:questions`) ? t("study.generating") : t("study.genQuestions")}
+                    {generating.includes(`practice:${key}`)
+                      ? t("study.practiceGenerating")
+                      : practice
+                        ? t("study.regenPractice")
+                        : t("study.genPractice")}
                   </button>
                 </span>
               </header>
@@ -287,6 +328,52 @@ export function StudyMaterials({
                         t("study.genNote")}
                     </p>
                   )}
+                </div>
+              ) : null}
+
+              {practice ? (
+                <div className="mt-2 rounded-lg border border-line-2 bg-surface-2">
+                  <button
+                    type="button"
+                    onClick={() => setOpenPractice(openPractice === key ? null : key)}
+                    className="flex w-full items-center justify-between px-2.5 py-1.5 text-[10px] text-ink-3 transition-colors hover:text-accent"
+                  >
+                    <span className="font-semibold text-ink-2">{t("study.genPractice")}</span>
+                    <span>
+                      {openPractice === key
+                        ? t("study.practiceClose")
+                        : `${t("study.practiceOpen")} · ${practice.items.length}`}
+                    </span>
+                  </button>
+                  {openPractice === key ? (
+                    <ol className="space-y-2 border-t border-line-2 bg-surface px-4 py-3">
+                      {practice.items.map((item, qi) => {
+                        const ansKey = `${practice.id}-${qi}`;
+                        return (
+                          <li key={ansKey} className="text-[11.5px] leading-relaxed text-ink-2">
+                            <p className="flex gap-1.5">
+                              <span className="shrink-0 tabular-nums text-ink-3">
+                                {t("study.questionN", { n: qi + 1 })}
+                              </span>
+                              <span className="flex-1">{item.q}</span>
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => setOpenAnswer(openAnswer === ansKey ? null : ansKey)}
+                              className="mt-1 text-[10px] text-ink-3 transition-colors hover:text-accent"
+                            >
+                              {openAnswer === ansKey ? t("study.hideAnswer") : t("study.showAnswer")}
+                            </button>
+                            {openAnswer === ansKey ? (
+                              <div className="mt-1 rounded-lg border border-line-2 bg-surface-2 px-2.5 py-1.5 text-[11px] leading-relaxed">
+                                {item.a}
+                              </div>
+                            ) : null}
+                          </li>
+                        );
+                      })}
+                    </ol>
+                  ) : null}
                 </div>
               ) : null}
             </section>

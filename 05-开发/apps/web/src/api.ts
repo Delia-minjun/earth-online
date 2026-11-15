@@ -785,6 +785,15 @@ export const api = {
 
   studyNotes: (subjectId?: string) =>
     request<ApiStudyNote[]>(`/study/notes${subjectId ? `?subjectId=${subjectId}` : ""}`),
+  practices: (subjectId?: string) =>
+    request<ApiPractice[]>(`/study/practice${subjectId ? `?subjectId=${subjectId}` : ""}`),
+  generatePractice: (subjectId: string, chapter: string | null, count = 10) =>
+    request<{ items: ApiPracticeItem[]; count: number }>(
+      "/study/practice/generate",
+      { method: "POST", body: JSON.stringify({ subjectId, chapter, count }) },
+      180_000,
+    ),
+
   generateNote: (subjectId: string, chapter: string | null) =>
     request<ApiStudyNote>(
       "/study/notes/generate",
@@ -927,6 +936,21 @@ export interface ApiStudyNote {
   subject_id: string;
   chapter: string | null;
   content: string;
+  created_at: string;
+  updated_at: string | null;
+}
+
+export interface ApiPracticeItem {
+  q: string;
+  a: string;
+  ref: string | null;
+}
+
+export interface ApiPractice {
+  id: string;
+  subject_id: string;
+  chapter: string | null;
+  items: ApiPracticeItem[];
   created_at: string;
   updated_at: string | null;
 }

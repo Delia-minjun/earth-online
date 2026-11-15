@@ -414,7 +414,7 @@
     "again": "不会",
     "good": "会了",
     "easy": "太简单",
-    "showAnswer": "看答案",
+    "showAnswer": "答案与详解",
     "noDue": "今天没有到期的卡片",
     "exams": "考试倒计时",
     "daysLeft": "还有 {{n}} 天",
@@ -466,7 +466,17 @@
     "noteEmpty": "还没有本章讲解",
     "noteGenerating": "正在整理讲解…",
     "noteGenFailed": "这一章还没有知识类资料，先上传课件或笔记",
-    "noteReady": "本章讲解已更新"
+    "noteReady": "本章讲解已更新",
+    "genPractice": "生成练习题",
+    "regenPractice": "重新生成练习题",
+    "practiceOpen": "展开练习",
+    "practiceClose": "收起",
+    "practiceEmpty": "还没有练习题",
+    "practiceGenerating": "正在出题…",
+    "practiceFailed": "这一章还没有题目类资料，先上传作业/quiz",
+    "practiceReady": "练习题已更新",
+    "hideAnswer": "收起答案",
+    "questionN": "第 {{n}} 题"
   },
   "growth": {
     "coins": "我的快乐币",

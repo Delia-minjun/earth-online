@@ -413,7 +413,7 @@
     "again": "Again",
     "good": "Good",
     "easy": "Easy",
-    "showAnswer": "Reveal answer",
+    "showAnswer": "Answer & explanation",
     "noDue": "Nothing due today",
     "exams": "Exam countdown",
     "daysLeft": "{{n}} days left",
@@ -465,7 +465,17 @@
     "noteEmpty": "No explanation yet",
     "noteGenerating": "Writing the explanation…",
     "noteGenFailed": "No knowledge files in this chapter yet",
-    "noteReady": "Chapter explanation updated"
+    "noteReady": "Chapter explanation updated",
+    "genPractice": "Generate practice",
+    "regenPractice": "Regenerate practice",
+    "practiceOpen": "Show exercises",
+    "practiceClose": "Collapse",
+    "practiceEmpty": "No exercises yet",
+    "practiceGenerating": "Writing questions…",
+    "practiceFailed": "No question files in this chapter yet",
+    "practiceReady": "Practice set updated",
+    "hideAnswer": "Hide answer",
+    "questionN": "Q{{n}}"
   },
   "growth": {
     "coins": "My coins",

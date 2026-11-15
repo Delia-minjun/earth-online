@@ -679,6 +679,96 @@ p5.delete("/study/notes/:id", (c) => {
   return c.json({ ok: true });
 });
 
+
+/* ---------------- 章节练习 ---------------- */
+
+const PRACTICE_COLS = "id, subject_id, chapter, items, created_at, updated_at";
+
+p5.get("/study/practice", (c) => {
+  const subjectId = c.req.query("subjectId");
+  const db = getDb();
+  const rows = subjectId
+    ? db
+        .prepare(`SELECT ${PRACTICE_COLS} FROM chapter_practice WHERE subject_id = ? ORDER BY chapter`)
+        .all(subjectId)
+    : db.prepare(`SELECT ${PRACTICE_COLS} FROM chapter_practice ORDER BY created_at`).all();
+  return c.json(
+    (rows as { items: string }[]).map((r) => ({ ...r, items: JSON.parse(r.items || "[]") })),
+  );
+});
+
+/** 生成整章练习：把该章题目类资料当参考，出整套题并附答案解析 */
+p5.post("/study/practice/generate", async (c) => {
+  const r = await readBody(
+    c,
+    z.object({
+      subjectId: z.string(),
+      chapter: z.string().trim().max(20).nullable().optional(),
+      count: z.number().int().min(3).max(20).default(10),
+    }),
+  );
+  if (!r.ok) return c.json({ error: r.error }, 400);
+
+  const db = getDb();
+  const subject = db.prepare("SELECT name FROM subject WHERE id = ?").get(r.data.subjectId) as
+    | { name: string }
+    | undefined;
+  if (!subject) return c.json({ error: "not_found" }, 404);
+
+  const chapter = r.data.chapter ?? null;
+  const mats = (
+    chapter === null
+      ? db
+          .prepare(
+            `SELECT title, content FROM material
+              WHERE subject_id = ? AND role = 'questions' AND chapter IS NULL
+                AND deleted_at IS NULL AND content != '' ORDER BY created_at`,
+          )
+          .all(r.data.subjectId)
+      : db
+          .prepare(
+            `SELECT title, content FROM material
+              WHERE subject_id = ? AND role = 'questions' AND chapter = ?
+                AND deleted_at IS NULL AND content != '' ORDER BY created_at`,
+          )
+          .all(r.data.subjectId, chapter)
+  ) as { title: string; content: string }[];
+
+  if (mats.length === 0) return c.json({ error: "no_material" }, 409);
+
+  const text = mats.map((m) => `【${m.title}】\n${m.content}`).join("\n\n").slice(0, 40000);
+
+  let cards;
+  try {
+    cards = await generateCards(text, subject.name, r.data.count, "questions");
+  } catch (e) {
+    const msg = (e as Error).message;
+    if (msg === "NOKEY") return c.json({ error: "NOKEY" }, 400);
+    return c.json({ error: msg }, 502);
+  }
+  if (cards.length === 0) return c.json({ error: "no_cards" }, 502);
+
+  const items = cards.map((card) => ({ q: card.front, a: card.back, ref: card.ref ?? null }));
+  const json = JSON.stringify(items);
+
+  const existing = db
+    .prepare(`SELECT id FROM chapter_practice WHERE subject_id = ? AND IFNULL(chapter, '') = IFNULL(?, '')`)
+    .get(r.data.subjectId, chapter) as { id: string } | undefined;
+
+  if (existing) {
+    db.prepare("UPDATE chapter_practice SET items = ?, updated_at = datetime('now') WHERE id = ?").run(
+      json,
+      existing.id,
+    );
+    return c.json({ items, count: items.length });
+  }
+
+  db.prepare(
+    "INSERT INTO chapter_practice (id, subject_id, chapter, items) VALUES (?, ?, ?, ?)",
+  ).run(uid(), r.data.subjectId, chapter, json);
+  return c.json({ items, count: items.length }, 201);
+});
+
 /* ---------------- 复习 ---------------- */
 
 /** 今日队列：到期（due_date <= 今天）的卡片，按逾期天数与 box 排 */

@@ -4,6 +4,7 @@ import {
   api,
   type ApiCard,
   type ApiExam,
+  type ApiPractice,
   type ApiStudyNote,
   type ApiMaterial,
   type ApiReviewCard,
@@ -24,6 +25,7 @@ export function StudyView() {
   const [materials, setMaterials] = useState<ApiMaterial[]>([]);
   const [cards, setCards] = useState<ApiCard[]>([]);
   const [notes, setNotes] = useState<ApiStudyNote[]>([]);
+  const [practices, setPractices] = useState<ApiPractice[]>([]);
   const [queue, setQueue] = useState<ApiReviewCard[]>([]);
   const [stats, setStats] = useState<ApiStudyStats | null>(null);
   const [exams, setExams] = useState<ApiExam[]>([]);
@@ -69,15 +71,17 @@ export function StudyView() {
       return;
     }
     try {
-      const [mats, q, cds, nts] = await Promise.all([
+      const [mats, q, cds, nts, prs] = await Promise.all([
         api.materials(subjectId),
         api.reviewQueue(subjectId),
         api.cards(subjectId),
         api.studyNotes(subjectId),
+        api.practices(subjectId),
       ]);
       setMaterials(mats);
       setCards(cds);
       setNotes(nts);
+      setPractices(prs);
       setQueue(q.cards);
       setIdx(0);
       setFlipped(false);
@@ -411,6 +415,7 @@ export function StudyView() {
             materials={materials}
             cards={cards}
             notes={notes}
+            practices={practices}
             busy={busy}
             onUpload={(files, role, chapter) => uploadMany(files, role, chapter)}
             onChanged={async () => {
@@ -419,112 +424,6 @@ export function StudyView() {
             }}
           />
 
-          {/* 右：复习 */}
-          <Card
-            title={t("study.review")}
-            action={
-              <span className="tabular-nums">
-                {t("study.todayDone", { n: stats?.reviewedToday ?? 0 })} · {t("study.dueN", { n: queue.length })}
-              </span>
-            }
-          >
-            {current ? (
-              <div>
-                <p className="flex flex-wrap items-center gap-1.5 text-[10px] text-ink-3">
-                  <span>{current.subject_name}</span>
-                  {current.chapter ? (
-                    <span className="rounded-full bg-surface-2 px-1.5 py-[1px]">
-                      {/^l/i.test(current.chapter)
-                        ? t("study.lectureN", { n: current.chapter.slice(1) })
-                        : t("study.chapterN", { n: current.chapter })}
-                    </span>
-                  ) : null}
-                  {current.kind ? (
-                    <span
-                      className={`rounded-full px-1.5 py-[1px] ${
-                        current.kind === "questions"
-                          ? "bg-warn-soft text-warn"
-                          : "bg-accent-soft text-accent"
-                      }`}
-                    >
-                      {current.kind === "questions" ? t("study.questions") : t("study.knowledge")}
-                    </span>
-                  ) : null}
-                  <span>box {current.box}</span>
-                </p>
-                <div className="mt-2 rounded-xl border border-line-2 bg-surface-2 p-3">
-                  <p className="text-[12.5px] leading-relaxed text-ink">{current.front}</p>
-                  {flipped ? (
-                    <p className="mt-2 border-t border-line pt-2 text-[11.5px] leading-relaxed text-ink-2">
-                      {current.back}
-                    </p>
-                  ) : null}
-                </div>
-
-                {!flipped ? (
-                  <>
-                    <textarea
-                      value={draftAnswer}
-                      onChange={(e) => setDraftAnswer(e.target.value)}
-                      rows={2}
-                      placeholder={t("study.answerPlaceholder")}
-                      className="mt-2 w-full resize-none rounded-lg border border-line bg-surface-2 px-2 py-1.5 text-[11px] leading-relaxed text-ink outline-none placeholder:text-[#c8c4bc]"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setFlipped(true)}
-                      className="mt-1.5 w-full rounded-lg bg-accent py-1.5 text-[10.5px] font-semibold text-white"
-                    >
-                      {t("study.showAnswer")}
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <div className="mt-2 flex flex-wrap gap-1.5">
-                      {(
-                        [
-                          ["independent", "good", t("study.stageIndependent"), "bg-accent text-white"],
-                          ["hinted", "good", t("study.stageHinted"), "border border-line text-ink-2 hover:border-accent"],
-                          ["revealed", "again", t("study.stageRevealed"), "border border-line text-ink-2 hover:border-warn"],
-                          ["failed", "again", t("study.stageFailed"), "border border-line text-ink-3 hover:border-warn"],
-                        ] as [Stage, "again" | "good", string, string][]
-                      ).map(([stage, rating, label, cls]) => (
-                        <button
-                          key={stage}
-                          type="button"
-                          onClick={() => void grade(rating, stage)}
-                          className={`rounded-lg px-2.5 py-1.5 text-[10.5px] font-semibold ${cls}`}
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-
-                    {draftAnswer.trim() ? (
-                      <button
-                        type="button"
-                        onClick={() => void askFeedback()}
-                        disabled={feedbackBusy}
-                        className="mt-1.5 text-[10px] text-ink-3 transition-colors hover:text-accent disabled:opacity-50"
-                      >
-                        {feedbackBusy ? t("study.generating") : `✧ ${t("study.askFeedback")}`}
-                      </button>
-                    ) : null}
-
-                    {feedback ? (
-                      <div className="mt-2 space-y-1.5 rounded-xl border border-line-2 bg-surface-2 p-2.5 text-[10.5px] leading-relaxed">
-                        <p><span className="text-ink-3">{t("study.feedbackGood")}：</span><span className="text-ink-2">{feedback.good}</span></p>
-                        <p><span className="text-ink-3">{t("study.feedbackWrong")}：</span><span className="text-warn">{feedback.wrong}</span></p>
-                        <p><span className="text-ink-3">{t("study.feedbackNext")}：</span><span className="text-ink-2">{feedback.next}</span></p>
-                      </div>
-                    ) : null}
-                  </>
-                )}
-              </div>
-            ) : (
-              <p className="py-3 text-center text-[10.5px] text-[#c8c4bc]">{t("study.noDue")}</p>
-            )}
-          </Card>
         </div>
       )}
 
