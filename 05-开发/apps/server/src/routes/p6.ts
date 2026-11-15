@@ -45,7 +45,7 @@ p6.get("/milestones", (c) => {
 
   const steps = db
     .prepare(
-      `SELECT id, milestone_id, title, done_at, sort FROM milestone_step ORDER BY sort, rowid`,
+      `SELECT id, milestone_id, title, done_at, sort, months, created_at FROM milestone_step ORDER BY sort, rowid`,
     )
     .all() as { id: string; milestone_id: string; title: string; done_at: string | null; sort: number }[];
 
@@ -63,7 +63,15 @@ const milestoneBody = z.object({
   areaId: z.string().nullable().optional(),
   dueDate: z.string().regex(DATE_RE).nullable().optional(),
   note: z.string().trim().max(200).nullable().optional(),
-  steps: z.array(z.string().trim().min(1).max(80)).max(8).optional(),
+  steps: z
+    .array(
+      z.union([
+        z.string().trim().min(1).max(80),
+        z.object({ title: z.string().trim().min(1).max(80), months: z.number().int().min(1).max(60).nullable().optional() }),
+      ]),
+    )
+    .max(8)
+    .optional(),
   coins: z.number().int().min(0).max(1000).optional(),
   months: z.number().int().min(1).max(60).nullable().optional(),
 });
@@ -100,8 +108,14 @@ p6.post("/milestones", async (c) => {
     r.data.coins ?? 30,
   );
 
-  const ins = db.prepare("INSERT INTO milestone_step (id, milestone_id, title, sort) VALUES (?, ?, ?, ?)");
-  (r.data.steps ?? []).forEach((t, i) => ins.run(uid(), id, t, i));
+  const ins = db.prepare(
+    "INSERT INTO milestone_step (id, milestone_id, title, sort, months) VALUES (?, ?, ?, ?, ?)",
+  );
+  (r.data.steps ?? []).forEach((s, i) => {
+    const title = typeof s === "string" ? s : s.title;
+    const months = typeof s === "string" ? null : (s.months ?? null);
+    ins.run(uid(), id, title, i, months);
+  });
 
   return c.json(db.prepare("SELECT * FROM milestone WHERE id = ?").get(id), 201);
 });
@@ -160,7 +174,13 @@ p6.delete("/milestones/:id", (c) => {
 
 p6.post("/milestones/:id/steps", async (c) => {
   const id = c.req.param("id");
-  const r = await readBody(c, z.object({ title: z.string().trim().min(1).max(80) }));
+  const r = await readBody(
+    c,
+    z.object({
+      title: z.string().trim().min(1).max(80),
+      months: z.number().int().min(1).max(60).nullable().optional(),
+    }),
+  );
   if (!r.ok) return c.json({ error: r.error }, 400);
 
   const db = getDb();
@@ -173,29 +193,34 @@ p6.post("/milestones/:id/steps", async (c) => {
       .prepare("SELECT COALESCE(MAX(sort), 0) + 1 AS n FROM milestone_step WHERE milestone_id = ?")
       .get(id) as { n: number }
   ).n;
-  db.prepare("INSERT INTO milestone_step (id, milestone_id, title, sort) VALUES (?, ?, ?, ?)").run(
-    sid,
-    id,
-    r.data.title,
-    next,
-  );
+  db.prepare(
+    "INSERT INTO milestone_step (id, milestone_id, title, sort, months) VALUES (?, ?, ?, ?, ?)",
+  ).run(sid, id, r.data.title, next, r.data.months ?? null);
   return c.json(db.prepare("SELECT * FROM milestone_step WHERE id = ?").get(sid), 201);
 });
 
 p6.patch("/milestone-steps/:id", async (c) => {
   const id = c.req.param("id");
-  const r = await readBody(c, z.object({ done: z.boolean(), title: z.string().trim().min(1).max(80).optional() }));
+  const r = await readBody(
+    c,
+    z.object({
+      done: z.boolean(),
+      title: z.string().trim().min(1).max(80).optional(),
+      months: z.number().int().min(1).max(60).nullable().optional(),
+    }),
+  );
   if (!r.ok) return c.json({ error: r.error }, 400);
 
   const db = getDb();
   const cur = db.prepare("SELECT * FROM milestone_step WHERE id = ?").get(id) as
-    | { title: string; done_at: string | null }
+    | { title: string; done_at: string | null; months: number | null }
     | undefined;
   if (!cur) return c.json({ error: "not found" }, 404);
 
-  db.prepare("UPDATE milestone_step SET title = ?, done_at = ? WHERE id = ?").run(
+  db.prepare("UPDATE milestone_step SET title = ?, done_at = ?, months = ? WHERE id = ?").run(
     r.data.title ?? cur.title,
     r.data.done ? cur.done_at ?? new Date().toISOString() : null,
+    r.data.months !== undefined ? r.data.months : cur.months,
     id,
   );
   return c.json(db.prepare("SELECT * FROM milestone_step WHERE id = ?").get(id));

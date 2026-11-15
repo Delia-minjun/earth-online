@@ -472,6 +472,7 @@
     "monthsN": "{{n}} months",
     "noDuration": "No duration",
     "stepPlaceholder": "Sub-goal (optional)",
-    "dayN": "Day {{n}}"
+    "dayN": "Day {{n}}",
+    "noDurationShort": "None"
   }
 }

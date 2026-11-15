@@ -196,6 +196,8 @@ export interface ApiMilestoneStep {
   title: string;
   done_at: string | null;
   sort: number;
+  months: number | null;
+  created_at: string;
 }
 
 export interface ApiMilestone {
@@ -668,7 +670,7 @@ export const api = {
     areaId?: string;
     dueDate?: string;
     note?: string;
-    steps?: string[];
+    steps?: ({ title: string; months?: number | null } | string)[];
     coins?: number;
     months?: number | null;
   }) => request<ApiMilestone>("/milestones", { method: "POST", body: JSON.stringify(input) }),
@@ -677,12 +679,12 @@ export const api = {
     patch: { title?: string; areaId?: string | null; dueDate?: string | null; note?: string | null; done?: boolean },
   ) => request<ApiMilestone>(`/milestones/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
   deleteMilestone: (id: string) => request<{ ok: true }>(`/milestones/${id}`, { method: "DELETE" }),
-  addStep: (milestoneId: string, title: string) =>
+  addStep: (milestoneId: string, title: string, months?: number | null) =>
     request<ApiMilestoneStep>(`/milestones/${milestoneId}/steps`, {
       method: "POST",
-      body: JSON.stringify({ title }),
+      body: JSON.stringify({ title, months: months ?? null }),
     }),
-  updateStep: (id: string, patch: { done: boolean; title?: string }) =>
+  updateStep: (id: string, patch: { done: boolean; title?: string; months?: number | null }) =>
     request<ApiMilestoneStep>(`/milestone-steps/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
   deleteStep: (id: string) => request<{ ok: true }>(`/milestone-steps/${id}`, { method: "DELETE" }),
 

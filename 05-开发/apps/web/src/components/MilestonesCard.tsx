@@ -13,7 +13,9 @@ export function MilestonesCard({ areas }: { areas: ApiAreaGrowth[] }) {
     const [stepDraft, setStepDraft] = useState("");
 
   const [draft, setDraft] = useState({ title: "", areaId: "", months: "" });
-  const [stepDrafts, setStepDrafts] = useState<string[]>([""]);
+  const [stepDrafts, setStepDrafts] = useState<{ title: string; months: string }[]>([
+    { title: "", months: "" },
+  ]);
 
   const load = useCallback(async () => {
     try {
@@ -33,7 +35,10 @@ export function MilestonesCard({ areas }: { areas: ApiAreaGrowth[] }) {
     if (!title) return;
     setBusy(true);
     try {
-      const steps = stepDrafts.map((s) => s.trim()).filter(Boolean).slice(0, 8);
+      const steps = stepDrafts
+        .filter((s) => s.title.trim())
+        .map((s) => ({ title: s.title.trim(), months: s.months ? Number(s.months) : null }))
+        .slice(0, 8);
       await api.addMilestone({
         title,
         areaId: draft.areaId || undefined,
@@ -41,7 +46,7 @@ export function MilestonesCard({ areas }: { areas: ApiAreaGrowth[] }) {
         steps: steps.length ? steps : undefined,
       });
       setDraft({ title: "", areaId: "", months: "" });
-      setStepDrafts([""]);
+      setStepDrafts([{ title: "", months: "" }]);
       setOpen(false);
       await load();
     } catch (e) {
@@ -174,6 +179,14 @@ export function MilestonesCard({ areas }: { areas: ApiAreaGrowth[] }) {
                         >
                           {s.title}
                         </span>
+                        {s.months ? (
+                          <span className="shrink-0 text-[9px] tabular-nums text-ink-3">
+                            {t("growth.monthsN", { n: s.months })}
+                          </span>
+                        ) : null}
+                        <span className="shrink-0 text-[9px] tabular-nums text-ink-3">
+                          {t("growth.dayN", { n: dayIndex(s.created_at) })}
+                        </span>
                         <button
                           type="button"
                           onClick={async () => {
@@ -269,13 +282,31 @@ export function MilestonesCard({ areas }: { areas: ApiAreaGrowth[] }) {
                   <div key={i} className="flex items-center gap-1.5">
                     <span className="shrink-0 text-[10px] text-[#c0bbb2]">└</span>
                     <input
-                      value={val}
+                      value={val.title}
                       onChange={(e) =>
-                        setStepDrafts((list) => list.map((v, k) => (k === i ? e.target.value : v)))
+                        setStepDrafts((list) =>
+                          list.map((v, k) => (k === i ? { ...v, title: e.target.value } : v)),
+                        )
                       }
                       placeholder={t("growth.stepPlaceholder")}
                       className="min-w-0 flex-1 rounded-lg border border-line bg-surface-2 px-2 py-1.5 text-[11px] text-ink outline-none placeholder:text-[#c8c4bc]"
                     />
+                    <select
+                      value={val.months}
+                      onChange={(e) =>
+                        setStepDrafts((list) =>
+                          list.map((v, k) => (k === i ? { ...v, months: e.target.value } : v)),
+                        )
+                      }
+                      className="w-[74px] shrink-0 rounded-lg border border-line bg-surface-2 px-1 py-1.5 text-[10.5px] text-ink-2 outline-none"
+                    >
+                      <option value="">{t("growth.noDurationShort")}</option>
+                      {[1, 2, 3, 4, 6, 9, 12].map((n) => (
+                        <option key={n} value={String(n)}>
+                          {t("growth.monthsN", { n })}
+                        </option>
+                      ))}
+                    </select>
                     <button
                       type="button"
                       onClick={() => setStepDrafts((list) => list.filter((_, k) => k !== i))}
@@ -289,7 +320,7 @@ export function MilestonesCard({ areas }: { areas: ApiAreaGrowth[] }) {
                 {stepDrafts.length < 8 ? (
                   <button
                     type="button"
-                    onClick={() => setStepDrafts((list) => [...list, ""])}
+                    onClick={() => setStepDrafts((list) => [...list, { title: "", months: "" }])}
                     className="text-[10px] text-ink-3 transition-colors hover:text-accent"
                   >
                     ＋ {t("growth.addStep")}
