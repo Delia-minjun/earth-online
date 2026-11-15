@@ -330,9 +330,9 @@ export function LifeGrowthView() {
                             className="min-w-0 flex-1 text-left"
                           >
                             <p className="truncate text-[11px] text-ink">{r.name}</p>
-                            <p className="mt-0.5 truncate text-[9.5px] text-ink-3">
-                              {r.money > 0 ? `¥${r.money}` : t("growth.noMoney")}
-                            </p>
+                            {r.money > 0 ? (
+                              <p className="mt-0.5 truncate text-[9.5px] text-ink-3">¥{r.money}</p>
+                            ) : null}
                           </button>
                           <button
                             type="button"
