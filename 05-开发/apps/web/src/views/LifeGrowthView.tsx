@@ -349,14 +349,6 @@ export function LifeGrowthView() {
                           >
                             ✎
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => void remove(r.id)}
-                            className="shrink-0 text-[11px] leading-none text-[#c0bbb2] transition-colors hover:text-warn md:opacity-0 md:group-hover:opacity-100"
-                            aria-label="delete"
-                          >
-                            ×
-                          </button>
                         </div>
 
                         <div className="mt-2 h-1 overflow-hidden rounded-full bg-line-2">
@@ -512,7 +504,20 @@ export function LifeGrowthView() {
                 />
               </div>
             </div>
-            <div className="mt-3 flex justify-end gap-1.5">
+            <div className="mt-3 flex items-center gap-1.5">
+              {editing ? (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await remove(editing);
+                    setOpen(false);
+                  }}
+                  className="rounded-lg border border-line px-3 py-1.5 text-[10.5px] text-warn transition-colors hover:border-warn"
+                >
+                  {t("common.delete")}
+                </button>
+              ) : null}
+              <span className="flex-1" />
               <button
                 type="button"
                 onClick={() => setOpen(false)}

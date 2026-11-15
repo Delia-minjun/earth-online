@@ -32,7 +32,8 @@
     "saving": "Saving…",
     "saved": "Saved",
     "saveFailed": "Save failed",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "delete": "Delete"
   },
   "demo": {
     "tag": "Sample data · replaced once real records are wired"
