@@ -53,7 +53,7 @@ export function NoteMarkdown({
     const line = raw.trimEnd();
     if (!line.trim()) {
       out.push(<div key={`gap-${idx}`} className="h-2" />);
-      return;
+      continue;
     }
 
     // 标题：越深越小
