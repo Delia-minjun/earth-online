@@ -49,7 +49,6 @@ export function StudyView() {
   /** 指令作用的章节；空 = 让 agent 自己判断 */
   const [askChapter, setAskChapter] = useState("");
   const [asking, setAsking] = useState(false);
-  const [askResult, setAskResult] = useState<string | null>(null);
   const [askElapsed, setAskElapsed] = useState(0);
   const [draftAnswer, setDraftAnswer] = useState("");
   const [feedback, setFeedback] = useState<{ good: string; wrong: string; next: string } | null>(null);
@@ -163,17 +162,18 @@ export function StudyView() {
   const sendInstruction = async () => {
     if (!active || !ask.trim() || asking) return;
     setAsking(true);
-    setAskResult(null);
     setAskElapsed(0);
     const timer = window.setInterval(() => setAskElapsed((s) => s + 1), 1000);
     try {
       const res = await api.instructStudy(active.id, ask.trim(), askChapter || null);
-      setAskResult(res.message);
+      setToast(res.message);
+      window.setTimeout(() => setToast(null), 1000);
       setAsk("");
       await loadSubject(active.id);
       await loadAll();
     } catch (e) {
-      setAskResult((e as Error).message);
+      setToast((e as Error).message);
+      window.setTimeout(() => setToast(null), 1500);
     } finally {
       window.clearInterval(timer);
       setAsking(false);
@@ -488,9 +488,6 @@ export function StudyView() {
                 {asking ? `${t("study.asking")} ${askElapsed}s` : t("study.askSend")}
               </button>
             </div>
-            {askResult ? (
-              <p className="mt-1.5 text-[10px] text-ink-3">{askResult}</p>
-            ) : null}
           </div>
 
           {/* 资料：知识内容与题目资料分开上传、分别出卡片 */}
