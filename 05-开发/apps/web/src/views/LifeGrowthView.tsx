@@ -7,6 +7,7 @@ import {
   type ApiWallet,
 } from "../api";
 import { Card } from "../components/Card";
+import { SectionHeader } from "../components/SectionHeader";
 import { MilestonesCard } from "../components/MilestonesCard";
 import { TodayTasksCard } from "../components/TodayTasksCard";
 
@@ -157,9 +158,10 @@ export function LifeGrowthView() {
 
       <div className="grid gap-3.5 lg:grid-cols-2">
         {/* 我的快乐币 */}
-        <Card data-tour="wallet">
-          <p className="text-[11.5px] font-semibold text-ink">{t("growth.coins")}</p>
-          <div className="mt-1.5 flex items-baseline gap-1.5">
+        <section>
+          <SectionHeader title={t("growth.coins")} />
+          <Card data-tour="wallet">
+          <div className="flex items-baseline gap-1.5">
             <span className="text-[42px] font-semibold leading-none tracking-tight text-ink">
               {balance.toLocaleString()}
             </span>
@@ -195,7 +197,8 @@ export function LifeGrowthView() {
               </div>
             </div>
           ) : null}
-        </Card>
+          </Card>
+        </section>
 
         {/* 六领域成长 */}
         <Card>
@@ -243,18 +246,20 @@ export function LifeGrowthView() {
       <MilestonesCard areas={growth} />
 
       {/* 商店：按快乐方式分区横排 */}
-      <Card
-        title={t("reward.shop")}
-        action={
-          <button
-            type="button"
-            onClick={startAdd}
-            className="rounded-full border border-line px-2 py-[1px] text-[9px] text-ink-3 transition-colors hover:border-accent hover:text-accent"
-          >
-            ＋
-          </button>
-        }
-      >
+      <section>
+        <SectionHeader
+          title={t("reward.shop")}
+          action={
+            <button
+              type="button"
+              onClick={startAdd}
+              className="rounded-full border border-line px-2 py-[1px] text-[9px] text-ink-3 transition-colors hover:border-accent hover:text-accent"
+            >
+              ＋
+            </button>
+          }
+        />
+        <Card>
         <div className="space-y-3">
           {grouped.map(([tagKey, list]) => {
             const meta = TAG_META[tagKey] ?? TAG_META[""]!;
@@ -357,10 +362,13 @@ export function LifeGrowthView() {
             <p className="text-[10px] text-[#c8c4bc]">{t("growth.shopNone")}</p>
           ) : null}
         </div>
-      </Card>
+        </Card>
+      </section>
 
       {/* 最近的账本 */}
-      <Card title={t("reward.ledger")}>
+      <section>
+        <SectionHeader title={t("reward.ledger")} />
+        <Card>
         <ul className="divide-y divide-line-2">
           {ledger.map((e) => (
             <li key={e.id} className="group flex items-center gap-2 py-1.5 text-[10.5px]">
@@ -400,7 +408,8 @@ export function LifeGrowthView() {
         {ledger.length === 0 ? (
           <p className="text-[10px] text-[#c8c4bc]">{t("reward.ledgerEmptyShort")}</p>
         ) : null}
-      </Card>
+        </Card>
+      </section>
 
       {/* 新建/编辑奖赏 */}
       {open ? (

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, type ApiAreaGrowth, type ApiMilestone } from "../api";
+import { SectionHeader } from "./SectionHeader";
 
 type StepDraft = { id?: string; title: string; months: string; removed?: boolean };
 
@@ -113,16 +114,18 @@ export function MilestonesCard({ areas }: { areas: ApiAreaGrowth[] }) {
 
   return (
     <section className="space-y-2.5">
-      <header className="flex items-center justify-between">
-        <h2 className="text-[13px] font-semibold text-ink">{t("growth.milestones")}</h2>
-        <button
-          type="button"
-          onClick={openCreate}
-          className="rounded-full border border-line px-2 py-[1px] text-[9px] text-ink-3 transition-colors hover:border-accent hover:text-accent"
-        >
-          ＋
-        </button>
-      </header>
+      <SectionHeader
+        title={t("growth.milestones")}
+        action={
+          <button
+            type="button"
+            onClick={openCreate}
+            className="rounded-full border border-line px-2 py-[1px] text-[9px] text-ink-3 transition-colors hover:border-accent hover:text-accent"
+          >
+            ＋
+          </button>
+        }
+      />
 
       {error ? <p className="text-[10px] text-warn">{error}</p> : null}
 
@@ -154,10 +157,17 @@ export function MilestonesCard({ areas }: { areas: ApiAreaGrowth[] }) {
               </button>
 
               <div className="min-w-0 flex-1">
-                <p
-                  className={`truncate text-[11.5px] ${done ? "text-ink-3 line-through" : "text-ink"}`}
-                >
-                  {m.title}
+                <p className="flex items-center gap-1.5">
+                  <span
+                    className={`truncate text-[11.5px] ${done ? "text-ink-3 line-through" : "text-ink"}`}
+                  >
+                    {m.title}
+                  </span>
+                  {!done && m.coins > 0 ? (
+                    <span className="shrink-0 rounded-full bg-accent-soft px-1.5 py-[1px] text-[9px] tabular-nums text-accent">
+                      +{m.coins}
+                    </span>
+                  ) : null}
                 </p>
                 <p className="mt-0.5 flex items-center gap-1.5 text-[9.5px] text-ink-3">
                   {m.area_id ? (
@@ -180,12 +190,6 @@ export function MilestonesCard({ areas }: { areas: ApiAreaGrowth[] }) {
                   <span className="tabular-nums">{t("growth.dayN", { n: dayIndex(m.created_at) })}</span>
                 </p>
               </div>
-
-              {!done && m.coins > 0 ? (
-                <span className="mt-[2px] shrink-0 rounded-full bg-accent-soft px-1.5 py-[1px] text-[9px] tabular-nums text-accent">
-                  +{m.coins}
-                </span>
-              ) : null}
 
               <button
                 type="button"
