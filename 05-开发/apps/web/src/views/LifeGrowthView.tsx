@@ -150,37 +150,77 @@ export function LifeGrowthView() {
     await load();
   };
 
+  /** 近 7 天的净进出，画成一排小柱 */
+  const week = useMemo(() => {
+    const days: { date: string; net: number }[] = [];
+    for (let i = 6; i >= 0; i -= 1) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+        d.getDate(),
+      ).padStart(2, "0")}`;
+      const net = (wallet?.entries ?? [])
+        .filter((e) => e.date === key)
+        .reduce((sum, e) => sum + e.amount, 0);
+      days.push({ date: key, net });
+    }
+    return days;
+  }, [wallet]);
+
   const ledger = (wallet?.entries ?? []).slice(0, 6);
 
   return (
     <div className="space-y-3.5">
       {error ? <p className="text-[10px] text-warn">{error}</p> : null}
 
-      <div className="grid gap-3.5 lg:grid-cols-2">
-        {/* 我的快乐币 */}
-        <section>
-          <SectionHeader title={t("growth.coins")} />
-          <Card data-tour="wallet">
-          <div className="flex items-baseline gap-1.5">
-            <span className="text-[42px] font-semibold leading-none tracking-tight text-ink">
-              {balance.toLocaleString()}
-            </span>
-            <span className="text-[12px] text-ink-3">{t("reward.unit")}</span>
-          </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <span className="rounded-full bg-accent-soft px-2.5 py-[3px] text-[10px] font-semibold text-accent">
-              {t("reward.weekIn", { n: wallet?.weekIn ?? 0 })}
-            </span>
-            <span className="rounded-full bg-warn-soft px-2.5 py-[3px] text-[10px] font-semibold text-warn">
-              {t("reward.weekOut", { n: wallet?.weekOut ?? 0 })}
-            </span>
-            <span className="rounded-full bg-surface-2 px-2.5 py-[3px] text-[10px] text-ink-3">
-              {t("reward.todayIn", { n: wallet?.todayIn ?? 0 })}
-            </span>
+      {/* 我的快乐币：整行横条 */}
+      <section>
+        <SectionHeader title={t("growth.coins")} />
+        <Card data-tour="wallet">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-[38px] font-semibold leading-none tracking-tight text-ink">
+                {balance.toLocaleString()}
+              </span>
+              <span className="text-[12px] text-ink-3">{t("reward.unit")}</span>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <span className="rounded-full bg-accent-soft px-2.5 py-[3px] text-[10px] font-semibold text-accent">
+                {t("reward.weekIn", { n: wallet?.weekIn ?? 0 })}
+              </span>
+              <span className="rounded-full bg-warn-soft px-2.5 py-[3px] text-[10px] font-semibold text-warn">
+                {t("reward.weekOut", { n: wallet?.weekOut ?? 0 })}
+              </span>
+              <span className="rounded-full bg-surface-2 px-2.5 py-[3px] text-[10px] text-ink-3">
+                {t("reward.todayIn", { n: wallet?.todayIn ?? 0 })}
+              </span>
+            </div>
+
+            {/* 近 7 天进出 */}
+            <div className="ml-auto flex items-end gap-1.5" title={t("growth.last7")}>
+              {week.map((d) => {
+                const peak = Math.max(1, ...week.map((x) => Math.abs(x.net)));
+                const h = Math.max(2, Math.round((Math.abs(d.net) / peak) * 26));
+                return (
+                  <span key={d.date} className="flex flex-col items-center gap-1">
+                    <span
+                      className="w-[7px] rounded-sm"
+                      style={{
+                        height: `${h}px`,
+                        background: d.net >= 0 ? "#A8B5A2" : "#C9A9A6",
+                        opacity: d.net === 0 ? 0.25 : 1,
+                      }}
+                    />
+                    <span className="text-[8px] tabular-nums text-[#c8c4bc]">{d.date.slice(8)}</span>
+                  </span>
+                );
+              })}
+            </div>
           </div>
 
           {nextWish ? (
-            <div className="mt-4 border-t border-line-2 pt-3">
+            <div className="mt-3 border-t border-line-2 pt-2.5">
               <div className="flex items-baseline justify-between gap-2">
                 <span className="truncate text-[10.5px] text-ink-2">
                   {t("growth.nextWish")} · {nextWish.name}
@@ -197,49 +237,48 @@ export function LifeGrowthView() {
               </div>
             </div>
           ) : null}
-          </Card>
-        </section>
-
-        {/* 六领域成长 */}
-        <Card>
-          <div className="grid gap-x-5 gap-y-3 sm:grid-cols-2">
-            {growth.map((a) => (
-              <div key={a.id}>
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className="flex min-w-0 items-center gap-1.5">
-                    <span
-                      className="h-1.5 w-1.5 shrink-0 rounded-full"
-                      style={{ background: a.color ?? "#9BA7B0" }}
-                    />
-                    <span className="truncate text-[10.5px] text-ink-2">{a.name}</span>
-                  </span>
-                  <span className="shrink-0 text-[9.5px] tabular-nums text-ink-3">
-                    Lv.{a.level}
-                  </span>
-                </div>
-                <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-line-2">
-                  <div
-                    className="h-full rounded-full"
-                    style={{
-                      width: `${Math.round((a.inLevel / a.need) * 100)}%`,
-                      background: a.color ?? "#9BA7B0",
-                    }}
-                  />
-                </div>
-                <div className="mt-1 flex items-baseline justify-between gap-2 text-[9px] text-ink-3">
-                  <span className="tabular-nums">
-                    {a.inLevel} / {a.need} XP
-                  </span>
-                  <span className="tabular-nums">{t("growth.recent", { n: a.recent14 })}</span>
-                </div>
-              </div>
-            ))}
-            {growth.length === 0 ? (
-              <p className="text-[10px] text-[#c8c4bc]">{t("reward.noArea")}</p>
-            ) : null}
-          </div>
         </Card>
-      </div>
+      </section>
+
+      {/* 六领域成长：整行三列 */}
+      <Card>
+        <div className="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+          {growth.map((a) => (
+            <div key={a.id}>
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="flex min-w-0 items-center gap-1.5">
+                  <span
+                    className="h-1.5 w-1.5 shrink-0 rounded-full"
+                    style={{ background: a.color ?? "#9BA7B0" }}
+                  />
+                  <span className="truncate text-[10.5px] text-ink-2">{a.name}</span>
+                </span>
+                <span className="shrink-0 text-[9.5px] tabular-nums text-ink-3">Lv.{a.level}</span>
+              </div>
+              <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-line-2">
+                <div
+                  className="h-full rounded-full"
+                  style={{
+                    width: `${Math.max(2, Math.round((a.inLevel / a.need) * 100))}%`,
+                    background: a.color ?? "#9BA7B0",
+                  }}
+                />
+              </div>
+              <div className="mt-1 flex items-baseline justify-between gap-2 text-[9px] text-ink-3">
+                <span className="tabular-nums">
+                  {a.inLevel} / {a.need} XP
+                </span>
+                {a.recent14 > 0 ? (
+                  <span className="tabular-nums">{t("growth.recent", { n: a.recent14 })}</span>
+                ) : null}
+              </div>
+            </div>
+          ))}
+          {growth.length === 0 ? (
+            <p className="text-[10px] text-[#c8c4bc]">{t("reward.noArea")}</p>
+          ) : null}
+        </div>
+      </Card>
 
       <TodayTasksCard coinPerTask={wallet?.rules?.taskPer30 ?? 0} onChanged={load} />
 

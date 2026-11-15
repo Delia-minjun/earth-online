@@ -484,6 +484,7 @@
     "tagOut": "Out",
     "tagOther": "Other",
     "redeemedOn": "redeemed {{d}}",
-    "undoEntry": "Undo this entry"
+    "undoEntry": "Undo this entry",
+    "last7": "Net change, last 7 days"
   }
 }
