@@ -43,8 +43,8 @@ export function StudyView() {
   const [idx, setIdx] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
-  const [goalOpen, setGoalOpen] = useState(false);
   const [goalDraft, setGoalDraft] = useState("");
+  const [goalSaving, setGoalSaving] = useState(false);
   const [draftAnswer, setDraftAnswer] = useState("");
   const [feedback, setFeedback] = useState<{ good: string; wrong: string; next: string } | null>(null);
   const [feedbackBusy, setFeedbackBusy] = useState(false);
@@ -123,6 +123,27 @@ export function StudyView() {
       await api.reorderSubjects(next.map((s) => s.id));
     } catch (e) {
       setError((e as Error).message);
+    }
+  };
+
+  useEffect(() => {
+    setGoalDraft(active?.goal ?? "");
+  }, [active?.id, active?.goal]);
+
+  /** 目标直接在当前这行编辑，失焦/回车保存 */
+  const saveGoal = async () => {
+    if (!active) return;
+    const next = goalDraft.trim();
+    if ((active.goal ?? "") === next) return;
+    setGoalSaving(true);
+    try {
+      await api.renameSubject(active.id, { goal: next || null });
+      const subs = await api.subjects();
+      setSubjects(subs);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setGoalSaving(false);
     }
   };
 
@@ -289,15 +310,6 @@ export function StudyView() {
     }
   };
 
-  const saveGoal = async () => {
-    if (!active) return;
-    const text = goalDraft.trim();
-    await api.renameSubject(active.id, { goal: text || null });
-    setGoalOpen(false);
-    const subs = await api.subjects();
-    setSubjects(subs);
-  };
-
   /** 看完答案后，用学习者的作答去要 AI 反馈 */
   const askFeedback = async () => {
     const card = queue[idx];
@@ -391,27 +403,22 @@ export function StudyView() {
       {!active ? null : (
         // 每张卡各占一整行，互不影响高度
         <div className="space-y-3.5">
-          {/* 学习目标 */}
-          <div className="flex flex-wrap items-center gap-2 rounded-xl border border-line bg-surface px-3 py-2">
-            <span className="text-[10px] uppercase tracking-[0.12em] text-ink-3">{t("study.goalLabel")}</span>
-            <span
-              className={`min-w-0 flex-1 truncate text-[11px] ${
-                active.goal ? "text-ink-2" : "text-[#c8c4bc]"
-              }`}
-            >
-              {active.goal || t("study.goalPlaceholder")}
+          {/* 学习目标：直接输入，失焦保存 */}
+          <div className="flex items-center gap-2 rounded-xl border border-line bg-surface px-3 py-1.5">
+            <span className="shrink-0 text-[10px] uppercase tracking-[0.12em] text-ink-3">
+              {t("study.goalLabel")}
             </span>
-            <button
-              type="button"
-              onClick={() => {
-                setGoalDraft(active.goal ?? "");
-                setGoalOpen(true);
+            <input
+              value={goalDraft}
+              onChange={(e) => setGoalDraft(e.target.value)}
+              onBlur={() => void saveGoal()}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") e.currentTarget.blur();
               }}
-              className="shrink-0 text-[11px] leading-none text-[#c0bbb2] transition-colors hover:text-accent"
-              aria-label={t("study.goalEdit")}
-            >
-              ✎
-            </button>
+              placeholder={t("study.goalPlaceholder")}
+              disabled={goalSaving}
+              className="min-w-0 flex-1 bg-transparent text-[11px] text-ink-2 outline-none placeholder:text-[#c8c4bc] disabled:opacity-60"
+            />
           </div>
 
           {/* 资料：知识内容与题目资料分开上传、分别出卡片 */}
@@ -538,48 +545,6 @@ export function StudyView() {
               </span>
             );
           })}
-        </div>
-      ) : null}
-
-      {goalOpen ? (
-        <div
-          className="fixed inset-0 z-50 flex items-start justify-center bg-black/25 p-4 pt-24"
-          onClick={() => setGoalOpen(false)}
-        >
-          <div
-            className="w-full max-w-sm rounded-2xl border border-line bg-surface p-4 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <header className="flex items-center justify-between">
-              <h2 className="text-[13px] font-semibold text-ink">{t("study.goalEdit")}</h2>
-              <button type="button" onClick={() => setGoalOpen(false)} className="text-[13px] text-ink-3">
-                ✕
-              </button>
-            </header>
-            <textarea
-              value={goalDraft}
-              onChange={(e) => setGoalDraft(e.target.value)}
-              rows={3}
-              placeholder={t("study.goalPlaceholder")}
-              className="mt-2 w-full resize-none rounded-lg border border-line bg-surface-2 px-2 py-1.5 text-[11.5px] leading-relaxed text-ink outline-none placeholder:text-[#c8c4bc]"
-            />
-            <div className="mt-2 flex justify-end gap-1.5">
-              <button
-                type="button"
-                onClick={() => setGoalOpen(false)}
-                className="rounded-lg border border-line px-3 py-1.5 text-[10.5px] text-ink-3"
-              >
-                {t("common.cancel")}
-              </button>
-              <button
-                type="button"
-                onClick={() => void saveGoal()}
-                className="rounded-lg bg-accent px-3 py-1.5 text-[10.5px] font-semibold text-white"
-              >
-                {t("common.save")}
-              </button>
-            </div>
-          </div>
         </div>
       ) : null}
 
