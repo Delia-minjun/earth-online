@@ -419,12 +419,21 @@ p5.post("/study/generate", async (c) => {
   if (cards.length === 0) return c.json({ error: "no_cards" }, 502);
 
   const ins = db.prepare(
-    `INSERT INTO card (id, subject_id, material_id, front, back, ref, box, due_date, chapter)
-     VALUES (?, ?, NULL, ?, ?, ?, 1, ?, ?)`,
+    `INSERT INTO card (id, subject_id, material_id, front, back, ref, box, due_date, chapter, kind)
+     VALUES (?, ?, NULL, ?, ?, ?, 1, ?, ?, ?)`,
   );
   const made = cards.map((card) => {
     const cid = uid();
-    ins.run(cid, r.data.subjectId, card.front, card.back, card.ref ?? null, today(), chapter);
+    ins.run(
+      cid,
+      r.data.subjectId,
+      card.front,
+      card.back,
+      card.ref ?? null,
+      today(),
+      chapter,
+      r.data.role,
+    );
     return { id: cid, front: card.front, back: card.back, ref: card.ref ?? null };
   });
   return c.json({ cards: made }, 201);
@@ -468,7 +477,8 @@ p5.delete("/study/materials/:id", (c) => {
 
 /* ---------------- 卡片 ---------------- */
 
-const CARD_COLS = "id, subject_id, material_id, front, back, ref, box, due_date, reviewed_at, chapter";
+const CARD_COLS =
+  "id, subject_id, material_id, front, back, ref, box, due_date, reviewed_at, chapter, kind";
 
 p5.get("/study/cards", (c) => {
   const subjectId = c.req.query("subjectId");
@@ -587,6 +597,7 @@ p5.get("/study/review/queue", (c) => {
   const subjectId = c.req.query("subjectId");
   const db = getDb();
   const base = `SELECT c.id, c.subject_id, c.front, c.back, c.ref, c.box, c.due_date,
+                       c.chapter, c.kind,
                        s.name AS subject_name, s.color AS subject_color
                   FROM card c JOIN subject s ON s.id = c.subject_id
                  WHERE c.deleted_at IS NULL AND c.due_date <= ?`;

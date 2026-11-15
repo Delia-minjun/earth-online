@@ -461,7 +461,8 @@
     "askFeedback": "AI 点评我的作答",
     "feedbackGood": "做对的",
     "feedbackWrong": "问题",
-    "feedbackNext": "下一步"
+    "feedbackNext": "下一步",
+    "generatedN": "已生成 {{n}} 张 · {{chapter}} · {{kind}}"
   },
   "growth": {
     "coins": "我的快乐币",

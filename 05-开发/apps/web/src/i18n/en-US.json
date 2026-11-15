@@ -460,7 +460,8 @@
     "askFeedback": "Have AI review my answer",
     "feedbackGood": "What's right",
     "feedbackWrong": "What's off",
-    "feedbackNext": "Next step"
+    "feedbackNext": "Next step",
+    "generatedN": "{{n}} cards created · {{chapter}} · {{kind}}"
   },
   "growth": {
     "coins": "My coins",

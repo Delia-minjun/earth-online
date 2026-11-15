@@ -33,6 +33,7 @@ export function StudyMaterials({
   /** 可能同时跑「知识卡」和「练习题」，所以是集合而不是单值 */
   const [generating, setGenerating] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [over, setOver] = useState(false);
 
@@ -52,6 +53,16 @@ export function StudyMaterials({
     return [...map.values()].sort((a, b) => chapterSortKey(a.chapter) - chapterSortKey(b.chapter));
   }, [materials, cards]);
 
+  const cardBreakdown = (g: ChapterGroup) => {
+    const k = cards.filter((c) => (c.chapter ?? null) === g.chapter && c.kind === "knowledge").length;
+    const q = cards.filter((c) => (c.chapter ?? null) === g.chapter && c.kind === "questions").length;
+    const parts: string[] = [];
+    if (k) parts.push(`${t("study.knowledge")} ${k}`);
+    if (q) parts.push(`${t("study.questions")} ${q}`);
+    if (!k && !q && g.cards) parts.push(t("study.cardCount", { n: g.cards }));
+    return parts.join(" · ");
+  };
+
   const chapterLabel = (chapter: string | null) =>
     chapter
       ? /^l/i.test(chapter)
@@ -64,7 +75,15 @@ export function StudyMaterials({
     setGenerating((list) => [...list, key]);
     setError(null);
     try {
-      await api.generateSection(subjectId, which, chapter, 8);
+      const res = await api.generateSection(subjectId, which, chapter, 8);
+      setToast(
+        t("study.generatedN", {
+          n: res.cards.length,
+          chapter: chapter ? chapterLabel(chapter) : t("study.noChapter"),
+          kind: which === "knowledge" ? t("study.knowledge") : t("study.questions"),
+        }),
+      );
+      window.setTimeout(() => setToast(null), 3000);
       await onChanged();
     } catch (e) {
       const msg = (e as Error).message;
@@ -89,6 +108,9 @@ export function StudyMaterials({
 
   return (
     <Card title={t("study.courseMaterials")}>
+      {toast ? (
+        <p className="mb-2 rounded-lg bg-accent-soft px-2.5 py-1.5 text-[10.5px] text-accent">{toast}</p>
+      ) : null}
       {error ? <p className="mb-2 text-[10px] text-warn">{error}</p> : null}
 
       {/* 上传：先选类别与章节，再拖文件 */}
@@ -165,7 +187,7 @@ export function StudyMaterials({
                 ) : null}
                 <span className="text-[9.5px] text-ink-3">
                   {t("study.materialCount", { n: g.materials.length })}
-                  {g.cards ? ` · ${t("study.cardCount", { n: g.cards })}` : ""}
+                  {cardBreakdown(g) ? ` · ${cardBreakdown(g)}` : ""}
                 </span>
                 <span className="ml-auto flex items-center gap-1.5">
                   <button

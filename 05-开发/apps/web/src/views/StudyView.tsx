@@ -437,9 +437,27 @@ export function StudyView() {
           >
             {current ? (
               <div>
-                <p className="text-[10px] text-ink-3">
-                  {current.subject_name} · box {current.box}
-                  {current.ref ? ` · ${current.ref}` : ""}
+                <p className="flex flex-wrap items-center gap-1.5 text-[10px] text-ink-3">
+                  <span>{current.subject_name}</span>
+                  {current.chapter ? (
+                    <span className="rounded-full bg-surface-2 px-1.5 py-[1px]">
+                      {/^l/i.test(current.chapter)
+                        ? t("study.lectureN", { n: current.chapter.slice(1) })
+                        : t("study.chapterN", { n: current.chapter })}
+                    </span>
+                  ) : null}
+                  {current.kind ? (
+                    <span
+                      className={`rounded-full px-1.5 py-[1px] ${
+                        current.kind === "questions"
+                          ? "bg-warn-soft text-warn"
+                          : "bg-accent-soft text-accent"
+                      }`}
+                    >
+                      {current.kind === "questions" ? t("study.questions") : t("study.knowledge")}
+                    </span>
+                  ) : null}
+                  <span>box {current.box}</span>
                 </p>
                 <div className="mt-2 rounded-xl border border-line-2 bg-surface-2 p-3">
                   <p className="text-[12.5px] leading-relaxed text-ink">{current.front}</p>

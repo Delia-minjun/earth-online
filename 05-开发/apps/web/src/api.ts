@@ -896,6 +896,7 @@ export interface ApiMaterial {
 export interface ApiCard {
   id: string;
   chapter?: string | null;
+  kind?: "knowledge" | "questions" | null;
   subject_id: string;
   material_id: string | null;
   front: string;
