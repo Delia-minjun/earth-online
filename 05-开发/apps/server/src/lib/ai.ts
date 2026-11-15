@@ -544,3 +544,72 @@ export async function planInstruction(
     message: String(parsed.message ?? "").trim(),
   };
 }
+
+
+/** 局部修改：只改用户点到的地方，其余原样保留 */
+export interface AppliedEdit {
+  target: "note" | "practice";
+  heading?: string;
+  append?: boolean;
+  content?: string;
+  index?: number;
+  q?: string;
+  a?: string;
+  ref?: string | null;
+}
+
+export interface PatchResult {
+  edits: AppliedEdit[];
+  message: string;
+}
+
+export async function planPatch(
+  subject: string,
+  chapter: string | null,
+  noteText: string,
+  practiceJson: string,
+  request: string,
+): Promise<PatchResult> {
+  const cfg = resolveAiConfig();
+  if (!cfg.apiKey) throw new Error("NOKEY");
+  const where = chapter ? `第 ${chapter} 章` : "本内容";
+  const prompt = `你是「${subject}」${where}学习内容的编辑器。用户提出修改要求，你只改动与要求直接相关的部分，其余内容必须原样保留。
+
+当前讲解（Markdown，每节以「### 」开头）：
+"""
+${noteText.slice(0, 8000)}
+"""
+
+当前练习题（JSON 数组，index 从 0 开始）：
+"""
+${practiceJson.slice(0, 6000)}
+"""
+
+用户要求：${request}
+
+只输出 JSON：
+{"edits":[
+ {"target":"note","heading":"### 2. 有效数字规则","content":"### 2. 有效数字规则\n- 是什么：…\n- 关键点：…\n- 例子：…"},
+ {"target":"note","append":true,"content":"### 47. 新知识点\n- 是什么：…"},
+ {"target":"practice","index":2,"q":"新的题干","a":"答案 + 解析"},
+ {"target":"practice","append":true,"q":"新题","a":"答案 + 解析","ref":"选择题·中等"}
+],"message":"一句话说明改了什么"}
+
+规则：
+- 只返回需要改的条目；没被提到的节和题一律不要出现
+- heading 必须是上面已存在的完整标题行（含「### 」前缀）
+- 新增知识点用 append，content 必须是完整的一节（含标题行）
+- 改写小节时保留「- 是什么 / - 关键点 / - 例子」结构，每行不超过 30 字
+- 内容只能来自资料，不确定写「资料未涉及」
+- 若用户要求整体重写，才返回所有条目`;
+  const raw = await chatOnce(cfg, [{ role: "user", content: prompt }], 0.2, 240_000);
+  const cleaned = raw.replace(/```json/gi, "").replace(/```/g, "").trim();
+  const s = cleaned.indexOf("{");
+  const e = cleaned.lastIndexOf("}");
+  const parsed = JSON.parse(s >= 0 && e > s ? cleaned.slice(s, e + 1) : cleaned) as {
+    edits?: AppliedEdit[];
+    message?: string;
+  };
+  if (!Array.isArray(parsed.edits)) throw new Error("模型没有返回 edits");
+  return { edits: parsed.edits, message: String(parsed.message ?? "").trim() };
+}
