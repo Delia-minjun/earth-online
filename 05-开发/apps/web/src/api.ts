@@ -718,6 +718,11 @@ export const api = {
   subjects: () => request<ApiSubject[]>("/study/subjects"),
   addSubject: (input: { name: string; color?: string }) =>
     request<ApiSubject>("/study/subjects", { method: "POST", body: JSON.stringify(input) }),
+  reorderSubjects: (ids: string[]) =>
+    request<{ ok: true }>("/study/subjects/order", {
+      method: "PUT",
+      body: JSON.stringify({ ids }),
+    }),
   renameSubject: (id: string, patch: { name?: string; color?: string; goal?: string | null }) =>
     request<ApiSubject>(`/study/subjects/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
   deleteSubject: (id: string) =>

@@ -35,6 +35,7 @@ export function StudyView() {
   // 复习
   const [idx, setIdx] = useState(0);
   const [flipped, setFlipped] = useState(false);
+  const [dragId, setDragId] = useState<string | null>(null);
   const [goalOpen, setGoalOpen] = useState(false);
   const [goalDraft, setGoalDraft] = useState("");
   const [draftAnswer, setDraftAnswer] = useState("");
@@ -92,6 +93,25 @@ export function StudyView() {
       }
     });
   }, [loadAll, loadSubject]);
+
+  /** 拖动科目换顺序，松手后写回 sort */
+  const onDropSubject = async (targetId: string) => {
+    if (!dragId || dragId === targetId) return;
+    const from = subjects.findIndex((s) => s.id === dragId);
+    const to = subjects.findIndex((s) => s.id === targetId);
+    if (from < 0 || to < 0) return;
+    const next = [...subjects];
+    const [moved] = next.splice(from, 1);
+    if (!moved) return;
+    next.splice(to, 0, moved);
+    setSubjects(next);
+    setDragId(null);
+    try {
+      await api.reorderSubjects(next.map((s) => s.id));
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  };
 
   const pickSubject = (id: string) => {
     setActiveId(id);
@@ -297,8 +317,15 @@ export function StudyView() {
             <button
               key={s.id}
               type="button"
+              draggable
+              onDragStart={() => setDragId(s.id)}
+              onDragEnd={() => setDragId(null)}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={() => void onDropSubject(s.id)}
               onClick={() => pickSubject(s.id)}
-              className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] transition-colors ${
+              className={`flex cursor-grab items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] transition-colors active:cursor-grabbing ${
+                dragId === s.id ? "opacity-40" : ""
+              } ${
                 s.id === activeId
                   ? "bg-accent text-white"
                   : "border border-line bg-surface text-ink-2 hover:border-accent"

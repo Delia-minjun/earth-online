@@ -56,6 +56,24 @@ p5.get("/study/subjects", (c) => {
   return c.json(rows);
 });
 
+
+/** 调整科目顺序：按传入的 id 顺序写 sort */
+p5.put("/study/subjects/order", async (c) => {
+  const r = await readBody(c, z.object({ ids: z.array(z.string()).min(1).max(100) }));
+  if (!r.ok) return c.json({ error: r.error }, 400);
+  const db = getDb();
+  const upd = db.prepare("UPDATE subject SET sort = ? WHERE id = ?");
+  db.exec("BEGIN");
+  try {
+    r.data.ids.forEach((id, i) => upd.run(i + 1, id));
+    db.exec("COMMIT");
+  } catch (e) {
+    db.exec("ROLLBACK");
+    return c.json({ error: (e as Error).message }, 500);
+  }
+  return c.json({ ok: true });
+});
+
 p5.post("/study/subjects", async (c) => {
   const r = await readBody(
     c,
