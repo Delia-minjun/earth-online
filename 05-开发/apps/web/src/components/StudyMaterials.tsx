@@ -372,7 +372,20 @@ export function StudyMaterials({
                   </button>
                   {openNote === key ? (
                     <div className="max-h-[62vh] overflow-y-auto border-t border-line-2 bg-surface px-4 py-3">
-                      <NoteMarkdown content={note.content} />
+                      <NoteMarkdown
+                        content={note.content}
+                        onRewrite={async (heading) => {
+                          setGenerating((list) => [...list, `sec:${note.id}`]);
+                          try {
+                            await api.regenNoteSection(note.id, heading);
+                            await onChanged();
+                          } catch (e) {
+                            setError((e as Error).message);
+                          } finally {
+                            setGenerating((list) => list.filter((k) => k !== `sec:${note.id}`));
+                          }
+                        }}
+                      />
                     </div>
                   ) : null}
                 </div>
@@ -495,6 +508,26 @@ export function StudyMaterials({
                                     }`}
                                   >
                                     {open ? t("study.hideAnswer") : t("study.showAnswer")}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={generating.includes(`item:${ansKey}`)}
+                                    onClick={async () => {
+                                      setGenerating((list) => [...list, `item:${ansKey}`]);
+                                      try {
+                                        await api.regenPracticeItem(practice.id, qi);
+                                        await onChanged();
+                                      } catch (e) {
+                                        setError((e as Error).message);
+                                      } finally {
+                                        setGenerating((list) => list.filter((k) => k !== `item:${ansKey}`));
+                                      }
+                                    }}
+                                    className={`${PILL} border-line text-ink-3 hover:border-accent hover:text-accent disabled:opacity-50`}
+                                  >
+                                    {generating.includes(`item:${ansKey}`)
+                                      ? t("study.practiceGenerating")
+                                      : t("study.regenOne")}
                                   </button>
                                   {(() => {
                                     const saved = wrongItems.some((w) => w.question === item.q);

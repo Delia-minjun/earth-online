@@ -493,7 +493,9 @@
     "addToChapter": "Add files to this chapter",
     "moveChapter": "Move to chapter",
     "noChapterPick": "No chapter",
-    "chapterInputPlaceholder": "Chapter, e.g. 3, 3-4 or L5"
+    "chapterInputPlaceholder": "Chapter, e.g. 3, 3-4 or L5",
+    "regenOne": "Replace",
+    "rewriteSection": "Rewrite"
   },
   "growth": {
     "coins": "My coins",

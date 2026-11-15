@@ -2,7 +2,14 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { getDb } from "../db.ts";
 import { DATE_RE, today } from "../lib/dates.ts";
-import { explainChapter, generateCards, ocrImage, reviewAnswer } from "../lib/ai.ts";
+import {
+  explainChapter,
+  generateCards,
+  ocrImage,
+  regenerateQuestion,
+  reviewAnswer,
+  rewriteSection,
+} from "../lib/ai.ts";
 import { extractDocument } from "../lib/office.ts";
 import { bumpArea, earn, getRules } from "../lib/coins.ts";
 
@@ -821,6 +828,103 @@ p5.post("/study/wrong", async (c) => {
 p5.delete("/study/wrong/:id", (c) => {
   getDb().prepare("DELETE FROM wrong_item WHERE id = ?").run(c.req.param("id"));
   return c.json({ ok: true });
+});
+
+
+/** 重出练习里的某一题，其余题保留 */
+p5.post("/study/practice/:id/item", async (c) => {
+  const id = c.req.param("id");
+  const r = await readBody(c, z.object({ index: z.number().int().min(0).max(50) }));
+  if (!r.ok) return c.json({ error: r.error }, 400);
+
+  const db = getDb();
+  const row = db
+    .prepare("SELECT subject_id, chapter, items FROM chapter_practice WHERE id = ?")
+    .get(id) as { subject_id: string; chapter: string | null; items: string } | undefined;
+  if (!row) return c.json({ error: "not_found" }, 404);
+
+  const items = JSON.parse(row.items || "[]") as { q: string; a: string; ref: string | null }[];
+  const old = items[r.data.index];
+  if (!old) return c.json({ error: "index_out_of_range" }, 400);
+
+  const subject = db.prepare("SELECT name FROM subject WHERE id = ?").get(row.subject_id) as
+    | { name: string }
+    | undefined;
+  const mats = db
+    .prepare(
+      `SELECT title, content FROM material
+        WHERE subject_id = ? AND role = 'questions' AND IFNULL(chapter, '') = IFNULL(?, '')
+          AND deleted_at IS NULL AND content != ''`,
+    )
+    .all(row.subject_id, row.chapter) as { title: string; content: string }[];
+  const text = mats.map((m) => `【${m.title}】\n${m.content}`).join("\n\n").slice(0, 40000);
+
+  let fresh;
+  try {
+    fresh = await regenerateQuestion(subject?.name ?? "", text, old.q, old.a);
+  } catch (e) {
+    const msg = (e as Error).message;
+    if (msg === "NOKEY") return c.json({ error: "NOKEY" }, 400);
+    return c.json({ error: msg }, 502);
+  }
+
+  items[r.data.index] = fresh;
+  db.prepare("UPDATE chapter_practice SET items = ?, updated_at = datetime('now') WHERE id = ?").run(
+    JSON.stringify(items),
+    id,
+  );
+  return c.json({ item: fresh, index: r.data.index });
+});
+
+/** 重写讲解里的某一节，其余节保留 */
+p5.post("/study/notes/:id/section", async (c) => {
+  const id = c.req.param("id");
+  const r = await readBody(c, z.object({ heading: z.string().trim().min(1).max(120) }));
+  if (!r.ok) return c.json({ error: r.error }, 400);
+
+  const db = getDb();
+  const row = db
+    .prepare("SELECT subject_id, chapter, content FROM study_note WHERE id = ?")
+    .get(id) as { subject_id: string; chapter: string | null; content: string } | undefined;
+  if (!row) return c.json({ error: "not_found" }, 404);
+
+  const heading = r.data.heading;
+  const lines = row.content.split("\n");
+  const startIdx = lines.findIndex((l) => l.trim() === heading.trim());
+  if (startIdx < 0) return c.json({ error: "section_not_found" }, 404);
+  let endIdx = startIdx + 1;
+  while (endIdx < lines.length && !/^#{2,4}\s/.test(lines[endIdx]!.trim())) endIdx += 1;
+  const body = lines.slice(startIdx, endIdx).join("\n");
+
+  const subject = db.prepare("SELECT name FROM subject WHERE id = ?").get(row.subject_id) as
+    | { name: string }
+    | undefined;
+  const mats = db
+    .prepare(
+      `SELECT title, content FROM material
+        WHERE subject_id = ? AND role = 'knowledge' AND IFNULL(chapter, '') = IFNULL(?, '')
+          AND deleted_at IS NULL AND content != ''`,
+    )
+    .all(row.subject_id, row.chapter) as { title: string; content: string }[];
+  const text = mats.map((m) => `【${m.title}】\n${m.content}`).join("\n\n").slice(0, 40000);
+
+  let fresh: string;
+  try {
+    fresh = await rewriteSection(subject?.name ?? "", row.chapter, text, heading, body);
+  } catch (e) {
+    const msg = (e as Error).message;
+    if (msg === "NOKEY") return c.json({ error: "NOKEY" }, 400);
+    return c.json({ error: msg }, 502);
+  }
+
+  const updated = [...lines.slice(0, startIdx), ...fresh.split("\n"), ...lines.slice(endIdx)]
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n");
+  db.prepare("UPDATE study_note SET content = ?, updated_at = datetime('now') WHERE id = ?").run(
+    updated,
+    id,
+  );
+  return c.json({ content: updated });
 });
 
 /* ---------------- 复习 ---------------- */

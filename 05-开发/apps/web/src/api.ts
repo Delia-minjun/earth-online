@@ -805,6 +805,17 @@ export const api = {
   }) => request<ApiWrongItem>("/study/wrong", { method: "POST", body: JSON.stringify(input) }),
   deleteWrong: (id: string) => request<{ ok: true }>(`/study/wrong/${id}`, { method: "DELETE" }),
 
+  regenPracticeItem: (practiceId: string, index: number) =>
+    request<{ item: ApiPracticeItem; index: number }>(`/study/practice/${practiceId}/item`, {
+      method: "POST",
+      body: JSON.stringify({ index }),
+    }, 180_000),
+  regenNoteSection: (noteId: string, heading: string) =>
+    request<{ content: string }>(`/study/notes/${noteId}/section`, {
+      method: "POST",
+      body: JSON.stringify({ heading }),
+    }, 180_000),
+
   generateNote: (subjectId: string, chapter: string | null) =>
     request<ApiStudyNote>(
       "/study/notes/generate",

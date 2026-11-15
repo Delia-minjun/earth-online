@@ -34,7 +34,14 @@ function inline(text: string, keyPrefix: string): ReactNode[] {
   return nodes;
 }
 
-export function NoteMarkdown({ content }: { content: string }) {
+export function NoteMarkdown({
+  content,
+  onRewrite,
+}: {
+  content: string;
+  /** 传入后在每个三级标题旁显示「重写本节」 */
+  onRewrite?: (heading: string) => void;
+}) {
   const lines = content.split("\n");
   const out: ReactNode[] = [];
 
@@ -57,9 +64,18 @@ export function NoteMarkdown({ content }: { content: string }) {
             ? "mt-5 mb-2 border-b border-line-2 pb-1.5 text-[13px] font-semibold text-ink"
             : "mt-3.5 mb-1 text-[12px] font-semibold text-ink-2";
       out.push(
-        <p key={`h-${idx}`} className={cls}>
-          {text}
-        </p>,
+        <div key={`h-${idx}`} className="group flex items-center gap-2">
+          <p className={`${cls} flex-1`}>{text}</p>
+          {level === 3 && onRewrite ? (
+            <button
+              type="button"
+              onClick={() => onRewrite(line.trim())}
+              className="shrink-0 text-[9.5px] text-[#c0bbb2] opacity-0 transition-opacity hover:text-accent group-hover:opacity-100"
+            >
+              重写
+            </button>
+          ) : null}
+        </div>,
       );
       return;
     }

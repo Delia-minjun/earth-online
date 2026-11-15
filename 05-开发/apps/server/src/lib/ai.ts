@@ -406,3 +406,76 @@ ${text.slice(0, 20000)}
 """`;
   return (await chatOnce(cfg, [{ role: "user", content: prompt }], 0.2)).trim();
 }
+
+
+/** 重出其中一道题：难度不低于原题，且不能与原题重复 */
+export async function regenerateQuestion(
+  subject: string,
+  text: string,
+  oldQuestion: string,
+  oldAnswer: string,
+): Promise<{ q: string; a: string; ref: string | null }> {
+  const cfg = resolveAiConfig();
+  if (!cfg.apiKey) throw new Error("NOKEY");
+  const prompt = `你在为「${subject}」出一道新的练习题，用来替换下面这道旧题。
+
+要求的输出（JSON）：
+{"q":"题干；如果是选择题，选项 A. … B. … 各占一行","a":"答案 + 解析（说清为什么）","ref":"题型·难度"}
+
+规则：
+- 考点与旧题相同，但情境/数据/问法必须不同，不能重复旧题
+- **难度不低于旧题**，优先出更进一步的变式（多一步推理、换一个条件、合并两个考点）
+- 只用下面资料里出现的内容，不要引入资料外的知识
+- 中文出题；资料是英文则用英文
+
+旧题：${oldQuestion.slice(0, 800)}
+旧题答案：${oldAnswer.slice(0, 800)}
+
+资料正文：
+"""
+${text.slice(0, 12000)}
+"""`;
+  const raw = await chatOnce(cfg, [{ role: "user", content: prompt }], 0.4);
+  const cleaned = raw.replace(/```json/gi, "").replace(/```/g, "").trim();
+  const start = cleaned.indexOf("{");
+  const end = cleaned.lastIndexOf("}");
+  const parsed = JSON.parse(start >= 0 && end > start ? cleaned.slice(start, end + 1) : cleaned) as {
+    q?: string;
+    a?: string;
+    ref?: string;
+  };
+  if (!parsed.q || !parsed.a) throw new Error("模型没有返回完整的题目");
+  return { q: String(parsed.q).trim(), a: String(parsed.a).trim(), ref: parsed.ref ?? null };
+}
+
+/** 重写讲解里的某一节（保留其余内容） */
+export async function rewriteSection(
+  subject: string,
+  chapter: string | null,
+  text: string,
+  heading: string,
+  body: string,
+): Promise<string> {
+  const cfg = resolveAiConfig();
+  if (!cfg.apiKey) throw new Error("NOKEY");
+  const where = chapter ? `第 ${chapter} 章` : "本内容";
+  const prompt = `你在改写「${subject}」${where}讲义里的其中一节。只重写这一节，不要输出其它节。
+
+当前小节标题：${heading}
+当前内容：
+${body.slice(0, 2000)}
+
+要求：
+- 保持同样的标题（以「### 」开头）
+- 继续用「- 是什么 / - 关键点 / - 例子」三行结构，每行不超过 30 字
+- 把原来讲得含糊、跳过推导或缺少例子的问题补上；有公式就写公式
+- 只使用下面资料里的内容，资料没写的写「资料未涉及」
+- 只输出这一节的 Markdown（标题 + 三行），不要解释、不要代码块
+
+资料正文：
+"""
+${text.slice(0, 14000)}
+"""`;
+  const out = (await chatOnce(cfg, [{ role: "user", content: prompt }], 0.35)).trim();
+  return out.replace(/^```[a-z]*\n?/i, "").replace(/\n?```$/, "").trim();
+}
