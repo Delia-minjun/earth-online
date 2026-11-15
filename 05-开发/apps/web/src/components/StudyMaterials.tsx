@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, type ApiCard, type ApiMaterial, type ApiStudyNote } from "../api";
 import { Card } from "../components/Card";
+import { NoteMarkdown } from "./NoteMarkdown";
 import { chapterSortKey, guessChapter } from "../lib/chapter";
 
 type Role = "knowledge" | "questions";
@@ -273,31 +274,12 @@ export function StudyMaterials({
                     onClick={() => setOpenNote(openNote === key ? null : key)}
                     className="flex w-full items-center justify-between px-2.5 py-1.5 text-[10px] text-ink-3 transition-colors hover:text-accent"
                   >
-                    <span>{t("study.genNote")}</span>
+                    <span className="font-semibold text-ink-2">{t("study.genNote")}</span>
                     <span>{openNote === key ? t("study.noteClose") : t("study.noteOpen")}</span>
                   </button>
                   {openNote === key ? (
-                    <div className="max-h-[420px] overflow-y-auto border-t border-line-2 px-3 py-2 text-[11px] leading-relaxed text-ink-2">
-                      {note.content.split("\n").map((line, i) => {
-                        const text = line.trim();
-                        if (!text) return <div key={i} className="h-1.5" />;
-                        if (text.startsWith("##")) {
-                          return (
-                            <p key={i} className="mt-2 text-[11.5px] font-semibold text-ink">
-                              {text.replace(/^#+\s*/, "")}
-                            </p>
-                          );
-                        }
-                        if (/^[-*]\s/.test(text)) {
-                          return (
-                            <p key={i} className="flex gap-1.5">
-                              <span className="text-[#c0bbb2]">·</span>
-                              <span>{text.replace(/^[-*]\s*/, "")}</span>
-                            </p>
-                          );
-                        }
-                        return <p key={i}>{text}</p>;
-                      })}
+                    <div className="max-h-[62vh] overflow-y-auto border-t border-line-2 bg-surface px-4 py-3">
+                      <NoteMarkdown content={note.content} />
                     </div>
                   ) : (
                     <p className="border-t border-line-2 px-3 py-1.5 text-[10px] text-[#c8c4bc]">

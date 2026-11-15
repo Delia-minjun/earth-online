@@ -1,0 +1,109 @@
+import type { ReactNode } from "react";
+
+/** 极简 Markdown 渲染：标题 / 列表 / 行内代码 / 粗体（够讲义用，不引依赖） */
+function inline(text: string, keyPrefix: string): ReactNode[] {
+  const nodes: ReactNode[] = [];
+  const re = /(`[^`]+`|\*\*[^*]+\*\*)/g;
+  let last = 0;
+  let m: RegExpExecArray | null;
+  let i = 0;
+
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > last) nodes.push(text.slice(last, m.index));
+    const token = m[0];
+    if (token.startsWith("`")) {
+      nodes.push(
+        <code
+          key={`${keyPrefix}-c${i}`}
+          className="rounded bg-[#efece5] px-1 py-[1px] font-mono text-[10.5px] text-ink"
+        >
+          {token.slice(1, -1)}
+        </code>,
+      );
+    } else {
+      nodes.push(
+        <strong key={`${keyPrefix}-b${i}`} className="font-semibold text-ink">
+          {token.slice(2, -2)}
+        </strong>,
+      );
+    }
+    last = m.index + token.length;
+    i += 1;
+  }
+  if (last < text.length) nodes.push(text.slice(last));
+  return nodes;
+}
+
+export function NoteMarkdown({ content }: { content: string }) {
+  const lines = content.split("\n");
+  const out: ReactNode[] = [];
+
+  lines.forEach((raw, idx) => {
+    const line = raw.trimEnd();
+    if (!line.trim()) {
+      out.push(<div key={`gap-${idx}`} className="h-2" />);
+      return;
+    }
+
+    // 标题：越深越小
+    const heading = line.match(/^(#{1,4})\s+(.*)$/);
+    if (heading) {
+      const level = heading[1]!.length;
+      const text = heading[2]!.replace(/\*\*/g, "");
+      const cls =
+        level === 1
+          ? "mt-3 mb-1 text-[13.5px] font-semibold text-ink first:mt-0"
+          : level === 2
+            ? "mt-3.5 mb-1.5 border-b border-line-2 pb-1 text-[12.5px] font-semibold text-ink"
+            : "mt-3 mb-1 text-[11.5px] font-semibold text-ink-2";
+      out.push(
+        <p key={`h-${idx}`} className={cls}>
+          {text}
+        </p>,
+      );
+      return;
+    }
+
+    // 无序列表
+    const bullet = line.match(/^([-*•])\s+(.*)$/);
+    if (bullet) {
+      out.push(
+        <div key={`ul-${idx}`} className="mt-1 flex gap-2 pl-1">
+          <span className="mt-[5px] h-1 w-1 shrink-0 rounded-full bg-[#c6c0b6]" />
+          <p className="flex-1 leading-[1.75]">{inline(bullet[2]!, `u${idx}`)}</p>
+        </div>,
+      );
+      return;
+    }
+
+    // 有序列表
+    const ordered = line.match(/^(\d+)[.)]\s+(.*)$/);
+    if (ordered) {
+      out.push(
+        <div key={`ol-${idx}`} className="mt-1 flex gap-2 pl-1">
+          <span className="w-4 shrink-0 text-right tabular-nums text-ink-3">{ordered[1]}.</span>
+          <p className="flex-1 leading-[1.75]">{inline(ordered[2]!, `o${idx}`)}</p>
+        </div>,
+      );
+      return;
+    }
+
+    // 引用
+    if (line.startsWith(">")) {
+      out.push(
+        <p key={`q-${idx}`} className="my-1 border-l-2 border-line pl-2.5 text-ink-3">
+          {inline(line.replace(/^>\s?/, ""), `q${idx}`)}
+        </p>,
+      );
+      return;
+    }
+
+    out.push(
+      <p key={`p-${idx}`} className="mt-1.5 leading-[1.75]">
+        {inline(line, `p${idx}`)}
+      </p>,
+    );
+  });
+
+  return <div className="text-[11px] text-ink-2">{out}</div>;
+}
