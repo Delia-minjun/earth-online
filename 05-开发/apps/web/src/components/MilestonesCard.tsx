@@ -280,7 +280,6 @@ export function MilestonesCard({ areas }: { areas: ApiAreaGrowth[] }) {
               <div className="space-y-1">
                 {stepDrafts.map((val, i) => (
                   <div key={i} className="flex items-center gap-1.5">
-                    <span className="shrink-0 text-[10px] text-[#c0bbb2]">└</span>
                     <input
                       value={val.title}
                       onChange={(e) =>
