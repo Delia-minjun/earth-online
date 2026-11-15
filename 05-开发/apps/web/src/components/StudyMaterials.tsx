@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, type ApiCard, type ApiMaterial } from "../api";
+import { api, type ApiCard, type ApiMaterial, type ApiStudyNote } from "../api";
 import { Card } from "../components/Card";
 import { chapterSortKey, guessChapter } from "../lib/chapter";
 
@@ -17,6 +17,7 @@ export function StudyMaterials({
   subjectId,
   materials,
   cards,
+  notes,
   busy,
   onUpload,
   onChanged,
@@ -24,6 +25,7 @@ export function StudyMaterials({
   subjectId: string;
   materials: ApiMaterial[];
   cards: ApiCard[];
+  notes: ApiStudyNote[];
   busy: boolean;
   onUpload: (files: FileList | File[], role: Role, chapter: string | null) => Promise<void>;
   onChanged: () => Promise<void> | void;
@@ -34,6 +36,7 @@ export function StudyMaterials({
   const [generating, setGenerating] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [openNote, setOpenNote] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [over, setOver] = useState(false);
 
@@ -93,6 +96,27 @@ export function StudyMaterials({
           : msg.includes("NOKEY")
             ? t("study.noKey")
             : msg,
+      );
+    } finally {
+      setGenerating((list) => list.filter((k) => k !== key));
+    }
+  };
+
+  /** 生成本章讲解（知识点 + 易错点），不是出题 */
+  const genNote = async (chapter: string | null) => {
+    const key = `note:${chapter ?? ""}`;
+    setGenerating((list) => [...list, key]);
+    setError(null);
+    try {
+      await api.generateNote(subjectId, chapter);
+      setToast(t("study.noteReady"));
+      window.setTimeout(() => setToast(null), 3000);
+      setOpenNote(chapter ?? "");
+      await onChanged();
+    } catch (e) {
+      const msg = (e as Error).message;
+      setError(
+        msg.includes("no_material") ? t("study.noteGenFailed") : msg.includes("NOKEY") ? t("study.noKey") : msg,
       );
     } finally {
       setGenerating((list) => list.filter((k) => k !== key));
@@ -179,6 +203,7 @@ export function StudyMaterials({
           const hasKnowledge = g.materials.some((m) => (m.role ?? "knowledge") === "knowledge");
           const hasQuestions = g.materials.some((m) => m.role === "questions");
           const key = `${g.chapter ?? ""}`;
+          const note = notes.find((n) => (n.chapter ?? null) === g.chapter);
           return (
             <section key={key} className="rounded-xl border border-line-2 p-2.5">
               <header className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -192,11 +217,15 @@ export function StudyMaterials({
                 <span className="ml-auto flex items-center gap-1.5">
                   <button
                     type="button"
-                    onClick={() => void generate(g.chapter, "knowledge")}
-                    disabled={busy || !hasKnowledge || generating.includes(`${key}:knowledge`)}
+                    onClick={() => void genNote(g.chapter)}
+                    disabled={busy || !hasKnowledge || generating.includes(`note:${key}`)}
                     className="rounded-full border border-line px-2 py-[2px] text-[9.5px] text-ink-3 transition-colors hover:border-accent hover:text-accent disabled:opacity-40"
                   >
-                    {generating.includes(`${key}:knowledge`) ? t("study.generating") : t("study.genKnowledge")}
+                    {generating.includes(`note:${key}`)
+                      ? t("study.noteGenerating")
+                      : note
+                        ? t("study.regenNote")
+                        : t("study.genNote")}
                   </button>
                   <button
                     type="button"
@@ -236,6 +265,48 @@ export function StudyMaterials({
                   </li>
                 ))}
               </ul>
+
+              {note ? (
+                <div className="mt-2 rounded-lg border border-line-2 bg-surface-2">
+                  <button
+                    type="button"
+                    onClick={() => setOpenNote(openNote === key ? null : key)}
+                    className="flex w-full items-center justify-between px-2.5 py-1.5 text-[10px] text-ink-3 transition-colors hover:text-accent"
+                  >
+                    <span>{t("study.genNote")}</span>
+                    <span>{openNote === key ? t("study.noteClose") : t("study.noteOpen")}</span>
+                  </button>
+                  {openNote === key ? (
+                    <div className="max-h-[420px] overflow-y-auto border-t border-line-2 px-3 py-2 text-[11px] leading-relaxed text-ink-2">
+                      {note.content.split("\n").map((line, i) => {
+                        const text = line.trim();
+                        if (!text) return <div key={i} className="h-1.5" />;
+                        if (text.startsWith("##")) {
+                          return (
+                            <p key={i} className="mt-2 text-[11.5px] font-semibold text-ink">
+                              {text.replace(/^#+\s*/, "")}
+                            </p>
+                          );
+                        }
+                        if (/^[-*]\s/.test(text)) {
+                          return (
+                            <p key={i} className="flex gap-1.5">
+                              <span className="text-[#c0bbb2]">·</span>
+                              <span>{text.replace(/^[-*]\s*/, "")}</span>
+                            </p>
+                          );
+                        }
+                        return <p key={i}>{text}</p>;
+                      })}
+                    </div>
+                  ) : (
+                    <p className="border-t border-line-2 px-3 py-1.5 text-[10px] text-[#c8c4bc]">
+                      {note.content.split("\n").find((l) => l.trim().startsWith("##"))?.replace(/^#+\s*/, "") ??
+                        t("study.genNote")}
+                    </p>
+                  )}
+                </div>
+              ) : null}
             </section>
           );
         })}

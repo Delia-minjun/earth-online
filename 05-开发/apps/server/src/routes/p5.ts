@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { getDb } from "../db.ts";
 import { DATE_RE, today } from "../lib/dates.ts";
-import { generateCards, ocrImage, reviewAnswer } from "../lib/ai.ts";
+import { explainChapter, generateCards, ocrImage, reviewAnswer } from "../lib/ai.ts";
 import { extractDocument } from "../lib/office.ts";
 import { bumpArea, earn, getRules } from "../lib/coins.ts";
 
@@ -587,6 +587,96 @@ p5.post("/study/materials/:id/generate", async (c) => {
     return { id: cid, front: card.front, back: card.back, ref: card.ref ?? m.title };
   });
   return c.json({ cards: made }, 201);
+});
+
+
+/* ---------------- 本章讲解 ---------------- */
+
+const NOTE_COLS = "id, subject_id, chapter, content, created_at, updated_at";
+
+p5.get("/study/notes", (c) => {
+  const subjectId = c.req.query("subjectId");
+  const db = getDb();
+  const rows = subjectId
+    ? db
+        .prepare(`SELECT ${NOTE_COLS} FROM study_note WHERE subject_id = ? ORDER BY chapter`)
+        .all(subjectId)
+    : db.prepare(`SELECT ${NOTE_COLS} FROM study_note ORDER BY created_at`).all();
+  return c.json(rows);
+});
+
+/** 生成/重写本章讲解：汇总该章知识类资料，输出「讲解 + 易错点」 */
+p5.post("/study/notes/generate", async (c) => {
+  const r = await readBody(
+    c,
+    z.object({
+      subjectId: z.string(),
+      chapter: z.string().trim().max(20).nullable().optional(),
+    }),
+  );
+  if (!r.ok) return c.json({ error: r.error }, 400);
+
+  const db = getDb();
+  const subject = db.prepare("SELECT name FROM subject WHERE id = ?").get(r.data.subjectId) as
+    | { name: string }
+    | undefined;
+  if (!subject) return c.json({ error: "not_found" }, 404);
+
+  const chapter = r.data.chapter ?? null;
+  const mats = (
+    chapter === null
+      ? db
+          .prepare(
+            `SELECT title, content FROM material
+              WHERE subject_id = ? AND role = 'knowledge' AND chapter IS NULL
+                AND deleted_at IS NULL AND content != '' ORDER BY created_at`,
+          )
+          .all(r.data.subjectId)
+      : db
+          .prepare(
+            `SELECT title, content FROM material
+              WHERE subject_id = ? AND role = 'knowledge' AND chapter = ?
+                AND deleted_at IS NULL AND content != '' ORDER BY created_at`,
+          )
+          .all(r.data.subjectId, chapter)
+  ) as { title: string; content: string }[];
+
+  if (mats.length === 0) return c.json({ error: "no_material" }, 409);
+
+  const text = mats.map((m) => `【${m.title}】\n${m.content}`).join("\n\n").slice(0, 40000);
+  let content: string;
+  try {
+    content = await explainChapter(subject.name, chapter, text);
+  } catch (e) {
+    const msg = (e as Error).message;
+    if (msg === "NOKEY") return c.json({ error: "NOKEY" }, 400);
+    return c.json({ error: msg }, 502);
+  }
+  if (!content.trim()) return c.json({ error: "empty_note" }, 502);
+
+  // upsert：同一科目同一章只保留一份
+  const existing = db
+    .prepare(`SELECT id FROM study_note WHERE subject_id = ? AND IFNULL(chapter, '') = IFNULL(?, '')`)
+    .get(r.data.subjectId, chapter) as { id: string } | undefined;
+
+  if (existing) {
+    db.prepare("UPDATE study_note SET content = ?, updated_at = datetime('now') WHERE id = ?").run(
+      content,
+      existing.id,
+    );
+    return c.json(db.prepare(`SELECT ${NOTE_COLS} FROM study_note WHERE id = ?`).get(existing.id));
+  }
+
+  const id = uid();
+  db.prepare(
+    "INSERT INTO study_note (id, subject_id, chapter, content) VALUES (?, ?, ?, ?)",
+  ).run(id, r.data.subjectId, chapter, content);
+  return c.json(db.prepare(`SELECT ${NOTE_COLS} FROM study_note WHERE id = ?`).get(id), 201);
+});
+
+p5.delete("/study/notes/:id", (c) => {
+  getDb().prepare("DELETE FROM study_note WHERE id = ?").run(c.req.param("id"));
+  return c.json({ ok: true });
 });
 
 /* ---------------- 复习 ---------------- */

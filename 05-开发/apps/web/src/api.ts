@@ -783,6 +783,16 @@ export const api = {
       120_000,
     ),
 
+  studyNotes: (subjectId?: string) =>
+    request<ApiStudyNote[]>(`/study/notes${subjectId ? `?subjectId=${subjectId}` : ""}`),
+  generateNote: (subjectId: string, chapter: string | null) =>
+    request<ApiStudyNote>(
+      "/study/notes/generate",
+      { method: "POST", body: JSON.stringify({ subjectId, chapter }) },
+      180_000,
+    ),
+  deleteNote: (id: string) => request<{ ok: true }>(`/study/notes/${id}`, { method: "DELETE" }),
+
   generateSection: (
     subjectId: string,
     role: "knowledge" | "questions",
@@ -910,6 +920,15 @@ export interface ApiCard {
 export interface ApiReviewCard extends ApiCard {
   subject_name: string;
   subject_color: string | null;
+}
+
+export interface ApiStudyNote {
+  id: string;
+  subject_id: string;
+  chapter: string | null;
+  content: string;
+  created_at: string;
+  updated_at: string | null;
 }
 
 export interface ApiStudyStats {

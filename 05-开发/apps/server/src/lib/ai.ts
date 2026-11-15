@@ -354,3 +354,29 @@ export async function reviewAnswer(
     next: String(parsed.next ?? "").trim(),
   };
 }
+
+
+/** 把一章资料整理成「讲解 + 易错点」的可读讲义（不是问答卡） */
+export async function explainChapter(
+  subject: string,
+  chapter: string | null,
+  text: string,
+): Promise<string> {
+  const cfg = resolveAiConfig();
+  if (!cfg.apiKey) throw new Error("NOKEY");
+  const where = chapter ? `第 ${chapter} 章` : "本次上传的内容";
+  const prompt = `你在为「${subject}」的${where}写一份可直接阅读的复习讲义，面向本人。
+
+要求：
+- 按知识点逐条讲解，每条给出：是什么、为什么/关键性质、必要时给公式或判断方法、一个具体例子
+- 只使用下面资料里出现的内容；资料没讲到的不要补，不确定的地方明确写「资料未涉及」
+- 最后单独一节「易错点」，列出容易混淆或容易做错的 3–6 条，每条说明错在哪、怎么避免
+- 用 Markdown：二级标题分节，列表用 -，公式用行内代码或纯文本，不要用代码块包裹整篇
+- 不要出题、不要写问答、不要写客套话或总结段落
+
+资料正文：
+"""
+${text.slice(0, 20000)}
+"""`;
+  return (await chatOnce(cfg, [{ role: "user", content: prompt }], 0.3)).trim();
+}

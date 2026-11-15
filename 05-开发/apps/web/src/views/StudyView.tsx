@@ -4,6 +4,7 @@ import {
   api,
   type ApiCard,
   type ApiExam,
+  type ApiStudyNote,
   type ApiMaterial,
   type ApiReviewCard,
   type ApiStudyStats,
@@ -22,6 +23,7 @@ export function StudyView() {
   const [activeId, setActiveId] = useState<string>("");
   const [materials, setMaterials] = useState<ApiMaterial[]>([]);
   const [cards, setCards] = useState<ApiCard[]>([]);
+  const [notes, setNotes] = useState<ApiStudyNote[]>([]);
   const [queue, setQueue] = useState<ApiReviewCard[]>([]);
   const [stats, setStats] = useState<ApiStudyStats | null>(null);
   const [exams, setExams] = useState<ApiExam[]>([]);
@@ -67,13 +69,15 @@ export function StudyView() {
       return;
     }
     try {
-      const [mats, q, cds] = await Promise.all([
+      const [mats, q, cds, nts] = await Promise.all([
         api.materials(subjectId),
         api.reviewQueue(subjectId),
         api.cards(subjectId),
+        api.studyNotes(subjectId),
       ]);
       setMaterials(mats);
       setCards(cds);
+      setNotes(nts);
       setQueue(q.cards);
       setIdx(0);
       setFlipped(false);
@@ -418,6 +422,7 @@ export function StudyView() {
             subjectId={active.id}
             materials={materials}
             cards={cards}
+            notes={notes}
             busy={busy}
             onUpload={(files, role, chapter) => uploadMany(files, role, chapter)}
             onChanged={async () => {

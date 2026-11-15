@@ -462,7 +462,15 @@
     "feedbackGood": "做对的",
     "feedbackWrong": "问题",
     "feedbackNext": "下一步",
-    "generatedN": "已生成 {{n}} 张 · {{chapter}} · {{kind}}"
+    "generatedN": "已生成 {{n}} 张 · {{chapter}} · {{kind}}",
+    "genNote": "生成本章讲解",
+    "regenNote": "重新生成本章讲解",
+    "noteOpen": "展开讲解",
+    "noteClose": "收起",
+    "noteEmpty": "还没有本章讲解",
+    "noteGenerating": "正在整理讲解…",
+    "noteGenFailed": "这一章还没有知识类资料，先上传课件或笔记",
+    "noteReady": "本章讲解已更新"
   },
   "growth": {
     "coins": "我的快乐币",

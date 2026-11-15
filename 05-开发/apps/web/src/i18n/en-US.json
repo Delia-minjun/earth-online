@@ -461,7 +461,15 @@
     "feedbackGood": "What's right",
     "feedbackWrong": "What's off",
     "feedbackNext": "Next step",
-    "generatedN": "{{n}} cards created · {{chapter}} · {{kind}}"
+    "generatedN": "{{n}} cards created · {{chapter}} · {{kind}}",
+    "genNote": "Explain this chapter",
+    "regenNote": "Regenerate explanation",
+    "noteOpen": "Show explanation",
+    "noteClose": "Collapse",
+    "noteEmpty": "No explanation yet",
+    "noteGenerating": "Writing the explanation…",
+    "noteGenFailed": "No knowledge files in this chapter yet",
+    "noteReady": "Chapter explanation updated"
   },
   "growth": {
     "coins": "My coins",
