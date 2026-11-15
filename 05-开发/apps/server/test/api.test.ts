@@ -230,7 +230,7 @@ test("课表：可以改单双周，改成与别的每周课冲突时返回 409"
 
 test("领域与项目：建项目、挂任务、改状态、软删除", async () => {
   const areas = (await (await get("/areas")).json()) as { id: string; name: string }[];
-  assert.ok(areas.length >= 6, "预置领域应当存在");
+  assert.ok(areas.length >= 4, "预置领域应当存在（四大领域）");
   const study = areas.find((a) => a.name === "学业事业");
   assert.ok(study);
 
