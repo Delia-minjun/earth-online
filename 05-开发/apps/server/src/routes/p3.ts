@@ -111,14 +111,16 @@ p3.get("/areas/growth", (c) => c.json(growth()));
 
 /* ---------------- 奖赏商店 ---------------- */
 
-const SHOP_COLS = "id, name, price, money, money_category_id, archived, sort, wish";
+const SHOP_COLS = "id, name, price, money, money_category_id, archived, sort, wish, tag";
 
 p3.get("/rewards", (c) => {
   const rows = getDb()
     .prepare(
       `SELECT ${SHOP_COLS},
               (SELECT COUNT(*) FROM coin_entry ce
-                WHERE ce.kind = 'redeem' AND ce.ref_id = reward_item.id) AS redeemed
+                WHERE ce.kind = 'redeem' AND ce.ref_id = reward_item.id) AS redeemed,
+              (SELECT MAX(ce.created_at) FROM coin_entry ce
+                WHERE ce.kind = 'redeem' AND ce.ref_id = reward_item.id) AS last_redeemed
          FROM reward_item WHERE archived = 0 ORDER BY sort, name`,
     )
     .all();
@@ -131,6 +133,7 @@ const rewardBody = z.object({
   money: z.number().int().min(0).max(100000).optional(),
   moneyCategoryId: z.string().optional(),
   wish: z.boolean().optional(),
+  tag: z.string().trim().max(20).nullable().optional(),
 });
 
 p3.post("/rewards", async (c) => {
@@ -141,8 +144,8 @@ p3.post("/rewards", async (c) => {
   const next =
     (db.prepare("SELECT COALESCE(MAX(sort), 0) + 1 AS n FROM reward_item").get() as { n: number }).n;
   db.prepare(
-    `INSERT INTO reward_item (id, name, price, money, money_category_id, sort, wish)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO reward_item (id, name, price, money, money_category_id, sort, wish, tag)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     id,
     r.data.name,
@@ -151,6 +154,7 @@ p3.post("/rewards", async (c) => {
     r.data.moneyCategoryId ?? null,
     next,
     r.data.wish ? 1 : 0,
+    r.data.tag ?? null,
   );
   return c.json(db.prepare(`SELECT ${SHOP_COLS} FROM reward_item WHERE id = ?`).get(id), 201);
 });
@@ -162,18 +166,27 @@ p3.patch("/rewards/:id", async (c) => {
 
   const db = getDb();
   const cur = db.prepare(`SELECT ${SHOP_COLS} FROM reward_item WHERE id = ?`).get(id) as
-    | { name: string; price: number; money: number; money_category_id: string | null; wish: number }
+    | {
+        name: string;
+        price: number;
+        money: number;
+        money_category_id: string | null;
+        wish: number;
+        tag: string | null;
+      }
     | undefined;
   if (!cur) return c.json({ error: "not found" }, 404);
 
   db.prepare(
-    `UPDATE reward_item SET name = ?, price = ?, money = ?, money_category_id = ?, wish = ? WHERE id = ?`,
+    `UPDATE reward_item SET name = ?, price = ?, money = ?, money_category_id = ?, wish = ?, tag = ?
+      WHERE id = ?`,
   ).run(
     r.data.name ?? cur.name,
     r.data.price ?? cur.price,
     r.data.money ?? cur.money,
     r.data.moneyCategoryId !== undefined ? r.data.moneyCategoryId : cur.money_category_id,
     r.data.wish === undefined ? cur.wish : r.data.wish ? 1 : 0,
+    r.data.tag !== undefined ? r.data.tag : cur.tag,
     id,
   );
   return c.json(db.prepare(`SELECT ${SHOP_COLS} FROM reward_item WHERE id = ?`).get(id));

@@ -89,7 +89,7 @@
     "weekOut": "This week −{{n}}",
     "areas": "Six areas",
     "decay": "−1% per day, floor 40%",
-    "shop": "Reward shop",
+    "shop": "Shop",
     "redeem": "Redeem",
     "redeeming": "Redeeming…",
     "ledger": "Recent ledger",
@@ -475,6 +475,14 @@
     "dayN": "Day {{n}}",
     "noDurationShort": "None",
     "editMilestone": "Edit milestone",
-    "addStepShort": "Add sub-goal"
+    "addStepShort": "Add sub-goal",
+    "tagTaste": "Taste",
+    "tagPlay": "Play",
+    "tagOwn": "Own",
+    "tagMake": "Make",
+    "tagBond": "Bond",
+    "tagOut": "Out",
+    "tagOther": "Other",
+    "redeemedOn": "redeemed {{d}}"
   }
 }

@@ -10,8 +10,21 @@ import { Card } from "../components/Card";
 import { MilestonesCard } from "../components/MilestonesCard";
 import { TodayTasksCard } from "../components/TodayTasksCard";
 
-type Draft = { name: string; price: string; money: string };
-const EMPTY: Draft = { name: "", price: "", money: "" };
+/** 快乐方式分区：味觉 / 玩乐 / 拥有 / 创造 / 关系 / 出门 */
+const TAG_META: Record<string, { label: string; color: string; icon: string }> = {
+  taste: { label: "growth.tagTaste", color: "#CBAAA2", icon: "☕" },
+  play: { label: "growth.tagPlay", color: "#A8B5A2", icon: "🎮" },
+  own: { label: "growth.tagOwn", color: "#B4AAC4", icon: "🎁" },
+  make: { label: "growth.tagMake", color: "#C9B99A", icon: "🎨" },
+  bond: { label: "growth.tagBond", color: "#C4A8A8", icon: "🤝" },
+  out: { label: "growth.tagOut", color: "#9FB3C0", icon: "🌤" },
+  "": { label: "growth.tagOther", color: "#C7C2B8", icon: "✨" },
+};
+
+const TAG_KEYS = ["taste", "play", "own", "make", "bond", "out", ""];
+
+type Draft = { name: string; price: string; money: string; tag: string };
+const EMPTY: Draft = { name: "", price: "", money: "", tag: "" };
 
 const KIND_LABEL: Record<string, string> = {
   task: "reward.kindTask",
@@ -23,8 +36,6 @@ const KIND_LABEL: Record<string, string> = {
   bonus: "reward.kindBonus",
 };
 
-type Tab = "all" | "wish" | "redeemed";
-
 /** 生活成长（原奖赏）：快乐币 + 六领域成长 + 奖赏商店 + 最近账本 */
 export function LifeGrowthView() {
   const { t } = useTranslation();
@@ -32,7 +43,6 @@ export function LifeGrowthView() {
   const [growth, setGrowth] = useState<ApiAreaGrowth[]>([]);
   const [shop, setShop] = useState<ApiRewardItem[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [tab, setTab] = useState<Tab>("all");
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
@@ -59,14 +69,22 @@ export function LifeGrowthView() {
   const balance = wallet?.balance ?? 0;
 
   const wishItems = useMemo(() => shop.filter((r) => r.wish), [shop]);
-  const redeemedItems = useMemo(() => shop.filter((r) => (r.redeemed ?? 0) > 0), [shop]);
 
   const nextWish = useMemo(() => {
     const candidates = wishItems.filter((r) => r.price > balance).sort((a, b) => a.price - b.price);
     return candidates[0] ?? null;
   }, [wishItems, balance]);
 
-  const visible = tab === "all" ? shop : tab === "wish" ? wishItems : redeemedItems;
+  /** 按快乐方式分区，空区不显示 */
+  const grouped = useMemo(() => {
+    const buckets = new Map<string, ApiRewardItem[]>();
+    for (const key of TAG_KEYS) buckets.set(key, []);
+    for (const r of shop) {
+      const key = r.tag && TAG_KEYS.includes(r.tag) ? r.tag : "";
+      buckets.get(key)!.push(r);
+    }
+    return [...buckets.entries()].filter(([, list]) => list.length > 0);
+  }, [shop]);
 
   const startAdd = () => {
     setEditing(null);
@@ -80,6 +98,7 @@ export function LifeGrowthView() {
       name: item.name,
       price: String(item.price),
       money: item.money > 0 ? String(item.money) : "",
+      tag: item.tag ?? "",
     });
     setOpen(true);
   };
@@ -94,6 +113,7 @@ export function LifeGrowthView() {
         name,
         price: Math.round(price),
         money: draft.money.trim() ? Math.round(Number(draft.money)) : 0,
+        tag: draft.tag || null,
       };
       if (editing) await api.updateReward(editing, payload);
       else await api.addReward(payload);
@@ -222,7 +242,7 @@ export function LifeGrowthView() {
 
       <MilestonesCard areas={growth} />
 
-      {/* 奖赏商店 */}
+      {/* 商店：按快乐方式分区横排 */}
       <Card
         title={t("reward.shop")}
         action={
@@ -235,100 +255,105 @@ export function LifeGrowthView() {
           </button>
         }
       >
-        <div className="flex flex-wrap items-center gap-1.5">
-          {(
-            [
-              ["all", t("growth.tabAll")],
-              ["wish", t("growth.tabWish")],
-              ["redeemed", t("growth.tabRedeemed", { n: redeemedItems.length })],
-            ] as [Tab, string][]
-          ).map(([key, label]) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setTab(key)}
-              className={`rounded-full px-2.5 py-[3px] text-[10px] transition-colors ${
-                tab === key
-                  ? "bg-accent text-white"
-                  : "border border-line text-ink-3 hover:border-accent hover:text-accent"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
-        <div className="mt-2.5 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
-          {visible.map((r) => {
-            const afford = balance >= r.price;
+        <div className="space-y-3">
+          {grouped.map(([tagKey, list]) => {
+            const meta = TAG_META[tagKey] ?? TAG_META[""]!;
             return (
-              <div
-                key={r.id}
-                className="group flex flex-col rounded-xl border border-line-2 bg-surface-2 p-2.5"
-              >
-                <div className="flex items-start gap-2">
-                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-surface text-[11px] text-ink-3">
-                    {r.name.slice(0, 1)}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => startEdit(r)}
-                    className="min-w-0 flex-1 text-left"
-                  >
-                    <p className="truncate text-[11px] text-ink">{r.name}</p>
-                    <p className="mt-0.5 truncate text-[9.5px] text-ink-3">
-                      {r.money > 0 ? `¥${r.money}` : t("growth.noMoney")}
-                      {r.redeemed ? ` · ${t("growth.redeemedN", { n: r.redeemed })}` : ""}
-                    </p>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void toggleWish(r)}
-                    aria-label={t("growth.wish")}
-                    className={`shrink-0 text-[12px] leading-none transition-colors ${
-                      r.wish ? "text-[#c9a76a]" : "text-[#d5d0c7] hover:text-[#c9a76a]"
-                    }`}
-                  >
-                    {r.wish ? "★" : "☆"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void remove(r.id)}
-                    className="shrink-0 text-[11px] leading-none text-[#c0bbb2] transition-colors hover:text-warn md:opacity-0 md:group-hover:opacity-100"
-                    aria-label="delete"
-                  >
-                    ×
-                  </button>
-                </div>
+              <section key={tagKey}>
+                <h3 className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.12em] text-ink-3">
+                  <span>{meta.icon}</span>
+                  {t(meta.label)}
+                </h3>
+                <div className="mt-1.5 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+                  {list.map((r) => {
+                    const afford = balance >= r.price;
+                    const ratio = Math.min(100, Math.round((balance / r.price) * 100));
+                    return (
+                      <div
+                        key={r.id}
+                        className="group flex flex-col rounded-xl border border-line-2 bg-surface-2 p-2.5 transition-transform duration-150 hover:-translate-y-0.5 hover:border-line"
+                      >
+                        <div className="flex items-start gap-2">
+                          <span
+                            className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-[12px]"
+                            style={{ background: `${meta.color}33`, color: meta.color }}
+                          >
+                            {meta.icon}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => startEdit(r)}
+                            className="min-w-0 flex-1 text-left"
+                          >
+                            <p className="truncate text-[11px] text-ink">{r.name}</p>
+                            <p className="mt-0.5 truncate text-[9.5px] text-ink-3">
+                              {r.money > 0 ? `¥${r.money}` : t("growth.noMoney")}
+                            </p>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void toggleWish(r)}
+                            aria-label={t("growth.wish")}
+                            className={`shrink-0 text-[12px] leading-none transition-colors ${
+                              r.wish ? "text-[#c9a76a]" : "text-[#d5d0c7] hover:text-[#c9a76a]"
+                            }`}
+                          >
+                            {r.wish ? "★" : "☆"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void remove(r.id)}
+                            className="shrink-0 text-[11px] leading-none text-[#c0bbb2] transition-colors hover:text-warn md:opacity-0 md:group-hover:opacity-100"
+                            aria-label="delete"
+                          >
+                            ×
+                          </button>
+                        </div>
 
-                <div className="mt-auto flex items-end justify-between gap-2 pt-3">
-                  <span className="flex items-baseline gap-1">
-                    <span className="text-[20px] font-semibold leading-none text-ink">
-                      {r.price}
-                    </span>
-                    <span className="text-[9.5px] text-ink-3">{t("reward.unit")}</span>
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => void redeem(r)}
-                    disabled={!afford || redeeming === r.id}
-                    className={`rounded-full px-2.5 py-[4px] text-[10px] font-semibold transition-colors ${
-                      afford
-                        ? "bg-accent text-white hover:opacity-90"
-                        : "bg-surface text-ink-3"
-                    } disabled:opacity-100`}
-                  >
-                    {redeeming === r.id
-                      ? t("reward.redeeming")
-                      : afford
-                        ? t("reward.redeem")
-                        : t("growth.shortBy", { n: r.price - balance })}
-                  </button>
+                        <div className="mt-2 h-1 overflow-hidden rounded-full bg-line-2">
+                          <div
+                            className="h-full rounded-full"
+                            style={{ width: `${ratio}%`, background: meta.color }}
+                          />
+                        </div>
+
+                        <div className="mt-1.5 flex items-end justify-between gap-2">
+                          <span className="flex items-baseline gap-1">
+                            <span className="text-[16px] font-semibold leading-none text-ink">
+                              {r.price}
+                            </span>
+                            <span className="text-[9.5px] text-ink-3">{t("reward.unit")}</span>
+                          </span>
+                          {r.redeemed ? (
+                            <span className="rounded-full bg-surface px-1.5 py-[1px] text-[9px] text-ink-3">
+                              {r.last_redeemed
+                                ? t("growth.redeemedOn", { d: r.last_redeemed.slice(5, 10) })
+                                : t("growth.redeemedN", { n: r.redeemed })}
+                            </span>
+                          ) : null}
+                          <button
+                            type="button"
+                            onClick={() => void redeem(r)}
+                            disabled={!afford || redeeming === r.id}
+                            className={`rounded-full px-2.5 py-[4px] text-[10px] font-semibold transition-colors ${
+                              afford ? "bg-accent text-white hover:opacity-90" : "bg-surface text-ink-3"
+                            } disabled:opacity-100`}
+                          >
+                            {redeeming === r.id
+                              ? t("reward.redeeming")
+                              : afford
+                                ? t("reward.redeem")
+                                : t("growth.shortBy", { n: r.price - balance })}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              </div>
+              </section>
             );
           })}
-          {visible.length === 0 ? (
+          {shop.length === 0 ? (
             <p className="text-[10px] text-[#c8c4bc]">{t("growth.shopNone")}</p>
           ) : null}
         </div>
@@ -394,6 +419,17 @@ export function LifeGrowthView() {
                 placeholder={t("reward.namePlaceholder")}
                 className="w-full rounded-lg border border-line bg-surface-2 px-2 py-1.5 text-[11.5px] text-ink outline-none placeholder:text-[#c8c4bc]"
               />
+              <select
+                value={draft.tag}
+                onChange={(e) => setDraft({ ...draft, tag: e.target.value })}
+                className="w-full rounded-lg border border-line bg-surface-2 px-1.5 py-1.5 text-[11px] text-ink-2 outline-none"
+              >
+                {TAG_KEYS.map((k) => (
+                  <option key={k} value={k}>
+                    {TAG_META[k]!.icon} {t(TAG_META[k]!.label)}
+                  </option>
+                ))}
+              </select>
               <div className="flex gap-1.5">
                 <input
                   value={draft.price}

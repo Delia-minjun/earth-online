@@ -90,7 +90,7 @@
     "weekOut": "本周 −{{n}}",
     "areas": "六领域进度",
     "decay": "每日 −1%，下限 40%",
-    "shop": "奖赏商店",
+    "shop": "商店",
     "redeem": "兑换",
     "redeeming": "兑换中…",
     "ledger": "最近的账本",
@@ -476,6 +476,14 @@
     "dayN": "第 {{n}} 天",
     "noDurationShort": "无时长",
     "editMilestone": "修改里程碑",
-    "addStepShort": "添加小目标"
+    "addStepShort": "添加小目标",
+    "tagTaste": "味觉",
+    "tagPlay": "玩乐",
+    "tagOwn": "拥有",
+    "tagMake": "创造",
+    "tagBond": "关系",
+    "tagOut": "出门",
+    "tagOther": "其他",
+    "redeemedOn": "{{d}} 兑换过"
   }
 }
