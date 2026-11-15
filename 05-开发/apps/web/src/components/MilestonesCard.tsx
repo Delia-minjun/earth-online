@@ -18,8 +18,6 @@ export function MilestonesCard({ areas }: { areas: ApiAreaGrowth[] }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState({ title: "", areaId: "", months: "" });
 
-  const [inlineStep, setInlineStep] = useState<Record<string, string>>({});
-  const [addingId, setAddingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -158,8 +156,8 @@ export function MilestonesCard({ areas }: { areas: ApiAreaGrowth[] }) {
               </button>
 
               <div className="min-w-0 flex-1">
-                {/* 标题行 */}
-                <div className="flex items-center gap-2">
+                {/* 一行：标题 + 币 + 元信息 + 操作 */}
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                   <span
                     className={`truncate text-[11.5px] ${done ? "text-ink-3 line-through" : "text-ink"}`}
                   >
@@ -170,6 +168,24 @@ export function MilestonesCard({ areas }: { areas: ApiAreaGrowth[] }) {
                       +{m.coins}
                     </span>
                   ) : null}
+                  <span className="flex flex-wrap items-center gap-x-1.5 text-[9.5px] text-ink-3">
+                    {m.area_id ? (
+                      <span className="flex items-center gap-1">
+                        <span
+                          className="h-1.5 w-1.5 rounded-full"
+                          style={{ background: m.area_color ?? "#9BA7B0" }}
+                        />
+                        {m.area_name}
+                      </span>
+                    ) : null}
+                    {m.months ? <span className="tabular-nums">{t("growth.monthsN", { n: m.months })}</span> : null}
+                    <span className="tabular-nums">{t("growth.dayN", { n: dayIndex(m.created_at) })}</span>
+                    {steps.length ? (
+                      <span className="tabular-nums">
+                        {t("growth.stepsProgress", { done: doneSteps, total: steps.length })}
+                      </span>
+                    ) : null}
+                  </span>
                   <span className="ml-auto flex shrink-0 items-center gap-2">
                     <button
                       type="button"
@@ -194,29 +210,9 @@ export function MilestonesCard({ areas }: { areas: ApiAreaGrowth[] }) {
                   </span>
                 </div>
 
-                {/* 元信息：领域 · 时长 · 第N天 · 完成数 */}
-                <p className="mt-[3px] flex flex-wrap items-center gap-x-1.5 text-[9.5px] text-ink-3">
-                  {m.area_id ? (
-                    <span className="flex items-center gap-1">
-                      <span
-                        className="h-1.5 w-1.5 rounded-full"
-                        style={{ background: m.area_color ?? "#9BA7B0" }}
-                      />
-                      {m.area_name}
-                    </span>
-                  ) : null}
-                  {m.months ? <span className="tabular-nums">{t("growth.monthsN", { n: m.months })}</span> : null}
-                  <span className="tabular-nums">{t("growth.dayN", { n: dayIndex(m.created_at) })}</span>
-                  {steps.length ? (
-                    <span className="tabular-nums">
-                      {t("growth.stepsProgress", { done: doneSteps, total: steps.length })}
-                    </span>
-                  ) : null}
-                </p>
-
-                {/* 小目标：固定缩进，树形前缀对齐 */}
-                {steps.length || addingId === m.id ? (
-                  <ul className="mt-1.5 space-y-1">
+                {/* 小目标 */}
+                {steps.length ? (
+                  <ul className="mt-1 space-y-1">
                     {steps.map((s) => (
                       <li key={s.id} className="flex items-center gap-1.5">
                         <span className="w-3 shrink-0 text-center text-[10px] leading-none text-[#d5d0c7]">
@@ -253,41 +249,7 @@ export function MilestonesCard({ areas }: { areas: ApiAreaGrowth[] }) {
                         ) : null}
                       </li>
                     ))}
-
-                    {addingId === m.id ? (
-                      <li className="flex items-center gap-1.5">
-                        <span className="w-3 shrink-0 text-center text-[10px] leading-none text-[#d5d0c7]">
-                          └
-                        </span>
-                        <input
-                          autoFocus
-                          value={inlineStep[m.id] ?? ""}
-                          onChange={(e) => setInlineStep((v) => ({ ...v, [m.id]: e.target.value }))}
-                          onKeyDown={async (e) => {
-                            if (e.key === "Enter" && (inlineStep[m.id] ?? "").trim()) {
-                              await api.addStep(m.id, (inlineStep[m.id] ?? "").trim());
-                              setInlineStep((v) => ({ ...v, [m.id]: "" }));
-                              await load();
-                            }
-                            if (e.key === "Escape") setAddingId(null);
-                          }}
-                          placeholder={t("growth.addStep")}
-                          className="min-w-0 flex-1 rounded-md border border-line bg-surface-2 px-2 py-[3px] text-[10.5px] text-ink outline-none placeholder:text-[#c8c4bc]"
-                        />
-                      </li>
-                    ) : null}
                   </ul>
-                ) : null}
-
-                {addingId !== m.id ? (
-                  <button
-                    type="button"
-                    onClick={() => setAddingId(m.id)}
-                    className="mt-1 flex items-center gap-1.5 text-[10px] text-ink-3 transition-colors hover:text-accent"
-                  >
-                    <span className="w-3 shrink-0 text-center text-[10px] leading-none text-[#d5d0c7]">└</span>
-                    ＋ {t("growth.addStepShort")}
-                  </button>
                 ) : null}
               </div>
             </div>
