@@ -21,6 +21,7 @@ const uid = () => crypto.randomUUID();
 interface MilestoneRow {
   id: string;
   coins: number;
+  months: number | null;
   title: string;
   area_id: string | null;
   due_date: string | null;
@@ -34,7 +35,7 @@ p6.get("/milestones", (c) => {
   const db = getDb();
   const rows = db
     .prepare(
-      `SELECT m.id, m.title, m.area_id, m.due_date, m.note, m.done_at, m.sort, m.coins,
+      `SELECT m.id, m.title, m.area_id, m.due_date, m.months, m.note, m.done_at, m.sort, m.coins,
               a.name AS area_name, a.color AS area_color
          FROM milestone m LEFT JOIN area a ON a.id = m.area_id
         WHERE m.deleted_at IS NULL
@@ -64,6 +65,7 @@ const milestoneBody = z.object({
   note: z.string().trim().max(200).nullable().optional(),
   steps: z.array(z.string().trim().min(1).max(80)).max(8).optional(),
   coins: z.number().int().min(0).max(1000).optional(),
+  months: z.number().int().min(1).max(60).nullable().optional(),
 });
 
 p6.post("/milestones", async (c) => {
@@ -73,13 +75,26 @@ p6.post("/milestones", async (c) => {
   const db = getDb();
   const id = uid();
   const next = (db.prepare("SELECT COALESCE(MAX(sort), 0) + 1 AS n FROM milestone").get() as { n: number }).n;
+  // 有月数就用「开始日 + N 个月」推导到期日，避免手填日期
+  const months = r.data.months ?? null;
+  const dueDate =
+    months !== null
+      ? (
+          db
+            .prepare("SELECT date('now', ?) AS d")
+            .get(`+${months} months`) as { d: string }
+        ).d
+      : (r.data.dueDate ?? null);
+
   db.prepare(
-    `INSERT INTO milestone (id, title, area_id, due_date, note, sort, coins) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO milestone (id, title, area_id, due_date, months, note, sort, coins)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     id,
     r.data.title,
     r.data.areaId ?? null,
-    r.data.dueDate ?? null,
+    dueDate,
+    months,
     r.data.note ?? null,
     next,
     r.data.coins ?? 30,

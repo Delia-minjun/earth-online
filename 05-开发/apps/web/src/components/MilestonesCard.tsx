@@ -13,7 +13,7 @@ export function MilestonesCard({ areas }: { areas: ApiAreaGrowth[] }) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [stepDraft, setStepDraft] = useState("");
 
-  const [draft, setDraft] = useState({ title: "", areaId: "", due: "", steps: "" });
+  const [draft, setDraft] = useState({ title: "", areaId: "", months: "", steps: "" });
 
   const load = useCallback(async () => {
     try {
@@ -41,10 +41,10 @@ export function MilestonesCard({ areas }: { areas: ApiAreaGrowth[] }) {
       await api.addMilestone({
         title,
         areaId: draft.areaId || undefined,
-        dueDate: draft.due || undefined,
+        months: draft.months ? Number(draft.months) : null,
         steps: steps.length ? steps : undefined,
       });
-      setDraft({ title: "", areaId: "", due: "", steps: "" });
+      setDraft({ title: "", areaId: "", months: "", steps: "" });
       setOpen(false);
       await load();
     } catch (e) {
@@ -127,6 +127,9 @@ export function MilestonesCard({ areas }: { areas: ApiAreaGrowth[] }) {
                       <span className="tabular-nums">
                         {doneSteps}/{steps.length}
                       </span>
+                    ) : null}
+                    {m.months ? (
+                      <span className="tabular-nums">{t("growth.monthsN", { n: m.months })}</span>
                     ) : null}
                     {left !== null ? (
                       <span className={`tabular-nums ${left < 0 ? "text-warn" : ""}`}>
@@ -258,12 +261,18 @@ export function MilestonesCard({ areas }: { areas: ApiAreaGrowth[] }) {
                     </option>
                   ))}
                 </select>
-                <input
-                  type="date"
-                  value={draft.due}
-                  onChange={(e) => setDraft({ ...draft, due: e.target.value })}
-                  className="w-1/2 rounded-lg border border-line bg-surface-2 px-1.5 py-1.5 text-[11px] tabular-nums text-ink-2 outline-none"
-                />
+                <select
+                  value={draft.months}
+                  onChange={(e) => setDraft({ ...draft, months: e.target.value })}
+                  className="w-1/2 rounded-lg border border-line bg-surface-2 px-1.5 py-1.5 text-[11px] text-ink-2 outline-none"
+                >
+                  <option value="">{t("growth.noDuration")}</option>
+                  {[1, 2, 3, 4, 6, 9, 12, 18].map((n) => (
+                    <option key={n} value={String(n)}>
+                      {t("growth.monthsN", { n })}
+                    </option>
+                  ))}
+                </select>
               </div>
               <textarea
                 value={draft.steps}
