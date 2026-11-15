@@ -9,6 +9,7 @@ import {
 } from "../api";
 import { Card } from "../components/Card";
 import { NoteMarkdown } from "./NoteMarkdown";
+import { splitQuestion } from "../lib/questionText";
 import { chapterSortKey, guessChapter } from "../lib/chapter";
 
 type Role = "knowledge" | "questions";
@@ -366,6 +367,7 @@ export function StudyMaterials({
                         {practice.items.map((item, qi) => {
                           const ansKey = `${practice.id}-${qi}`;
                           const open = openAnswers.includes(ansKey);
+                          const { stem, options } = splitQuestion(item.q);
                           return (
                             <li
                               key={ansKey}
@@ -382,8 +384,23 @@ export function StudyMaterials({
                                     </span>
                                   ) : null}
                                   <p className="max-w-[70ch] text-[12.5px] leading-[1.9] text-ink-2">
-                                    {item.q}
+                                    {stem}
                                   </p>
+                                  {options.length ? (
+                                    <ul className="mt-2 max-w-[70ch] space-y-1">
+                                      {options.map((opt, oi) => (
+                                        <li
+                                          key={`${ansKey}-o${oi}`}
+                                          className="flex gap-2 text-[12px] leading-[1.8] text-ink-2"
+                                        >
+                                          <span className="grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full border border-line text-[9.5px] font-semibold tabular-nums text-ink-3">
+                                            {String.fromCharCode(65 + oi)}
+                                          </span>
+                                          <span className="flex-1">{opt}</span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  ) : null}
 
                                   <button
                                     type="button"
