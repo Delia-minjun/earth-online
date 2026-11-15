@@ -112,7 +112,7 @@ export default function App() {
                 {t("app.title")}
               </p>
               <h1 className="mt-1.5 truncate text-[22px] font-semibold leading-tight text-ink">
-                {isReward ? t("reward.homeTitle") : t(`nav.${view}`)}
+                {t(`nav.${view}`)}
               </h1>
 
               {/* 日期 / 说明行：切换条在这一行的右端，与日期垂直居中 */}
@@ -123,7 +123,7 @@ export default function App() {
                         "week.range",
                         { start: short(week.startDate), end: short(week.endDate) },
                       )}` : ""}`
-                    : t(`sub.${view}`)}
+                    : ""}
                 </p>
 
                 {isSchedule ? (

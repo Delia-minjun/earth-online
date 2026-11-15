@@ -83,7 +83,6 @@
     "fun": "Leisure"
   },
   "reward": {
-    "homeTitle": "Earth Online System",
     "balance": "Balance",
     "unit": "coins",
     "weekIn": "This week +{{n}}",
@@ -242,14 +241,6 @@
     "inUse": "This category is still used by time blocks — reassign them first",
     "pickColor": "Click the swatch to change color",
     "newPlaceholder": "New category"
-  },
-  "sub": {
-    "week": "See this week by day; switch to Month for the whole month",
-    "review": "Look back: keep, improve, stop, start",
-    "reward": "Earn coins from real work, spend them on rewards you define",
-    "settings": "Models, term and preferences",
-    "habits": "Small things daily, long-term direction",
-    "study": "Organise, revise, quiz"
   },
   "placeholder": {
     "title": "Still building",
