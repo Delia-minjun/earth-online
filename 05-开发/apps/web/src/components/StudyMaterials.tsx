@@ -346,29 +346,48 @@ export function StudyMaterials({
                     </span>
                   </button>
                   {openPractice === key ? (
-                    <ol className="space-y-2 border-t border-line-2 bg-surface px-4 py-3">
+                    <ol className="max-h-[70vh] space-y-2.5 overflow-y-auto border-t border-line-2 bg-surface px-3 py-3">
                       {practice.items.map((item, qi) => {
                         const ansKey = `${practice.id}-${qi}`;
+                        const open = openAnswer === ansKey;
                         return (
-                          <li key={ansKey} className="text-[11.5px] leading-relaxed text-ink-2">
-                            <p className="flex gap-1.5">
-                              <span className="shrink-0 tabular-nums text-ink-3">
-                                {t("study.questionN", { n: qi + 1 })}
+                          <li
+                            key={ansKey}
+                            className="rounded-xl border border-line-2 bg-surface-2 px-3 py-2.5"
+                          >
+                            <div className="flex gap-2.5">
+                              <span className="mt-[1px] grid h-5 w-5 shrink-0 place-items-center rounded-full bg-accent-soft text-[10px] font-semibold tabular-nums text-accent">
+                                {qi + 1}
                               </span>
-                              <span className="flex-1">{item.q}</span>
-                            </p>
-                            <button
-                              type="button"
-                              onClick={() => setOpenAnswer(openAnswer === ansKey ? null : ansKey)}
-                              className="mt-1 text-[10px] text-ink-3 transition-colors hover:text-accent"
-                            >
-                              {openAnswer === ansKey ? t("study.hideAnswer") : t("study.showAnswer")}
-                            </button>
-                            {openAnswer === ansKey ? (
-                              <div className="mt-1 rounded-lg border border-line-2 bg-surface-2 px-2.5 py-1.5 text-[11px] leading-relaxed">
-                                {item.a}
-                              </div>
-                            ) : null}
+                              <p className="max-w-[68ch] flex-1 text-[12px] leading-[1.85] text-ink-2">
+                                {item.q}
+                              </p>
+                            </div>
+
+                            <div className="mt-1.5 pl-[30px]">
+                              <button
+                                type="button"
+                                onClick={() => setOpenAnswer(open ? null : ansKey)}
+                                className={`rounded-full border px-2 py-[2px] text-[9.5px] transition-colors ${
+                                  open
+                                    ? "border-accent text-accent"
+                                    : "border-line text-ink-3 hover:border-accent hover:text-accent"
+                                }`}
+                              >
+                                {open ? t("study.hideAnswer") : t("study.showAnswer")}
+                              </button>
+
+                              {open ? (
+                                <div className="mt-2 max-w-[68ch] rounded-lg border border-line-2 bg-surface px-3 py-2">
+                                  <p className="text-[9.5px] uppercase tracking-[0.12em] text-ink-3">
+                                    {t("study.answerLabel")}
+                                  </p>
+                                  <p className="mt-1 whitespace-pre-wrap text-[11.5px] leading-[1.85] text-ink-2">
+                                    {item.a}
+                                  </p>
+                                </div>
+                              ) : null}
+                            </div>
                           </li>
                         );
                       })}

@@ -475,7 +475,8 @@
     "practiceFailed": "No question files in this chapter yet",
     "practiceReady": "Practice set updated",
     "hideAnswer": "Hide answer",
-    "questionN": "Q{{n}}"
+    "questionN": "Q{{n}}",
+    "answerLabel": "Answer & explanation"
   },
   "growth": {
     "coins": "My coins",

@@ -476,7 +476,8 @@
     "practiceFailed": "这一章还没有题目类资料，先上传作业/quiz",
     "practiceReady": "练习题已更新",
     "hideAnswer": "收起答案",
-    "questionN": "第 {{n}} 题"
+    "questionN": "第 {{n}} 题",
+    "answerLabel": "答案与解析"
   },
   "growth": {
     "coins": "我的快乐币",
