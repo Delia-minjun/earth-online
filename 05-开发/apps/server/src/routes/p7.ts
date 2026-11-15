@@ -22,6 +22,26 @@ const uid = () => crypto.randomUUID();
  * 用户写「第 3 章讲得太浅，多补例子」→ 规划器决定改讲解还是出题，
  * 再把这句要求塞进生成提示词，重写对应内容。
  */
+
+/** 本地关键词判断，省掉一次规划调用；判断不了再交给模型 */
+function localPlan(request: string): { action: "note" | "practice" | "both"; chapter: string | null } | null {
+  const wantsPractice = /(题|练习|刷题|quiz|考试|做题|选择题|计算题)/i.test(request);
+  const wantsNote = /(讲解|知识点|讲义|易错|讲得|讲浅|讲深|补充|例子|总结|梳理)/i.test(request);
+  if (!wantsNote && !wantsPractice) return null;
+
+  const chapter =
+    request.match(/第\s*([0-9]+(?:\s*-\s*[0-9]+)?)\s*章/)?.[1]?.replace(/\s+/g, "-") ??
+    request.match(/\bch(?:apter)?\s*([0-9]+)/i)?.[1] ??
+    request.match(/\bL\s*([0-9]+)/i)?.[1] === undefined
+      ? (request.match(/第\s*([0-9]+(?:\s*-\s*[0-9]+)?)\s*章/)?.[1]?.replace(/\s+/g, "-") ??
+        request.match(/\bch(?:apter)?\s*([0-9]+)/i)?.[1] ??
+        null)
+      : `L${request.match(/\bL\s*([0-9]+)/i)![1]}`;
+
+  const action = wantsNote && wantsPractice ? "both" : wantsNote ? "note" : "practice";
+  return { action, chapter };
+}
+
 p7.post("/study/instruct", async (c) => {
   const r = await readBody(
     c,
@@ -49,13 +69,19 @@ p7.post("/study/instruct", async (c) => {
       .all(r.data.subjectId) as { chapter: string }[]
   ).map((x) => x.chapter);
 
-  let plan;
-  try {
-    plan = await planInstruction(subject.name, chapters, r.data.request);
-  } catch (e) {
-    const msg = (e as Error).message;
-    if (msg === "NOKEY") return c.json({ error: "NOKEY" }, 400);
-    return c.json({ error: `规划失败：${msg}` }, 502);
+  // 先用关键词判断，省一次模型调用；判断不了再问模型
+  const quick = localPlan(r.data.request);
+  let plan: { action: "note" | "practice" | "both" | "none"; chapter: string | null; message: string };
+  if (quick) {
+    plan = { ...quick, message: "" };
+  } else {
+    try {
+      plan = await planInstruction(subject.name, chapters, r.data.request);
+    } catch (e) {
+      const msg = (e as Error).message;
+      if (msg === "NOKEY") return c.json({ error: "NOKEY" }, 400);
+      return c.json({ error: `规划失败：${msg}` }, 502);
+    }
   }
 
   if (plan.action === "none") {
@@ -85,7 +111,11 @@ p7.post("/study/instruct", async (c) => {
     ) as { title: string; content: string }[];
 
   try {
-    if (plan.action === "note" || plan.action === "both") {
+    const runNote = plan.action === "note" || plan.action === "both";
+    const runPractice = plan.action === "practice" || plan.action === "both";
+
+    const noteJob = (async () => {
+    if (runNote) {
       const mats = loadMats("knowledge");
       if (mats.length === 0) {
         done.push(`第 ${chapter ?? "当前"} 章没有知识类资料`);
@@ -106,11 +136,14 @@ p7.post("/study/instruct", async (c) => {
             "INSERT INTO study_note (id, subject_id, chapter, content) VALUES (?, ?, ?, ?)",
           ).run(uid(), r.data.subjectId, chapter, content);
         }
-        done.push("讲解已更新");
+        return "讲解已更新";
       }
     }
+    return null;
+    })();
 
-    if (plan.action === "practice" || plan.action === "both") {
+    const practiceJob = (async () => {
+    if (runPractice) {
       const mats = loadMats("questions");
       if (mats.length === 0) {
         done.push(`第 ${chapter ?? "当前"} 章没有题目类资料`);
@@ -132,9 +165,16 @@ p7.post("/study/instruct", async (c) => {
             "INSERT INTO chapter_practice (id, subject_id, chapter, items) VALUES (?, ?, ?, ?)",
           ).run(uid(), r.data.subjectId, chapter, JSON.stringify(items));
         }
-        done.push(`练习题已更新（${items.length} 题）`);
+        return `练习题已更新（${items.length} 题）`;
       }
     }
+    return null;
+    })();
+
+    // 两个生成同时跑，等于把等待时间减半
+    const [noteMsg, practiceMsg] = await Promise.all([noteJob, practiceJob]);
+    if (noteMsg) done.push(noteMsg);
+    if (practiceMsg) done.push(practiceMsg);
   } catch (e) {
     const msg = (e as Error).message;
     if (msg === "NOKEY") return c.json({ error: "NOKEY" }, 400);

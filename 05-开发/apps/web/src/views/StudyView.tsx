@@ -50,6 +50,7 @@ export function StudyView() {
   const [askChapter, setAskChapter] = useState("");
   const [asking, setAsking] = useState(false);
   const [askResult, setAskResult] = useState<string | null>(null);
+  const [askElapsed, setAskElapsed] = useState(0);
   const [draftAnswer, setDraftAnswer] = useState("");
   const [feedback, setFeedback] = useState<{ good: string; wrong: string; next: string } | null>(null);
   const [feedbackBusy, setFeedbackBusy] = useState(false);
@@ -163,6 +164,8 @@ export function StudyView() {
     if (!active || !ask.trim() || asking) return;
     setAsking(true);
     setAskResult(null);
+    setAskElapsed(0);
+    const timer = window.setInterval(() => setAskElapsed((s) => s + 1), 1000);
     try {
       const res = await api.instructStudy(active.id, ask.trim(), askChapter || null);
       setAskResult(res.message);
@@ -172,6 +175,7 @@ export function StudyView() {
     } catch (e) {
       setAskResult((e as Error).message);
     } finally {
+      window.clearInterval(timer);
       setAsking(false);
     }
   };
@@ -481,7 +485,7 @@ export function StudyView() {
                 disabled={asking || !ask.trim()}
                 className="shrink-0 rounded-full bg-accent px-2.5 py-[3px] text-[10px] font-semibold text-white disabled:opacity-50"
               >
-                {asking ? t("study.asking") : t("study.askSend")}
+                {asking ? `${t("study.asking")} ${askElapsed}s` : t("study.askSend")}
               </button>
             </div>
             {askResult ? (

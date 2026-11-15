@@ -197,11 +197,16 @@ export async function listModels(
 
 type Msg = { role: "user"; content: unknown };
 
-async function chatOnce(cfg: AiConfig, messages: Msg[], temperature = 0): Promise<string> {
+async function chatOnce(
+  cfg: AiConfig,
+  messages: Msg[],
+  temperature = 0,
+  timeoutMs = 120_000,
+): Promise<string> {
   const res = await fetch(`${cfg.base.replace(/\/$/, "")}/chat/completions`, {
     method: "POST",
     headers: { "content-type": "application/json", authorization: `Bearer ${cfg.apiKey}` },
-    signal: AbortSignal.timeout(120_000),
+    signal: AbortSignal.timeout(timeoutMs),
     body: JSON.stringify({ model: cfg.model, temperature, messages }),
   });
   if (!res.ok) {
@@ -292,6 +297,7 @@ export async function generateCards(
     cfg,
     [{ role: "user", content: extra ? `${base}\n\n本次额外要求（优先满足）：${extra}` : base }],
     0.2,
+    300_000,
   );
 
   const cleaned = raw.replace(/```json/gi, "").replace(/```/g, "").trim();
@@ -416,7 +422,7 @@ ${text.slice(0, 20000)}
 
 本次额外要求（优先满足，但不允许违反上面的覆盖与出处规则）：${extra}`
     : prompt;
-  return (await chatOnce(cfg, [{ role: "user", content: withExtra }], 0.2)).trim();
+  return (await chatOnce(cfg, [{ role: "user", content: withExtra }], 0.2, 300_000)).trim();
 }
 
 

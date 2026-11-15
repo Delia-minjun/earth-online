@@ -500,7 +500,7 @@
     "sectionRewritten": "这一节已重写",
     "askPlaceholder": "有什么要改的？例如：第3章讲得太浅，多补例子和易错点",
     "askSend": "发送",
-    "asking": "处理中…",
+    "asking": "生成中",
     "askAnyChapter": "自动判断"
   },
   "growth": {
