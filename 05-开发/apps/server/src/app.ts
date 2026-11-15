@@ -9,6 +9,7 @@ import { p3 } from "./routes/p3.ts";
 import { p4 } from "./routes/p4.ts";
 import { p5 } from "./routes/p5.ts";
 import { p6 } from "./routes/p6.ts";
+import { p7 } from "./routes/p7.ts";
 
 /**
  * 组装 Hono 应用但不监听端口——测试可以直接 app.request() 打进来。
@@ -35,6 +36,7 @@ export function createApp(
   app.route("/api", p4);
   app.route("/api", p5);
   app.route("/api", p6);
+  app.route("/api", p7);
 
   // 生产模式托管前端构建产物；开发模式由 Vite 单独跑并代理 /api
   app.use("/*", serveStatic({ root: webDist }));

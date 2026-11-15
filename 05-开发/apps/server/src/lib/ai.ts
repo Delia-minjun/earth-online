@@ -282,11 +282,17 @@ export async function generateCards(
   subject: string,
   count = 8,
   mode: CardMode = "knowledge",
+  extra?: string,
 ): Promise<GeneratedCard[]> {
   const cfg = resolveAiConfig();
   if (!cfg.apiKey) throw new Error("NOKEY");
   const prompt = mode === "questions" ? QUESTIONS_PROMPT : KNOWLEDGE_PROMPT;
-  const raw = await chatOnce(cfg, [{ role: "user", content: prompt(subject, count, text) }], 0.2);
+  const base = prompt(subject, count, text);
+  const raw = await chatOnce(
+    cfg,
+    [{ role: "user", content: extra ? `${base}\n\n本次额外要求（优先满足）：${extra}` : base }],
+    0.2,
+  );
 
   const cleaned = raw.replace(/```json/gi, "").replace(/```/g, "").trim();
   const start = cleaned.indexOf("{");
@@ -364,6 +370,7 @@ export async function explainChapter(
   subject: string,
   chapter: string | null,
   text: string,
+  extra?: string,
 ): Promise<string> {
   const cfg = resolveAiConfig();
   if (!cfg.apiKey) throw new Error("NOKEY");
@@ -404,7 +411,12 @@ export async function explainChapter(
 """
 ${text.slice(0, 20000)}
 """`;
-  return (await chatOnce(cfg, [{ role: "user", content: prompt }], 0.2)).trim();
+  const withExtra = extra
+    ? `${prompt}
+
+本次额外要求（优先满足，但不允许违反上面的覆盖与出处规则）：${extra}`
+    : prompt;
+  return (await chatOnce(cfg, [{ role: "user", content: withExtra }], 0.2)).trim();
 }
 
 
@@ -478,4 +490,51 @@ ${text.slice(0, 14000)}
 """`;
   const out = (await chatOnce(cfg, [{ role: "user", content: prompt }], 0.35)).trim();
   return out.replace(/^```[a-z]*\n?/i, "").replace(/\n?```$/, "").trim();
+}
+
+
+/** 把用户的自然语言要求，变成「对哪一章做什么」 */
+export interface InstructionPlan {
+  action: "note" | "practice" | "both" | "none";
+  chapter: string | null;
+  message: string;
+}
+
+export async function planInstruction(
+  subject: string,
+  chapters: string[],
+  request: string,
+): Promise<InstructionPlan> {
+  const cfg = resolveAiConfig();
+  if (!cfg.apiKey) throw new Error("NOKEY");
+  const prompt = `你是学习页的操作规划器。用户对一个科目提出了修改要求，你需要判断该做什么。
+
+科目：${subject}
+已有章节：${chapters.length ? chapters.join("、") : "（无）"}
+
+用户要求：${request}
+
+只输出 JSON：
+{"action":"note|practice|both|none","chapter":"章节号或 null","message":"一句话回应用户"}
+
+判断规则：
+- 提到"讲解/知识点/易错点/讲得浅/讲错"→ note
+- 提到"题/练习/太难/太简单/多出几道"→ practice
+- 两者都提到 → both
+- 与学习内容无关或无法执行 → none，并在 message 里说明
+- chapter 取用户明确提到的章节号（如"第3章"→"3"）；没提就填 null（表示当前章）`;
+  const raw = await chatOnce(cfg, [{ role: "user", content: prompt }], 0);
+  const cleaned = raw.replace(/```json/gi, "").replace(/```/g, "").trim();
+  const s = cleaned.indexOf("{");
+  const e = cleaned.lastIndexOf("}");
+  const parsed = JSON.parse(s >= 0 && e > s ? cleaned.slice(s, e + 1) : cleaned) as Partial<InstructionPlan>;
+  const action =
+    parsed.action === "note" || parsed.action === "practice" || parsed.action === "both" || parsed.action === "none"
+      ? parsed.action
+      : "none";
+  return {
+    action,
+    chapter: parsed.chapter ? String(parsed.chapter) : null,
+    message: String(parsed.message ?? "").trim(),
+  };
 }

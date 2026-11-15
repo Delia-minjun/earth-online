@@ -373,24 +373,7 @@ export function StudyMaterials({
                   </button>
                   {openNote === key ? (
                     <div className="max-h-[62vh] overflow-y-auto border-t border-line-2 bg-surface px-4 py-3">
-                      <NoteMarkdown
-                        content={note.content}
-                        pendingHeading={rewriting}
-                        onRewrite={async (heading) => {
-                          setRewriting(heading);
-                          setError(null);
-                          try {
-                            await api.regenNoteSection(note.id, heading);
-                            setToast(t("study.sectionRewritten"));
-                            window.setTimeout(() => setToast(null), 2500);
-                            await onChanged();
-                          } catch (e) {
-                            setError((e as Error).message);
-                          } finally {
-                            setRewriting(null);
-                          }
-                        }}
-                      />
+                      <NoteMarkdown content={note.content} />
                     </div>
                   ) : null}
                 </div>

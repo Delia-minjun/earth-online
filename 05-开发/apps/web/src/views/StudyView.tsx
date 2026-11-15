@@ -45,6 +45,9 @@ export function StudyView() {
   const [dragId, setDragId] = useState<string | null>(null);
   const [goalDraft, setGoalDraft] = useState("");
   const [goalSaving, setGoalSaving] = useState(false);
+  const [ask, setAsk] = useState("");
+  const [asking, setAsking] = useState(false);
+  const [askResult, setAskResult] = useState<string | null>(null);
   const [draftAnswer, setDraftAnswer] = useState("");
   const [feedback, setFeedback] = useState<{ good: string; wrong: string; next: string } | null>(null);
   const [feedbackBusy, setFeedbackBusy] = useState(false);
@@ -144,6 +147,24 @@ export function StudyView() {
       setError((e as Error).message);
     } finally {
       setGoalSaving(false);
+    }
+  };
+
+  /** 把一句话要求发给 agent：它自己决定改讲解还是出题 */
+  const sendInstruction = async () => {
+    if (!active || !ask.trim() || asking) return;
+    setAsking(true);
+    setAskResult(null);
+    try {
+      const res = await api.instructStudy(active.id, ask.trim(), null);
+      setAskResult(res.message);
+      setAsk("");
+      await loadSubject(active.id);
+      await loadAll();
+    } catch (e) {
+      setAskResult((e as Error).message);
+    } finally {
+      setAsking(false);
     }
   };
 
@@ -419,6 +440,33 @@ export function StudyView() {
               disabled={goalSaving}
               className="min-w-0 flex-1 bg-transparent text-[11px] text-ink-2 outline-none placeholder:text-[#c8c4bc] disabled:opacity-60"
             />
+          </div>
+
+          {/* 提要求：交给 agent 决定改讲解还是出题 */}
+          <div className="rounded-xl border border-line bg-surface px-3 py-2">
+            <div className="flex items-center gap-2">
+              <input
+                value={ask}
+                onChange={(e) => setAsk(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") void sendInstruction();
+                }}
+                placeholder={t("study.askPlaceholder")}
+                disabled={asking}
+                className="min-w-0 flex-1 bg-transparent text-[11px] text-ink-2 outline-none placeholder:text-[#c8c4bc] disabled:opacity-60"
+              />
+              <button
+                type="button"
+                onClick={() => void sendInstruction()}
+                disabled={asking || !ask.trim()}
+                className="shrink-0 rounded-full bg-accent px-2.5 py-[3px] text-[10px] font-semibold text-white disabled:opacity-50"
+              >
+                {asking ? t("study.asking") : t("study.askSend")}
+              </button>
+            </div>
+            {askResult ? (
+              <p className="mt-1.5 text-[10px] text-ink-3">{askResult}</p>
+            ) : null}
           </div>
 
           {/* 资料：知识内容与题目资料分开上传、分别出卡片 */}

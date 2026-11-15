@@ -816,6 +816,13 @@ export const api = {
       body: JSON.stringify({ heading }),
     }, 180_000),
 
+  instructStudy: (subjectId: string, text: string, chapter: string | null) =>
+    request<{ action: string; chapter: string | null; message: string }>(
+      "/study/instruct",
+      { method: "POST", body: JSON.stringify({ subjectId, request: text, chapter }) },
+      240_000,
+    ),
+
   generateNote: (subjectId: string, chapter: string | null) =>
     request<ApiStudyNote>(
       "/study/notes/generate",
