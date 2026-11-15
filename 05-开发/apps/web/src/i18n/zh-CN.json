@@ -491,7 +491,10 @@
     "wrongEmpty": "还没有收录错题",
     "wrongCount": "共 {{n}} 题",
     "removeFromWrong": "移出",
-    "addToChapter": "把文件加到本章"
+    "addToChapter": "把文件加到本章",
+    "moveChapter": "移动到章节",
+    "noChapterPick": "不分章",
+    "chapterInputPlaceholder": "章节，如 3 或 3-4 或 L5"
   },
   "growth": {
     "coins": "我的快乐币",

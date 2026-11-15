@@ -60,6 +60,9 @@ export function StudyMaterials({
   /** 章节内的 ＋ 上传：指定章节与类别 */
   const chapterFileRef = useRef<HTMLInputElement>(null);
   const [chapterTarget, setChapterTarget] = useState<string | null>(null);
+  /** 正在移动章节的资料 */
+  const [moving, setMoving] = useState<ApiMaterial | null>(null);
+  const [moveDraft, setMoveDraft] = useState("");
   const [over, setOver] = useState(false);
 
   const groups = useMemo<ChapterGroup[]>(() => {
@@ -331,7 +334,17 @@ export function StudyMaterials({
                     >
                       {m.role === "questions" ? t("study.questions") : t("study.knowledge")}
                     </span>
-                    <span className="min-w-0 flex-1 truncate text-[10.5px] text-ink-2">{m.title}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMoving(m);
+                        setMoveDraft(m.chapter ?? "");
+                      }}
+                      title={t("study.moveChapter")}
+                      className="min-w-0 flex-1 truncate text-left text-[10.5px] text-ink-2 transition-colors hover:text-accent"
+                    >
+                      {m.title}
+                    </button>
                     <button
                       type="button"
                       onClick={async () => {
@@ -536,6 +549,85 @@ export function StudyMaterials({
           <p className="text-[10px] text-[#c8c4bc]">{t("study.noMaterial")}</p>
         ) : null}
       </div>
+
+      {moving ? (
+        <div
+          className="fixed inset-0 z-50 flex items-start justify-center bg-black/25 p-4 pt-24"
+          onClick={() => setMoving(null)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl border border-line bg-surface p-4 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <header className="flex items-center justify-between">
+              <h2 className="text-[13px] font-semibold text-ink">{t("study.moveChapter")}</h2>
+              <button type="button" onClick={() => setMoving(null)} className="text-[13px] text-ink-3">
+                ✕
+              </button>
+            </header>
+            <p className="mt-1 truncate text-[10px] text-ink-3">{moving.title}</p>
+
+            <div className="mt-2.5 flex flex-wrap gap-1.5">
+              {[...new Set(materials.map((x) => x.chapter).filter((c): c is string => Boolean(c)))]
+                .sort()
+                .map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setMoveDraft(c)}
+                    className={`rounded-full border px-2 py-[2px] text-[10px] transition-colors ${
+                      moveDraft === c
+                        ? "border-accent bg-accent-soft text-accent"
+                        : "border-line text-ink-3 hover:border-accent"
+                    }`}
+                  >
+                    {t("study.chapterN", { n: c })}
+                  </button>
+                ))}
+              <button
+                type="button"
+                onClick={() => setMoveDraft("")}
+                className={`rounded-full border px-2 py-[2px] text-[10px] transition-colors ${
+                  moveDraft === ""
+                    ? "border-accent bg-accent-soft text-accent"
+                    : "border-line text-ink-3 hover:border-accent"
+                }`}
+              >
+                {t("study.noChapterPick")}
+              </button>
+            </div>
+
+            <input
+              value={moveDraft}
+              onChange={(e) => setMoveDraft(e.target.value)}
+              placeholder={t("study.chapterInputPlaceholder")}
+              className="mt-2 w-full rounded-lg border border-line bg-surface-2 px-2 py-1.5 text-[11.5px] text-ink outline-none placeholder:text-[#c8c4bc]"
+            />
+
+            <div className="mt-3 flex justify-end gap-1.5">
+              <button
+                type="button"
+                onClick={() => setMoving(null)}
+                className="rounded-lg border border-line px-3 py-1.5 text-[10.5px] text-ink-3"
+              >
+                {t("common.cancel")}
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  const id = moving.id;
+                  await api.updateMaterial(id, { chapter: moveDraft.trim() || null });
+                  setMoving(null);
+                  await onChanged();
+                }}
+                className="rounded-lg bg-accent px-3 py-1.5 text-[10.5px] font-semibold text-white"
+              >
+                {t("common.save")}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </Card>
   );
 }

@@ -490,7 +490,10 @@
     "wrongEmpty": "No questions saved yet",
     "wrongCount": "{{n}} saved",
     "removeFromWrong": "Remove",
-    "addToChapter": "Add files to this chapter"
+    "addToChapter": "Add files to this chapter",
+    "moveChapter": "Move to chapter",
+    "noChapterPick": "No chapter",
+    "chapterInputPlaceholder": "Chapter, e.g. 3, 3-4 or L5"
   },
   "growth": {
     "coins": "My coins",
