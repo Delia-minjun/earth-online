@@ -500,7 +500,8 @@
     "askPlaceholder": "Anything to change? e.g. chapter 3 is too shallow, add examples and pitfalls",
     "askSend": "Send",
     "asking": "Working",
-    "askAnyChapter": "Auto"
+    "askAnyChapter": "Auto",
+    "instructDone": "Changes applied"
   },
   "growth": {
     "coins": "My coins",

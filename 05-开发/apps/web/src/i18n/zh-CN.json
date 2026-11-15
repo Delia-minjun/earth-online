@@ -501,7 +501,8 @@
     "askPlaceholder": "有什么要改的？例如：第3章讲得太浅，多补例子和易错点",
     "askSend": "发送",
     "asking": "生成中",
-    "askAnyChapter": "自动判断"
+    "askAnyChapter": "自动判断",
+    "instructDone": "已修改完成"
   },
   "growth": {
     "coins": "我的快乐币",

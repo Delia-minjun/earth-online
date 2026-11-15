@@ -165,8 +165,8 @@ export function StudyView() {
     setAskElapsed(0);
     const timer = window.setInterval(() => setAskElapsed((s) => s + 1), 1000);
     try {
-      const res = await api.instructStudy(active.id, ask.trim(), askChapter || null);
-      setToast(res.message);
+      await api.instructStudy(active.id, ask.trim(), askChapter || null);
+      setToast(t("study.instructDone"));
       window.setTimeout(() => setToast(null), 1000);
       setAsk("");
       await loadSubject(active.id);
