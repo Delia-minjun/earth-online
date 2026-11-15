@@ -496,7 +496,8 @@
     "noChapterPick": "不分章",
     "chapterInputPlaceholder": "章节，如 3 或 3-4 或 L5",
     "regenOne": "换一题",
-    "rewriteSection": "重写"
+    "rewriteSection": "重写",
+    "sectionRewritten": "这一节已重写"
   },
   "growth": {
     "coins": "我的快乐币",

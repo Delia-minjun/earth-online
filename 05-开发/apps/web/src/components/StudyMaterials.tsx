@@ -60,6 +60,7 @@ export function StudyMaterials({
   /** 章节内的 ＋ 上传：指定章节与类别 */
   const chapterFileRef = useRef<HTMLInputElement>(null);
   const [chapterTarget, setChapterTarget] = useState<string | null>(null);
+  const [rewriting, setRewriting] = useState<string | null>(null);
   /** 正在移动章节的资料 */
   const [moving, setMoving] = useState<ApiMaterial | null>(null);
   const [moveDraft, setMoveDraft] = useState("");
@@ -374,15 +375,19 @@ export function StudyMaterials({
                     <div className="max-h-[62vh] overflow-y-auto border-t border-line-2 bg-surface px-4 py-3">
                       <NoteMarkdown
                         content={note.content}
+                        pendingHeading={rewriting}
                         onRewrite={async (heading) => {
-                          setGenerating((list) => [...list, `sec:${note.id}`]);
+                          setRewriting(heading);
+                          setError(null);
                           try {
                             await api.regenNoteSection(note.id, heading);
+                            setToast(t("study.sectionRewritten"));
+                            window.setTimeout(() => setToast(null), 2500);
                             await onChanged();
                           } catch (e) {
                             setError((e as Error).message);
                           } finally {
-                            setGenerating((list) => list.filter((k) => k !== `sec:${note.id}`));
+                            setRewriting(null);
                           }
                         }}
                       />

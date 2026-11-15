@@ -495,7 +495,8 @@
     "noChapterPick": "No chapter",
     "chapterInputPlaceholder": "Chapter, e.g. 3, 3-4 or L5",
     "regenOne": "Replace",
-    "rewriteSection": "Rewrite"
+    "rewriteSection": "Rewrite",
+    "sectionRewritten": "Section rewritten"
   },
   "growth": {
     "coins": "My coins",

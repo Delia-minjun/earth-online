@@ -37,10 +37,13 @@ function inline(text: string, keyPrefix: string): ReactNode[] {
 export function NoteMarkdown({
   content,
   onRewrite,
+  pendingHeading,
 }: {
   content: string;
-  /** 传入后在每个三级标题旁显示「重写本节」 */
+  /** 传入后在每个三级标题旁显示「重写」 */
   onRewrite?: (heading: string) => void;
+  /** 正在重写的小节标题，显示重写中并禁用按钮 */
+  pendingHeading?: string | null;
 }) {
   const lines = content.split("\n");
   const out: ReactNode[] = [];
@@ -69,10 +72,15 @@ export function NoteMarkdown({
           {level === 3 && onRewrite ? (
             <button
               type="button"
+              disabled={pendingHeading === line.trim()}
               onClick={() => onRewrite(line.trim())}
-              className="shrink-0 rounded-full border border-line px-2 py-[1px] text-[9.5px] text-ink-3 transition-colors hover:border-accent hover:text-accent"
+              className={`shrink-0 rounded-full border px-2 py-[1px] text-[9.5px] transition-colors ${
+                pendingHeading === line.trim()
+                  ? "border-accent bg-accent-soft text-accent"
+                  : "border-line text-ink-3 hover:border-accent hover:text-accent"
+              } disabled:opacity-100`}
             >
-              重写
+              {pendingHeading === line.trim() ? "重写中…" : "重写"}
             </button>
           ) : null}
         </div>,
