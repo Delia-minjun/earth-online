@@ -473,6 +473,8 @@
     "noDuration": "No duration",
     "stepPlaceholder": "Sub-goal (optional)",
     "dayN": "Day {{n}}",
-    "noDurationShort": "None"
+    "noDurationShort": "None",
+    "editMilestone": "Edit milestone",
+    "addStepShort": "Add sub-goal"
   }
 }

@@ -474,6 +474,8 @@
     "noDuration": "不设时长",
     "stepPlaceholder": "小目标（可留空）",
     "dayN": "第 {{n}} 天",
-    "noDurationShort": "无时长"
+    "noDurationShort": "无时长",
+    "editMilestone": "修改里程碑",
+    "addStepShort": "添加小目标"
   }
 }

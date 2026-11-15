@@ -676,7 +676,14 @@ export const api = {
   }) => request<ApiMilestone>("/milestones", { method: "POST", body: JSON.stringify(input) }),
   updateMilestone: (
     id: string,
-    patch: { title?: string; areaId?: string | null; dueDate?: string | null; note?: string | null; done?: boolean },
+    patch: {
+      title?: string;
+      areaId?: string | null;
+      dueDate?: string | null;
+      note?: string | null;
+      done?: boolean;
+      months?: number | null;
+    },
   ) => request<ApiMilestone>(`/milestones/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
   deleteMilestone: (id: string) => request<{ ok: true }>(`/milestones/${id}`, { method: "DELETE" }),
   addStep: (milestoneId: string, title: string, months?: number | null) =>

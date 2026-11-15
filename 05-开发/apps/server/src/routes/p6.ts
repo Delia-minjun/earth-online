@@ -22,6 +22,7 @@ interface MilestoneRow {
   id: string;
   coins: number;
   months: number | null;
+  created_at: string;
   title: string;
   area_id: string | null;
   due_date: string | null;
@@ -130,6 +131,7 @@ p6.patch("/milestones/:id", async (c) => {
       dueDate: z.string().regex(DATE_RE).nullable().optional(),
       note: z.string().trim().max(200).nullable().optional(),
       done: z.boolean().optional(),
+      months: z.number().int().min(1).max(60).nullable().optional(),
     }),
   );
   if (!r.ok) return c.json({ error: r.error }, 400);
@@ -143,12 +145,28 @@ p6.patch("/milestones/:id", async (c) => {
   const wasDone = Boolean(cur.done_at);
   const nowDone = r.data.done ?? wasDone;
 
+  // 改月数时重算到期日（以创建日为基准）
+  const months = r.data.months !== undefined ? r.data.months : cur.months;
+  let dueDate = r.data.dueDate !== undefined ? r.data.dueDate : cur.due_date;
+  if (r.data.months !== undefined) {
+    dueDate =
+      months === null
+        ? null
+        : (
+            db
+              .prepare("SELECT date(?, ?) AS d")
+              .get(cur.created_at.slice(0, 10), `+${months} months`) as { d: string }
+          ).d;
+  }
+
   db.prepare(
-    `UPDATE milestone SET title = ?, area_id = ?, due_date = ?, note = ?, done_at = ? WHERE id = ?`,
+    `UPDATE milestone SET title = ?, area_id = ?, due_date = ?, months = ?, note = ?, done_at = ?
+      WHERE id = ?`,
   ).run(
     r.data.title ?? cur.title,
     r.data.areaId !== undefined ? r.data.areaId : cur.area_id,
-    r.data.dueDate !== undefined ? r.data.dueDate : cur.due_date,
+    dueDate,
+    months,
     r.data.note !== undefined ? r.data.note : cur.note,
     nowDone ? cur.done_at ?? new Date().toISOString() : null,
     id,
