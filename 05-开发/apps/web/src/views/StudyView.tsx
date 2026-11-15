@@ -405,18 +405,6 @@ export function StudyView() {
             </button>
           </div>
 
-          {/* 下一步 */}
-          <div className="flex flex-wrap items-center gap-2 px-1">
-            <span className="text-[10px] uppercase tracking-[0.12em] text-ink-3">{t("study.nextStep")}</span>
-            <span className="text-[11px] text-ink-2">
-              {queue.length > 0
-                ? t("study.nextReview", { n: queue.length })
-                : materials.length === 0
-                  ? t("study.nextUpload")
-                  : t("study.nextGenerate")}
-            </span>
-          </div>
-
           {/* 资料：知识内容与题目资料分开上传、分别出卡片 */}
           <StudyMaterials
             subjectId={active.id}
