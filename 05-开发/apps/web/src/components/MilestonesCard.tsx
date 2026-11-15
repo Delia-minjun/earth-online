@@ -51,11 +51,12 @@ export function MilestonesCard({ areas }: { areas: ApiAreaGrowth[] }) {
     }
   };
 
-  const daysLeft = (due: string | null) => {
-    if (!due) return null;
+  /** 已经进行到第几天（从创建日算起，当天算第 1 天） */
+  const dayIndex = (createdAt: string) => {
+    const start = new Date(`${createdAt.slice(0, 10)}T00:00:00`);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    return Math.round((new Date(`${due}T00:00:00`).getTime() - today.getTime()) / 86_400_000);
+    return Math.max(1, Math.round((today.getTime() - start.getTime()) / 86_400_000) + 1);
   };
 
   return (
@@ -78,7 +79,6 @@ export function MilestonesCard({ areas }: { areas: ApiAreaGrowth[] }) {
           const done = Boolean(m.done_at);
           const steps = m.steps ?? [];
           const doneSteps = steps.filter((s) => s.done_at).length;
-          const left = daysLeft(m.due_date);
 
           return (
             <li key={m.id} className="py-2 first:pt-0">
@@ -123,13 +123,9 @@ export function MilestonesCard({ areas }: { areas: ApiAreaGrowth[] }) {
                     {m.months ? (
                       <span className="tabular-nums">{t("growth.monthsN", { n: m.months })}</span>
                     ) : null}
-                    {left !== null ? (
-                      <span className={`tabular-nums ${left < 0 ? "text-warn" : ""}`}>
-                        {left < 0
-                          ? t("growth.overdue", { n: -left })
-                          : t("growth.daysLeft", { n: left })}
-                      </span>
-                    ) : null}
+                    <span className="tabular-nums">
+                      {t("growth.dayN", { n: dayIndex(m.created_at) })}
+                    </span>
                   </p>
                 </div>
 

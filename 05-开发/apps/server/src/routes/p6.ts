@@ -35,7 +35,7 @@ p6.get("/milestones", (c) => {
   const db = getDb();
   const rows = db
     .prepare(
-      `SELECT m.id, m.title, m.area_id, m.due_date, m.months, m.note, m.done_at, m.sort, m.coins,
+      `SELECT m.id, m.title, m.area_id, m.due_date, m.months, m.note, m.done_at, m.sort, m.coins, m.created_at,
               a.name AS area_name, a.color AS area_color
          FROM milestone m LEFT JOIN area a ON a.id = m.area_id
         WHERE m.deleted_at IS NULL

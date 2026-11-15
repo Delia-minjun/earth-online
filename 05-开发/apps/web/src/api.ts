@@ -203,6 +203,7 @@ export interface ApiMilestone {
   title: string;
   coins: number;
   months: number | null;
+  created_at: string;
   area_id: string | null;
   area_name: string | null;
   area_color: string | null;

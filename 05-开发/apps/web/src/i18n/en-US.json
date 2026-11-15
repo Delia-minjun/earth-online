@@ -466,13 +466,12 @@
     "noMilestone": "No milestones yet",
     "markDone": "Mark done",
     "markUndone": "Mark not done",
-    "daysLeft": "{{n}} days left",
-    "overdue": "{{n}} days over",
     "noAreaPick": "No area",
     "tasks": "Today's tasks",
     "noTask": "No tasks today",
     "monthsN": "{{n}} months",
     "noDuration": "No duration",
-    "stepPlaceholder": "Sub-goal (optional)"
+    "stepPlaceholder": "Sub-goal (optional)",
+    "dayN": "Day {{n}}"
   }
 }
