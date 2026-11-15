@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { getDb } from "../db.ts";
 import { DATE_RE, today } from "../lib/dates.ts";
-import { generateCards, ocrImage } from "../lib/ai.ts";
+import { generateCards, ocrImage, reviewAnswer } from "../lib/ai.ts";
 import { extractDocument } from "../lib/office.ts";
 import { bumpArea, earn, getRules } from "../lib/coins.ts";
 
@@ -39,12 +39,12 @@ function mimeOf(filename: string): string {
 }
 /* ---------------- 科目 ---------------- */
 
-const SUBJECT_COLS = "id, name, color, archived, sort";
+const SUBJECT_COLS = "id, name, color, archived, sort, goal";
 
 p5.get("/study/subjects", (c) => {
   const rows = getDb()
     .prepare(
-      `SELECT s.id, s.name, s.color, s.sort,
+      `SELECT s.id, s.name, s.color, s.sort, s.goal,
               (SELECT COUNT(*) FROM material m WHERE m.subject_id = s.id AND m.deleted_at IS NULL) AS materials,
               (SELECT COUNT(*) FROM card c WHERE c.subject_id = s.id AND c.deleted_at IS NULL) AS cards,
               (SELECT COUNT(*) FROM card c WHERE c.subject_id = s.id AND c.deleted_at IS NULL AND c.due_date <= ?) AS due
@@ -57,33 +57,49 @@ p5.get("/study/subjects", (c) => {
 });
 
 p5.post("/study/subjects", async (c) => {
-  const r = await readBody(c, z.object({ name: z.string().trim().min(1).max(40), color: z.string().optional() }));
+  const r = await readBody(
+    c,
+    z.object({
+      name: z.string().trim().min(1).max(40),
+      color: z.string().optional(),
+      goal: z.string().trim().max(300).nullable().optional(),
+    }),
+  );
   if (!r.ok) return c.json({ error: r.error }, 400);
   const db = getDb();
   const id = uid();
   const next = (db.prepare("SELECT COALESCE(MAX(sort), 0) + 1 AS n FROM subject").get() as { n: number }).n;
   const COLORS = ["#9BA7B0", "#A8B5A2", "#CBBB9A", "#B0A6BC", "#C9A9A6", "#CDBDB0"];
-  db.prepare("INSERT INTO subject (id, name, color, sort) VALUES (?, ?, ?, ?)").run(
+  db.prepare("INSERT INTO subject (id, name, color, sort, goal) VALUES (?, ?, ?, ?, ?)").run(
     id,
     r.data.name,
     r.data.color ?? COLORS[next % COLORS.length]!,
     next,
+    r.data.goal ?? null,
   );
   return c.json(db.prepare(`SELECT ${SUBJECT_COLS} FROM subject WHERE id = ?`).get(id), 201);
 });
 
 p5.patch("/study/subjects/:id", async (c) => {
   const id = c.req.param("id");
-  const r = await readBody(c, z.object({ name: z.string().trim().min(1).max(40).optional(), color: z.string().optional() }));
+  const r = await readBody(
+    c,
+    z.object({
+      name: z.string().trim().min(1).max(40).optional(),
+      color: z.string().optional(),
+      goal: z.string().trim().max(300).nullable().optional(),
+    }),
+  );
   if (!r.ok) return c.json({ error: r.error }, 400);
   const db = getDb();
   const cur = db.prepare("SELECT * FROM subject WHERE id = ?").get(id) as
-    | { name: string; color: string | null }
+    | { name: string; color: string | null; goal: string | null }
     | undefined;
   if (!cur) return c.json({ error: "not found" }, 404);
-  db.prepare("UPDATE subject SET name = ?, color = ? WHERE id = ?").run(
+  db.prepare("UPDATE subject SET name = ?, color = ?, goal = ? WHERE id = ?").run(
     r.data.name ?? cur.name,
     r.data.color ?? cur.color,
+    r.data.goal !== undefined ? r.data.goal : cur.goal,
     id,
   );
   return c.json(db.prepare(`SELECT ${SUBJECT_COLS} FROM subject WHERE id = ?`).get(id));
@@ -563,9 +579,40 @@ p5.get("/study/review/queue", (c) => {
 });
 
 /** 自评三档：again 回第一格，good 进一格，easy 进两格 */
+
+/** 看完答案后：拿学习者的作答去对照参考答案要反馈 */
+p5.post("/study/cards/:id/feedback", async (c) => {
+  const id = c.req.param("id");
+  const r = await readBody(c, z.object({ answer: z.string().trim().min(1).max(4000) }));
+  if (!r.ok) return c.json({ error: r.error }, 400);
+
+  const db = getDb();
+  const card = db
+    .prepare("SELECT front, back FROM card WHERE id = ? AND deleted_at IS NULL")
+    .get(id) as { front: string; back: string } | undefined;
+  if (!card) return c.json({ error: "not found" }, 404);
+
+  try {
+    const fb = await reviewAnswer(card.front, card.back, r.data.answer);
+    return c.json(fb);
+  } catch (e) {
+    const msg = (e as Error).message;
+    if (msg === "NOKEY") return c.json({ error: "NOKEY" }, 400);
+    return c.json({ error: msg }, 502);
+  }
+});
+
 p5.post("/study/cards/:id/review", async (c) => {
   const id = c.req.param("id");
-  const r = await readBody(c, z.object({ rating: z.enum(["again", "good", "easy"]) }));
+  const r = await readBody(
+    c,
+    z.object({
+      rating: z.enum(["again", "good", "easy"]),
+      /** independent 独立 / hinted 提示后 / revealed 看了答案 / failed 不会 */
+      stage: z.enum(["independent", "hinted", "revealed", "failed"]).default("independent"),
+      answer: z.string().max(4000).optional(),
+    }),
+  );
   if (!r.ok) return c.json({ error: r.error }, 400);
 
   const db = getDb();
@@ -575,8 +622,13 @@ p5.post("/study/cards/:id/review", async (c) => {
   if (!card) return c.json({ error: "not found" }, 404);
 
   const prev = card.box;
-  const next =
-    r.data.rating === "again" ? 1 : Math.min(BOX_DAYS.length, prev + (r.data.rating === "easy" ? 2 : 1));
+  // 只有独立完成才允许前进；看了答案或没做出来一律回到第一格
+  const independent = r.data.stage === "independent" || r.data.stage === "hinted";
+  const next = !independent
+    ? 1
+    : r.data.rating === "again"
+      ? 1
+      : Math.min(BOX_DAYS.length, prev + (r.data.rating === "easy" ? 2 : 1));
   const due = addDays(today(), BOX_DAYS[next - 1]!);
 
   db.prepare("UPDATE card SET box = ?, due_date = ?, reviewed_at = datetime('now') WHERE id = ?").run(
@@ -585,8 +637,9 @@ p5.post("/study/cards/:id/review", async (c) => {
     id,
   );
   db.prepare(
-    `INSERT INTO card_review (id, card_id, rating, prev_box, next_box) VALUES (?, ?, ?, ?, ?)`,
-  ).run(uid(), id, r.data.rating, prev, next);
+    `INSERT INTO card_review (id, card_id, rating, prev_box, next_box, stage, answer)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+  ).run(uid(), id, r.data.rating, prev, next, r.data.stage, r.data.answer ?? null);
 
   // 复习 = 学习：给「学业事业」加进度，满 10 张发一次币（防刷）
   bumpArea("area-study", 0.04);

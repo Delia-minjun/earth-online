@@ -306,3 +306,51 @@ export async function generateCards(
     }))
     .filter((c) => c.front && c.back);
 }
+
+/** 判一次作答：指出对的、错的、下一步怎么练 */
+export interface AnswerFeedback {
+  good: string;
+  wrong: string;
+  next: string;
+  verdict: "right" | "partial" | "wrong";
+}
+
+export async function reviewAnswer(
+  front: string,
+  back: string,
+  answer: string,
+): Promise<AnswerFeedback> {
+  const cfg = resolveAiConfig();
+  if (!cfg.apiKey) throw new Error("NOKEY");
+  const prompt = `你在批改一道自测题的作答。只输出 JSON：
+
+{"verdict":"right|partial|wrong","good":"作答里做对的部分（没有就写 未涉及）","wrong":"具体的错误或遗漏，指出是哪一步/哪个概念","next":"下一步怎么练：一个更小的练习或换个角度的变式，一句话"}
+
+规则：
+- 只依据给定参考答案判断，不要引入外部知识；参考答案本身可疑时在 wrong 里指出
+- 不要给分数，不要客套；指出具体位置，而不是笼统说"不完整"
+- 作答与答案意思一致但表述不同，算 right
+
+题目：${front}
+
+参考答案：${back}
+
+学习者作答：${answer.slice(0, 3000)}`;
+
+  const raw = await chatOnce(cfg, [{ role: "user", content: prompt }], 0.2);
+  const cleaned = raw.replace(/```json/gi, "").replace(/```/g, "").trim();
+  const start = cleaned.indexOf("{");
+  const end = cleaned.lastIndexOf("}");
+  const body = start >= 0 && end > start ? cleaned.slice(start, end + 1) : cleaned;
+  const parsed = JSON.parse(body) as Partial<AnswerFeedback>;
+  const verdict =
+    parsed.verdict === "right" || parsed.verdict === "partial" || parsed.verdict === "wrong"
+      ? parsed.verdict
+      : "partial";
+  return {
+    verdict,
+    good: String(parsed.good ?? "").trim(),
+    wrong: String(parsed.wrong ?? "").trim(),
+    next: String(parsed.next ?? "").trim(),
+  };
+}

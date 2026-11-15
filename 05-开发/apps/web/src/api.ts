@@ -718,7 +718,7 @@ export const api = {
   subjects: () => request<ApiSubject[]>("/study/subjects"),
   addSubject: (input: { name: string; color?: string }) =>
     request<ApiSubject>("/study/subjects", { method: "POST", body: JSON.stringify(input) }),
-  renameSubject: (id: string, patch: { name?: string; color?: string }) =>
+  renameSubject: (id: string, patch: { name?: string; color?: string; goal?: string | null }) =>
     request<ApiSubject>(`/study/subjects/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
   deleteSubject: (id: string) =>
     request<{ ok: true }>(`/study/subjects/${id}`, { method: "DELETE" }),
@@ -800,11 +800,22 @@ export const api = {
     request<{ date: string; cards: ApiReviewCard[] }>(
       `/study/review/queue${subjectId ? `?subjectId=${subjectId}` : ""}`,
     ),
-  reviewCard: (id: string, rating: "again" | "good" | "easy") =>
+  reviewCard: (
+    id: string,
+    rating: "again" | "good" | "easy",
+    stage: "independent" | "hinted" | "revealed" | "failed" = "independent",
+    answer?: string,
+  ) =>
     request<ApiCard & { coins: number }>(`/study/cards/${id}/review`, {
       method: "POST",
-      body: JSON.stringify({ rating }),
+      body: JSON.stringify({ rating, stage, answer }),
     }),
+  cardFeedback: (id: string, answer: string) =>
+    request<{ verdict: "right" | "partial" | "wrong"; good: string; wrong: string; next: string }>(
+      `/study/cards/${id}/feedback`,
+      { method: "POST", body: JSON.stringify({ answer }) },
+      120_000,
+    ),
   studyStats: () => request<ApiStudyStats>("/study/stats"),
 
   exams: () => request<ApiExam[]>("/study/exams"),
@@ -853,6 +864,7 @@ export function shiftWeeks(date: Date, delta: number): Date {
 export interface ApiSubject {
   id: string;
   name: string;
+  goal?: string | null;
   color: string | null;
   sort: number;
   materials: number;

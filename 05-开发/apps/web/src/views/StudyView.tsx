@@ -13,6 +13,8 @@ import { Card } from "../components/Card";
 import { StudyMaterials } from "../components/StudyMaterials";
 import { renderPdfPages } from "../lib/pdfPages";
 
+type Stage = "independent" | "hinted" | "revealed" | "failed";
+
 /** 学习：科目 → 资料 → 卡片 → 间隔重复复习 */
 export function StudyView() {
   const { t } = useTranslation();
@@ -33,6 +35,11 @@ export function StudyView() {
   // 复习
   const [idx, setIdx] = useState(0);
   const [flipped, setFlipped] = useState(false);
+  const [goalOpen, setGoalOpen] = useState(false);
+  const [goalDraft, setGoalDraft] = useState("");
+  const [draftAnswer, setDraftAnswer] = useState("");
+  const [feedback, setFeedback] = useState<{ good: string; wrong: string; next: string } | null>(null);
+  const [feedbackBusy, setFeedbackBusy] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -69,6 +76,8 @@ export function StudyView() {
       setQueue(q.cards);
       setIdx(0);
       setFlipped(false);
+      setDraftAnswer("");
+      setFeedback(null);
     } catch (e) {
       setError((e as Error).message);
     }
@@ -225,11 +234,11 @@ export function StudyView() {
     }
   };
 
-  const grade = async (rating: "again" | "good" | "easy") => {
+  const grade = async (rating: "again" | "good" | "easy", stage: Stage = "independent") => {
     const card = queue[idx];
     if (!card) return;
     try {
-      const res = await api.reviewCard(card.id, rating);
+      const res = await api.reviewCard(card.id, rating, stage, draftAnswer.trim() || undefined);
       if (res.coins > 0) setToast(t("study.coins", { n: res.coins }));
       // 本地摘掉这张，避免整队重拉
       setQueue((q) => {
@@ -238,10 +247,36 @@ export function StudyView() {
         return next;
       });
       setFlipped(false);
+      setDraftAnswer("");
+      setFeedback(null);
       void loadAll();
       window.setTimeout(() => setToast(null), 2000);
     } catch (e) {
       setError((e as Error).message);
+    }
+  };
+
+  const saveGoal = async () => {
+    if (!active) return;
+    const text = goalDraft.trim();
+    await api.renameSubject(active.id, { goal: text || null });
+    setGoalOpen(false);
+    const subs = await api.subjects();
+    setSubjects(subs);
+  };
+
+  /** 看完答案后，用学习者的作答去要 AI 反馈 */
+  const askFeedback = async () => {
+    const card = queue[idx];
+    if (!card || !draftAnswer.trim()) return;
+    setFeedbackBusy(true);
+    try {
+      const fb = await api.cardFeedback(card.id, draftAnswer.trim());
+      setFeedback({ good: fb.good, wrong: fb.wrong, next: fb.next });
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setFeedbackBusy(false);
     }
   };
 
@@ -316,6 +351,37 @@ export function StudyView() {
       {!active ? null : (
         // 每张卡各占一整行，互不影响高度
         <div className="space-y-3.5">
+          {/* 学习目标 */}
+          <div className="flex flex-wrap items-center gap-2 rounded-xl border border-line bg-surface px-3 py-2">
+            <span className="text-[10px] uppercase tracking-[0.12em] text-ink-3">{t("study.goalLabel")}</span>
+            <span className="min-w-0 flex-1 truncate text-[11px] text-ink-2">
+              {active.goal || t("study.goalPlaceholder")}
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setGoalDraft(active.goal ?? "");
+                setGoalOpen(true);
+              }}
+              className="shrink-0 text-[11px] leading-none text-[#c0bbb2] transition-colors hover:text-accent"
+              aria-label={t("study.goalEdit")}
+            >
+              ✎
+            </button>
+          </div>
+
+          {/* 下一步 */}
+          <div className="flex flex-wrap items-center gap-2 px-1">
+            <span className="text-[10px] uppercase tracking-[0.12em] text-ink-3">{t("study.nextStep")}</span>
+            <span className="text-[11px] text-ink-2">
+              {queue.length > 0
+                ? t("study.nextReview", { n: queue.length })
+                : materials.length === 0
+                  ? t("study.nextUpload")
+                  : t("study.nextGenerate")}
+            </span>
+          </div>
+
           {/* 资料：知识内容与题目资料分开上传、分别出卡片 */}
           <StudyMaterials
             subjectId={active.id}
@@ -353,38 +419,64 @@ export function StudyView() {
                   ) : null}
                 </div>
 
-                {flipped ? (
-                  <div className="mt-2.5 flex gap-1.5">
+                {!flipped ? (
+                  <>
+                    <textarea
+                      value={draftAnswer}
+                      onChange={(e) => setDraftAnswer(e.target.value)}
+                      rows={2}
+                      placeholder={t("study.answerPlaceholder")}
+                      className="mt-2 w-full resize-none rounded-lg border border-line bg-surface-2 px-2 py-1.5 text-[11px] leading-relaxed text-ink outline-none placeholder:text-[#c8c4bc]"
+                    />
                     <button
                       type="button"
-                      onClick={() => void grade("again")}
-                      className="flex-1 rounded-lg border border-line py-1.5 text-[10.5px] text-ink-2 hover:border-warn hover:text-warn"
+                      onClick={() => setFlipped(true)}
+                      className="mt-1.5 w-full rounded-lg bg-accent py-1.5 text-[10.5px] font-semibold text-white"
                     >
-                      {t("study.again")}
+                      {t("study.showAnswer")}
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => void grade("good")}
-                      className="flex-1 rounded-lg bg-accent py-1.5 text-[10.5px] font-semibold text-white"
-                    >
-                      {t("study.good")}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void grade("easy")}
-                      className="flex-1 rounded-lg border border-line py-1.5 text-[10.5px] text-ink-2 hover:border-accent hover:text-accent"
-                    >
-                      {t("study.easy")}
-                    </button>
-                  </div>
+                  </>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={() => setFlipped(true)}
-                    className="mt-2.5 w-full rounded-lg bg-accent py-1.5 text-[10.5px] font-semibold text-white"
-                  >
-                    {t("study.showAnswer")}
-                  </button>
+                  <>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {(
+                        [
+                          ["independent", "good", t("study.stageIndependent"), "bg-accent text-white"],
+                          ["hinted", "good", t("study.stageHinted"), "border border-line text-ink-2 hover:border-accent"],
+                          ["revealed", "again", t("study.stageRevealed"), "border border-line text-ink-2 hover:border-warn"],
+                          ["failed", "again", t("study.stageFailed"), "border border-line text-ink-3 hover:border-warn"],
+                        ] as [Stage, "again" | "good", string, string][]
+                      ).map(([stage, rating, label, cls]) => (
+                        <button
+                          key={stage}
+                          type="button"
+                          onClick={() => void grade(rating, stage)}
+                          className={`rounded-lg px-2.5 py-1.5 text-[10.5px] font-semibold ${cls}`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {draftAnswer.trim() ? (
+                      <button
+                        type="button"
+                        onClick={() => void askFeedback()}
+                        disabled={feedbackBusy}
+                        className="mt-1.5 text-[10px] text-ink-3 transition-colors hover:text-accent disabled:opacity-50"
+                      >
+                        {feedbackBusy ? t("study.generating") : `✧ ${t("study.askFeedback")}`}
+                      </button>
+                    ) : null}
+
+                    {feedback ? (
+                      <div className="mt-2 space-y-1.5 rounded-xl border border-line-2 bg-surface-2 p-2.5 text-[10.5px] leading-relaxed">
+                        <p><span className="text-ink-3">{t("study.feedbackGood")}：</span><span className="text-ink-2">{feedback.good}</span></p>
+                        <p><span className="text-ink-3">{t("study.feedbackWrong")}：</span><span className="text-warn">{feedback.wrong}</span></p>
+                        <p><span className="text-ink-3">{t("study.feedbackNext")}：</span><span className="text-ink-2">{feedback.next}</span></p>
+                      </div>
+                    ) : null}
+                  </>
                 )}
               </div>
             ) : (
@@ -424,6 +516,48 @@ export function StudyView() {
               </span>
             );
           })}
+        </div>
+      ) : null}
+
+      {goalOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-start justify-center bg-black/25 p-4 pt-24"
+          onClick={() => setGoalOpen(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl border border-line bg-surface p-4 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <header className="flex items-center justify-between">
+              <h2 className="text-[13px] font-semibold text-ink">{t("study.goalEdit")}</h2>
+              <button type="button" onClick={() => setGoalOpen(false)} className="text-[13px] text-ink-3">
+                ✕
+              </button>
+            </header>
+            <textarea
+              value={goalDraft}
+              onChange={(e) => setGoalDraft(e.target.value)}
+              rows={3}
+              placeholder={t("study.goalPlaceholder")}
+              className="mt-2 w-full resize-none rounded-lg border border-line bg-surface-2 px-2 py-1.5 text-[11.5px] leading-relaxed text-ink outline-none placeholder:text-[#c8c4bc]"
+            />
+            <div className="mt-2 flex justify-end gap-1.5">
+              <button
+                type="button"
+                onClick={() => setGoalOpen(false)}
+                className="rounded-lg border border-line px-3 py-1.5 text-[10.5px] text-ink-3"
+              >
+                {t("common.cancel")}
+              </button>
+              <button
+                type="button"
+                onClick={() => void saveGoal()}
+                className="rounded-lg bg-accent px-3 py-1.5 text-[10.5px] font-semibold text-white"
+              >
+                {t("common.save")}
+              </button>
+            </div>
+          </div>
         </div>
       ) : null}
 
