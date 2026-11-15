@@ -167,13 +167,13 @@ export function StudyView() {
     try {
       await api.instructStudy(active.id, ask.trim(), askChapter || null);
       setToast(t("study.instructDone"));
-      window.setTimeout(() => setToast(null), 1000);
+      window.setTimeout(() => setToast(null), 1300);
       setAsk("");
       await loadSubject(active.id);
       await loadAll();
     } catch (e) {
       setToast((e as Error).message);
-      window.setTimeout(() => setToast(null), 1500);
+      window.setTimeout(() => setToast(null), 1300);
     } finally {
       window.clearInterval(timer);
       setAsking(false);
@@ -317,7 +317,7 @@ export function StudyView() {
       );
     } finally {
       setBusy(false);
-      window.setTimeout(() => setToast(null), 2500);
+      window.setTimeout(() => setToast(null), 1300);
     }
   };
 
@@ -337,7 +337,7 @@ export function StudyView() {
       setDraftAnswer("");
       setFeedback(null);
       void loadAll();
-      window.setTimeout(() => setToast(null), 2000);
+      window.setTimeout(() => setToast(null), 1300);
     } catch (e) {
       setError((e as Error).message);
     }
@@ -618,7 +618,7 @@ export function StudyView() {
       ) : null}
 
       {toast ? (
-        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full bg-ink px-4 py-2 text-[10.5px] text-white shadow-lg">
+        <div className="toast-pop fixed bottom-6 left-1/2 z-50 rounded-full bg-ink px-4 py-2 text-[10.5px] text-white shadow-lg">
           {toast}
         </div>
       ) : null}

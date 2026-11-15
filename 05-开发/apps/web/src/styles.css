@@ -58,3 +58,33 @@ button:disabled,
   }
 }
 
+/* 底部提示：淡入 → 停留 → 淡出，总时长与 JS 的 1.3s 对齐 */
+@keyframes dsh-toast {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 10px);
+  }
+  12% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  76% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+}
+
+.toast-pop {
+  animation: dsh-toast 1.3s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast-pop {
+    animation: none;
+    transform: translate(-50%, 0);
+  }
+}
