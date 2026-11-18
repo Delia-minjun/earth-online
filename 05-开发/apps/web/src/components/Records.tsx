@@ -195,12 +195,17 @@ export function BodyCard({ date }: { date: string }) {
   const [targetDate, setTargetDate] = useState(date);
 
   const load = useCallback(async () => {
-    const from = new Date(`${targetDate}T00:00:00`);
-    from.setDate(from.getDate() - 29);
+    // 曲线始终以今天为右端，往前 30 天；如果选的是更早的日期，窗口也把它包含进来，
+    // 这样切换日期时图不会消失
+    const today = new Date(`${date}T00:00:00`);
+    const windowStart = new Date(today);
+    windowStart.setDate(windowStart.getDate() - 29);
+    const pickedDay = new Date(`${targetDate}T00:00:00`);
+    const from = pickedDay < windowStart ? pickedDay : windowStart;
     const fromStr = `${from.getFullYear()}-${String(from.getMonth() + 1).padStart(2, "0")}-${String(
       from.getDate(),
     ).padStart(2, "0")}`;
-    const list = await api.bodyLog(fromStr, targetDate);
+    const list = await api.bodyLog(fromStr, date);
     setHistory(list);
     const picked = list.find((x) => x.date === targetDate);
     setRow(picked ?? { date: targetDate, weight: null, workout: null });
