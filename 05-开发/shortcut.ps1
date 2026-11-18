@@ -1,9 +1,11 @@
-﻿# 创建「地球 Online」快捷方式：桌面一个、开机启动一个（静默模式）
+# 创建「地球 Online」快捷方式：桌面一个、开机启动一个（静默模式）
 # 由 安装.cmd 调用；也可以手动：powershell -File shortcut.ps1
 param(
   [string]$Dev = "",
   # 测试用：把两个快捷方式都放到指定目录，不动真实的桌面/启动文件夹
-  [string]$Dir = ""
+  [string]$Dir = "",
+  # 只要桌面图标，不设开机自启
+  [switch]$NoStartup
 )
 
 $ErrorActionPreference = "Stop"
@@ -34,11 +36,15 @@ function New-Shortcut([string]$path, [string]$arg) {
 if ($Dir) {
   New-Item -ItemType Directory -Force -Path $Dir | Out-Null
   New-Shortcut (Join-Path $Dir "桌面.lnk") ""
-  New-Shortcut (Join-Path $Dir "自启.lnk") "--silent"
+  if (-not $NoStartup) { New-Shortcut (Join-Path $Dir "自启.lnk") "--silent" }
 } else {
   $desk = [Environment]::GetFolderPath("Desktop")
   $startup = [Environment]::GetFolderPath("Startup")
   New-Shortcut (Join-Path $desk "地球 Online.lnk") ""
-  New-Shortcut (Join-Path $startup "地球 Online.lnk") "--silent"
-  Write-Output "桌面和开机启动的快捷方式都建好了"
+  if (-not $NoStartup) {
+    New-Shortcut (Join-Path $startup "地球 Online.lnk") "--silent"
+    Write-Output "桌面和开机启动的快捷方式都建好了"
+  } else {
+    Write-Output "桌面快捷方式已建好（没有设置开机自启）"
+  }
 }

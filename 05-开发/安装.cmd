@@ -86,12 +86,23 @@ if not "%BUILDCODE%"=="0" (
 )
 echo.
 rem ---------- 4) 快捷方式 ----------
-echo [4/5] 创建快捷方式（桌面 + 开机启动）
-powershell -NoProfile -ExecutionPolicy Bypass -File "%DEV%shortcut.ps1"
+echo [4/5] 创建桌面快捷方式
+set "AUTOSTART=0"
+set /p ASK=  要不要开机自动启动？输入 y 开启，直接回车跳过：
+if /i "%ASK%"=="y" set "AUTOSTART=1"
+if "%AUTOSTART%"=="1" (
+  powershell -NoProfile -ExecutionPolicy Bypass -File "%DEV%shortcut.ps1"
+) else (
+  powershell -NoProfile -ExecutionPolicy Bypass -File "%DEV%shortcut.ps1" -NoStartup
+)
 if errorlevel 1 (
   echo    快捷方式创建失败，不影响使用；可手动双击 start.cmd 启动。
 ) else (
-  echo    桌面和开机启动的快捷方式都建好了
+  if "%AUTOSTART%"=="1" (
+    echo    桌面快捷方式已建好，并已设为开机自启
+  ) else (
+    echo    桌面快捷方式已建好（未设开机自启，需要时手动双击）
+  )
 )
 echo.
 
