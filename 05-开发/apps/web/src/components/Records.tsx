@@ -191,26 +191,28 @@ export function BodyCard({ date }: { date: string }) {
   const [row, setRow] = useState<ApiBodyLog>({ date, weight: null, workout: null });
   const [history, setHistory] = useState<ApiBodyLog[]>([]);
   const [draft, setDraft] = useState("");
+  /** 记录到哪一天：默认今天，可以改成过去的日期补记 */
+  const [targetDate, setTargetDate] = useState(date);
 
   const load = useCallback(async () => {
-    const from = new Date(`${date}T00:00:00`);
+    const from = new Date(`${targetDate}T00:00:00`);
     from.setDate(from.getDate() - 29);
     const fromStr = `${from.getFullYear()}-${String(from.getMonth() + 1).padStart(2, "0")}-${String(
       from.getDate(),
     ).padStart(2, "0")}`;
-    const list = await api.bodyLog(fromStr, date);
+    const list = await api.bodyLog(fromStr, targetDate);
     setHistory(list);
-    const today = list.find((x) => x.date === date);
-    setRow(today ?? { date, weight: null, workout: null });
-    setDraft(today?.weight != null ? String(today.weight) : "");
-  }, [date]);
+    const picked = list.find((x) => x.date === targetDate);
+    setRow(picked ?? { date: targetDate, weight: null, workout: null });
+    setDraft(picked?.weight != null ? String(picked.weight) : "");
+  }, [targetDate]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
   const save = async (patch: { weight?: number | null; workout?: string | null }) => {
-    const saved = await api.saveBody(date, patch);
+    const saved = await api.saveBody(targetDate, patch);
     setRow(saved);
     await load();
   };
@@ -243,7 +245,14 @@ export function BodyCard({ date }: { date: string }) {
         ) : null
       }
     >
-      <div className="flex items-center gap-1.5">
+      <div className="flex flex-wrap items-center gap-1.5">
+        <input
+          type="date"
+          value={targetDate}
+          max={date}
+          onChange={(e) => setTargetDate(e.target.value || date)}
+          className="rounded-lg border border-line bg-surface-2 px-1.5 py-1 text-[10.5px] tabular-nums text-ink-2 outline-none"
+        />
         <input
           inputMode="decimal"
           value={draft}
