@@ -282,12 +282,11 @@ export function BodyCard({ date }: { date: string }) {
       </div>
 
       {weighed.length ? (
-        <ul className="mt-2 divide-y divide-line-2">
+        <ul className="mt-2 max-h-[104px] divide-y divide-line-2 overflow-y-auto pr-1 [scrollbar-width:thin]">
           {[...weighed]
             .reverse()
-            .slice(0, 3)
             .map((h) => (
-              <li key={h.date} className="flex items-center gap-2 py-1 text-[10.5px]">
+              <li key={h.date} className="flex h-[26px] items-center gap-2 text-[10.5px]">
                 <span className="tabular-nums text-ink-3">{h.date.slice(5)}</span>
                 <span className="tabular-nums text-ink-2">{h.weight!.toFixed(1)}</span>
                 <button
