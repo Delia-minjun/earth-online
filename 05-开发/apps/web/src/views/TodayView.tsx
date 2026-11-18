@@ -253,6 +253,16 @@ export function TodayView() {
                       >
                         {t("common.cancel")}
                       </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditTaskId(null);
+                          void removeTask(f.id);
+                        }}
+                        className="rounded-md border border-line px-2.5 py-1 text-[10px] text-[#b8b2a9] transition-colors hover:border-warn hover:text-warn"
+                      >
+                        {t("common.delete")}
+                      </button>
                     </div>
                   </li>
                 ) : (
@@ -303,14 +313,6 @@ export function TodayView() {
                       aria-label="edit"
                     >
                       {t("course.editRow")}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void removeTask(f.id)}
-                      className="shrink-0 text-[12px] leading-none text-[#a9a49b] opacity-100 transition-colors hover:text-warn md:opacity-0 md:group-hover:opacity-100"
-                      aria-label="delete"
-                    >
-                      ×
                     </button>
                   </li>
                 ),
