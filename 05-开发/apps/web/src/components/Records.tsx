@@ -265,18 +265,6 @@ export function BodyCard({ date }: { date: string }) {
             {t("common.save")}
           </button>
         ) : null}
-        {row.weight != null && !dirty ? (
-          <button
-            type="button"
-            onClick={async () => {
-              setDraft("");
-              await save({ weight: null });
-            }}
-            className="ml-1 text-[10px] text-[#b8b2a9] transition-colors hover:text-warn"
-          >
-            {t("body.clearToday")}
-          </button>
-        ) : null}
       </div>
 
       {weighed.length ? (
