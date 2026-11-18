@@ -37,5 +37,5 @@ export const DDL_TONE_CLASS: Record<DdlTone, string> = {
   far: "bg-surface-2 text-ink-3",
   soon: "bg-[#F3EDDA] text-[#97845A]",
   close: "bg-warn-soft text-warn",
-  overdue: "bg-[#E3CEC7] text-[#8A3A2C] font-medium",
+  overdue: "bg-[#D9CDBF] text-[#33291F] font-semibold",
 };
