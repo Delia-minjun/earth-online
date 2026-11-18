@@ -148,7 +148,8 @@
     "weightPlaceholder": "Weight",
     "twoWeeks": "2-week",
     "last30": "Last 30 days",
-    "noWeightShort": "No weight records yet"
+    "noWeightShort": "No weight records yet",
+    "clearToday": "Clear"
   },
   "tour": {
     "skip": "Skip",

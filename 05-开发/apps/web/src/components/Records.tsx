@@ -225,6 +225,7 @@ export function BodyCard({ date }: { date: string }) {
     await save({ weight: value });
   };
 
+  const dirty = draft.trim() !== (row.weight != null ? String(row.weight) : "");
   const weighed = history.filter((h) => h.weight != null);
   const last = weighed[weighed.length - 1];
   const first = weighed[0];
@@ -255,7 +256,53 @@ export function BodyCard({ date }: { date: string }) {
           className="w-20 rounded-lg border border-line bg-surface-2 px-2 py-1 text-[12px] tabular-nums text-ink outline-none placeholder:text-[#c8c4bc]"
         />
         <span className="text-[10px] text-ink-3">kg</span>
+        {dirty ? (
+          <button
+            type="button"
+            onClick={() => void commitWeight()}
+            className="ml-1 rounded-lg bg-accent px-2 py-[3px] text-[10px] font-semibold text-white"
+          >
+            {t("common.save")}
+          </button>
+        ) : null}
+        {row.weight != null && !dirty ? (
+          <button
+            type="button"
+            onClick={async () => {
+              setDraft("");
+              await save({ weight: null });
+            }}
+            className="ml-1 text-[10px] text-[#b8b2a9] transition-colors hover:text-warn"
+          >
+            {t("body.clearToday")}
+          </button>
+        ) : null}
       </div>
+
+      {weighed.length ? (
+        <ul className="mt-2 divide-y divide-line-2">
+          {[...weighed]
+            .reverse()
+            .slice(0, 3)
+            .map((h) => (
+              <li key={h.date} className="flex items-center gap-2 py-1 text-[10.5px]">
+                <span className="tabular-nums text-ink-3">{h.date.slice(5)}</span>
+                <span className="tabular-nums text-ink-2">{h.weight!.toFixed(1)}</span>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await api.saveBody(h.date, { weight: null });
+                    await load();
+                  }}
+                  className="ml-auto text-[11px] leading-none text-[#c0bbb2] transition-colors hover:text-warn"
+                  aria-label="delete"
+                >
+                  ×
+                </button>
+              </li>
+            ))}
+        </ul>
+      ) : null}
 
       <div className="mt-3 border-t border-line-2 pt-2.5">
         {weighed.length ? (

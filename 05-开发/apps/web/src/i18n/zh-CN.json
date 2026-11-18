@@ -149,7 +149,8 @@
     "weightPlaceholder": "体重",
     "twoWeeks": "近两周",
     "last30": "近 30 天",
-    "noWeightShort": "还没有体重记录"
+    "noWeightShort": "还没有体重记录",
+    "clearToday": "清除"
   },
   "tour": {
     "skip": "跳过",
